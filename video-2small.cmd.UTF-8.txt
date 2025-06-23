@@ -1,3 +1,7 @@
+# This file is used for browser preview only.
+# This file uses encoding: UTF-8
+# linguist-language=Batchfile
+
 @echo off
 set "VERS=Froz video recode script 23.06.2025"
 :: Цель скрипта: перекодирование видеофайлов с телефонов/фотоаппаратов
