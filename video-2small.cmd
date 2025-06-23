@@ -1,120 +1,120 @@
 @echo off
 set "VERS=Froz video recode script 23.06.2025"
-:: –¶–µ–ª—å —Å–∫—Ä–∏–ø—Ç–∞: –ø–µ—Ä–µ–∫–æ–¥–∏—Ä–æ–≤–∞–Ω–∏–µ –≤–∏–¥–µ–æ—Ñ–∞–π–ª–æ–≤ —Å —Ç–µ–ª–µ—Ñ–æ–Ω–æ–≤/—Ñ–æ—Ç–æ–∞–ø–ø–∞—Ä–∞—Ç–æ–≤
-:: –≤ —É–º–µ–Ω—å—à–µ–Ω–Ω—ã–π —Ä–∞–∑–º–µ—Ä –¥–ª—è –≤–∏–¥–µ–æ–∞—Ä—Ö–∏–≤–∞ –±–µ–∑ —Å—É—â–µ—Å—Ç–≤–µ–Ω–Ω–æ–π –ø–æ—Ç–µ—Ä–∏ –∫–∞—á–µ—Å—Ç–≤–∞.
+:: ñ•´Ï ·™‡®Ø‚†: Ø•‡•™Æ§®‡Æ¢†≠®• ¢®§•Æ‰†©´Æ¢ · ‚•´•‰Æ≠Æ¢/‰Æ‚Æ†ØØ†‡†‚Æ¢
+:: ¢ „¨•≠ÏË•≠≠Î© ‡†ß¨•‡ §´Ô ¢®§•Æ†‡Â®¢† °•ß ·„È•·‚¢•≠≠Æ© ØÆ‚•‡® ™†Á•·‚¢†.
 
 
-:: === –ë–ª–æ–∫: –ù–∞—Å—Ç—Ä–æ–π–∫–∏ ===
+:: === Å´Æ™: ç†·‚‡Æ©™® ===
 
-:: –ù–æ–≤–∞—è –≤—ã—Å–æ—Ç–∞ –≤–∏–¥–µ–æ (–æ–ø—Ü–∏–æ–Ω–∞–ª—å–Ω–æ). –ü—Ä–∏–º–µ—Ä—ã: 1080, 720, 480
-::  –ï—Å–ª–∏ –Ω–µ –∑–∞–¥–∞–Ω–æ - –æ—Å—Ç–∞—ë—Ç—Å—è –±–µ–∑ –∏–∑–º–µ–Ω–µ–Ω–∏–π.
+:: çÆ¢†Ô ¢Î·Æ‚† ¢®§•Æ (ÆØÊ®Æ≠†´Ï≠Æ). è‡®¨•‡Î: 1080, 720, 480
+::  Ö·´® ≠• ß†§†≠Æ - Æ·‚†Ò‚·Ô °•ß ®ß¨•≠•≠®©.
 set "SCALE=720"
 
-:: –ü–æ–≤–æ—Ä–æ—Ç –≤–∏–¥–µ–æ (Rotation tag).
-:: –í–ê–ñ–ù–û: –ê–ø–ø–∞—Ä–∞—Ç–Ω—ã–µ –∫–æ–¥–µ–∫–∏ hevc_qsv hevc_d3d12va h264_qsv h264_d3d12va
-:: –ù–ï –ø–æ–¥–¥–¥–µ—Ä–∂–∏–≤–∞—é—Ç –ø–æ–≤–æ—Ä–æ—Ç - –∫–ª—é—á –±—É–¥–µ—Ç –ø—Ä–æ–∏–≥–Ω–æ—Ä–∏—Ä–æ–≤–∞–Ω!.
-:: –ö–æ–¥–µ–∫ hevc_amf –º–æ–∂–µ—Ç –∏–º–µ—Ç—å –æ—à–∏–±–∫–∏ —Å –ø–æ–≤–æ—Ä–æ—Ç–æ–º!
-:: –í–æ–∑–º–æ–∂–Ω—ã–µ –∑–Ω–∞—á–µ–Ω–∏—è:
-::    90 - –ø–æ–≤–æ—Ä–æ—Ç –ø–æ —á–∞—Å–æ–≤–æ–π —Å—Ç—Ä–µ–ª–∫–µ –Ω–∞ 90 –≥—Ä–∞–¥—É—Å–æ–≤
-::    180 - –ø–æ–≤–æ—Ä–æ—Ç –Ω–∞ 180 –≥—Ä–∞–¥—É—Å–æ–≤
-::    270 - –ø–æ–≤–æ—Ä–æ—Ç –ø—Ä–æ—Ç–∏–≤ —á–∞—Å–æ–≤–æ–π —Å—Ç—Ä–µ–ª–∫–∏ –Ω–∞ 90 –≥—Ä–∞–¥—É—Å–æ–≤
-::    –ï—Å–ª–∏ –Ω–µ –∑–∞–¥–∞–Ω–æ - –ø–æ–≤–æ—Ä–æ—Ç –±–µ—Ä—ë—Ç—Å—è –∏–∑ —Ñ–∞–π–ª–∞ (rotation tag)
+:: èÆ¢Æ‡Æ‚ ¢®§•Æ (Rotation tag).
+:: ÇÄÜçé: ÄØØ†‡†‚≠Î• ™Æ§•™® hevc_qsv hevc_d3d12va h264_qsv h264_d3d12va
+:: çÖ ØÆ§§§•‡¶®¢†Ó‚ ØÆ¢Æ‡Æ‚ - ™´ÓÁ °„§•‚ Ø‡Æ®£≠Æ‡®‡Æ¢†≠!.
+:: äÆ§•™ hevc_amf ¨Æ¶•‚ ®¨•‚Ï ÆË®°™® · ØÆ¢Æ‡Æ‚Æ¨!
+:: ÇÆß¨Æ¶≠Î• ß≠†Á•≠®Ô:
+::    90 - ØÆ¢Æ‡Æ‚ ØÆ Á†·Æ¢Æ© ·‚‡•´™• ≠† 90 £‡†§„·Æ¢
+::    180 - ØÆ¢Æ‡Æ‚ ≠† 180 £‡†§„·Æ¢
+::    270 - ØÆ¢Æ‡Æ‚ Ø‡Æ‚®¢ Á†·Æ¢Æ© ·‚‡•´™® ≠† 90 £‡†§„·Æ¢
+::    Ö·´® ≠• ß†§†≠Æ - ØÆ¢Æ‡Æ‚ °•‡Ò‚·Ô ®ß ‰†©´† (rotation tag)
 set "ROTATION="
 
-:: –ö–æ–¥–µ–∫ –∏ –ø–∞—Ä–∞–º–µ—Ç—Ä—ã –∫–æ–¥–∏—Ä–æ–≤–∞–Ω–∏—è:
-:: HEVC (H.265) –∫–æ–¥–µ–∫–∏:
-::    hevc_nvenc   - NVIDIA GPU (—Ä–µ–∫–æ–º–µ–Ω–¥—É–µ–º—ã–π, —Ç—Ä–µ–±—É–µ—Ç—Å—è Nvidia GeForce GTX 950 –∏ –≤—ã—à–µ –∏ –¥—Ä–∞–π–≤–µ—Ä 570+)
+:: äÆ§•™ ® Ø†‡†¨•‚‡Î ™Æ§®‡Æ¢†≠®Ô:
+:: HEVC (H.265) ™Æ§•™®:
+::    hevc_nvenc   - NVIDIA GPU (‡•™Æ¨•≠§„•¨Î©, ‚‡•°„•‚·Ô Nvidia GeForce GTX 950 ® ¢ÎË• ® §‡†©¢•‡ 570+)
 ::    hevc_amf     - AMD GPU
 ::    hevc_qsv     - Intel Quick Sync Video
-::    hevc_d3d12va - Windows Direct 12 (DXVA2), –∞–ø–ø–∞—Ä–∞—Ç–Ω–∞—è –ø–æ–¥–¥–µ—Ä–∂–∫–∞
-::    libx265      - software –∫–æ–¥–∏—Ä–æ–≤–∞–Ω–∏–µ HEVC (–æ—á–µ–Ω—å –º–µ–¥–ª–µ–Ω–Ω–æ)
-:: H.264 –∫–æ–¥–µ–∫–∏:
-::    h264_nvenc   - NVIDIA GPU (—Ä–µ–∫–æ–º–µ–Ω–¥—É–µ–º—ã–π)
+::    hevc_d3d12va - Windows Direct 12 (DXVA2), †ØØ†‡†‚≠†Ô ØÆ§§•‡¶™†
+::    libx265      - software ™Æ§®‡Æ¢†≠®• HEVC (ÆÁ•≠Ï ¨•§´•≠≠Æ)
+:: H.264 ™Æ§•™®:
+::    h264_nvenc   - NVIDIA GPU (‡•™Æ¨•≠§„•¨Î©)
 ::    h264_amf     - AMD GPU
 ::    h264_qsv     - Intel Quick Sync Video
-::    libx264      - software –∫–æ–¥–∏—Ä–æ–≤–∞–Ω–∏–µ H.264 (–º–µ–¥–ª–µ–Ω–Ω—ã–π)
+::    libx264      - software ™Æ§®‡Æ¢†≠®• H.264 (¨•§´•≠≠Î©)
 set "CODEC=hevc_nvenc"
 
-:: Preset –¥–ª—è hevc_nvenc (—Å–∫–æ—Ä–æ—Å—Ç—å/–∫–∞—á–µ—Å—Ç–≤–æ). –í–æ–∑–º–æ–∂–Ω—ã–µ –∑–Ω–∞—á–µ–Ω–∏—è: p1-p7 (—Å–∫–æ—Ä–æ—Å—Ç—å-–∫–∞—á–µ—Å—Ç–≤–æ).
-:: –ï—Å–ª–∏ –Ω–µ –∑–∞–¥–∞–Ω–æ - –ø–æ —É–º–æ–ª—á–∞–Ω–∏—é hevc_nvenc –≤—ã–±–∏—Ä–∞–µ—Ç p4 (~CRF20, –Ω–∞ 720p ~2,5 –ú–±–∏—Ç/—Å)
+:: Preset §´Ô hevc_nvenc (·™Æ‡Æ·‚Ï/™†Á•·‚¢Æ). ÇÆß¨Æ¶≠Î• ß≠†Á•≠®Ô: p1-p7 (·™Æ‡Æ·‚Ï-™†Á•·‚¢Æ).
+:: Ö·´® ≠• ß†§†≠Æ - ØÆ „¨Æ´Á†≠®Ó hevc_nvenc ¢Î°®‡†•‚ p4 (~CRF20, ≠† 720p ~2,5 å°®‚/·)
 set "PRESET="
 
-:: –ü—Ä–æ—Ñ–∏–ª—å –∫–æ–¥–∏—Ä–æ–≤–∞–Ω–∏—è.
-::    –¥–ª—è HEVC: main10 - 10 bit, main - 8 bit.
-::    –¥–ª—è H.264: –∞–≤—Ç–æ–º–∞—Ç–∏—á–µ—Å–∫–∏ –≤—ã–±–∏—Ä–∞–µ—Ç—Å—è high, –Ω–µ–∑–∞–≤–∏—Å–∏–º–æ –æ—Ç —É–∫–∞–∑–∞–Ω–Ω–æ–≥–æ –∑–¥–µ—Å—å.
-:: –ï—Å–ª–∏ –Ω–µ –∑–∞–¥–∞–Ω–æ - –≤—ã–±–∏—Ä–∞–µ—Ç –∫–æ–¥–µ–∫.
-:: main10 –ø–æ–¥–¥–µ—Ä–∂–∏–≤–∞—é—Ç: hevc_nvenc, hevc_amf, libx265
-:: main10 –º–æ–∂–µ—Ç –Ω–µ –≤–æ—Å–ø—Ä–æ–∏–∑–≤–æ–¥–∏—Ç—å—Å—è –≤ —Å—Ç–∞—Ä—ã—Ö –ø—Ä–æ–∏–≥—Ä—ã–≤–∞—Ç–µ–ª—è—Ö –∏ —É—Å—Ç—Ä–æ–π—Å—Ç–≤–∞—Ö!
+:: è‡Æ‰®´Ï ™Æ§®‡Æ¢†≠®Ô.
+::    §´Ô HEVC: main10 - 10 bit, main - 8 bit.
+::    §´Ô H.264: †¢‚Æ¨†‚®Á•·™® ¢Î°®‡†•‚·Ô high, ≠•ß†¢®·®¨Æ Æ‚ „™†ß†≠≠Æ£Æ ß§•·Ï.
+:: Ö·´® ≠• ß†§†≠Æ - ¢Î°®‡†•‚ ™Æ§•™.
+:: main10 ØÆ§§•‡¶®¢†Ó‚: hevc_nvenc, hevc_amf, libx265
+:: main10 ¨Æ¶•‚ ≠• ¢Æ·Ø‡Æ®ß¢Æ§®‚Ï·Ô ¢ ·‚†‡ÎÂ Ø‡Æ®£‡Î¢†‚•´ÔÂ ® „·‚‡Æ©·‚¢†Â!
 set "PROFILE=main10"
 
-:: CRF - "—É—Ä–æ–≤–µ–Ω—å –∫–∞—á–µ—Å—Ç–≤–∞". –ï—Å–ª–∏ –Ω–µ –∑–∞–¥–∞–Ω–æ - –≤—ã–±–∏—Ä–∞–µ—Ç –∫–æ–¥–µ–∫.
-:: –†–µ–∫–æ–º–µ–Ω–¥—É–µ–º—ã–µ –∑–Ω–∞—á–µ–Ω–∏—è –ø–æ —É–±—ã–≤–∞–Ω–∏—é –∫–∞—á–µ—Å—Ç–≤–∞ –∏ —Ä–∞–∑–º–µ—Ä–∞ —Ñ–∞–π–ª–∞: 20-24
-:: hevc_nvenc –∞–≤—Ç–æ–º–∞—Ç–æ–º —Å—Ç–∞–≤–∏—Ç –Ω–æ—Ä–º–∞–ª—å–Ω—ã–π —É—Ä–æ–≤–µ–Ω—å, –ø—Ä–∏–º–µ—Ä–Ω–æ —Ä–∞–≤–Ω—ã–π CRF20.
-:: –î–ª—è libx265/264 –ª—É—á—à–µ –ø—Ä–∏–Ω—É–¥–∏—Ç–µ–ª—å–Ω–æ —Å—Ç–∞–≤–∏—Ç—å CRF20 –∏–Ω–∞—á–µ –æ–Ω –≤—ã–±–µ—Ä–µ—Ç –Ω–∏–∑–∫–æ–µ –∫–∞—á–µ—Å—Ç–≤–æ CRF28
-:: CRF20 –≤ 720p —ç—Ç–æ ~2,5 –º–±–∏—Ç/—Å
+:: CRF - "„‡Æ¢•≠Ï ™†Á•·‚¢†". Ö·´® ≠• ß†§†≠Æ - ¢Î°®‡†•‚ ™Æ§•™.
+:: ê•™Æ¨•≠§„•¨Î• ß≠†Á•≠®Ô ØÆ „°Î¢†≠®Ó ™†Á•·‚¢† ® ‡†ß¨•‡† ‰†©´†: 20-24
+:: hevc_nvenc †¢‚Æ¨†‚Æ¨ ·‚†¢®‚ ≠Æ‡¨†´Ï≠Î© „‡Æ¢•≠Ï, Ø‡®¨•‡≠Æ ‡†¢≠Î© CRF20.
+:: Ñ´Ô libx265/264 ´„ÁË• Ø‡®≠„§®‚•´Ï≠Æ ·‚†¢®‚Ï CRF20 ®≠†Á• Æ≠ ¢Î°•‡•‚ ≠®ß™Æ• ™†Á•·‚¢Æ CRF28
+:: CRF20 ¢ 720p Ì‚Æ ~2,5 ¨°®‚/·
 set "CRF="
 
-:: –ê—É–¥–∏–æ-–Ω–∞—Å—Ç—Ä–æ–π–∫–∏ - –ø–æ —É–º–æ–ª—á–∞–Ω–∏—é –∫–æ–ø–∏—Ä–æ–≤–∞–Ω–∏–µ –∞—É–¥–∏–æ–¥–æ—Ä–æ–∂–∫–∏
-:: –ú–æ–∂–Ω–æ –∏—Å–ø–æ–ª—å–∑–æ–≤–∞—Ç—å "-c:a libopus -b:a 128k" –¥–ª—è —É–º–µ–Ω—å—à–µ–Ω–∏—è —Ä–∞–∑–º–µ—Ä–∞
+:: Ä„§®Æ-≠†·‚‡Æ©™® - ØÆ „¨Æ´Á†≠®Ó ™ÆØ®‡Æ¢†≠®• †„§®Æ§Æ‡Æ¶™®
+:: åÆ¶≠Æ ®·ØÆ´ÏßÆ¢†‚Ï "-c:a libopus -b:a 128k" §´Ô „¨•≠ÏË•≠®Ô ‡†ß¨•‡†
 set "AUDIO_ARGS=-c:a copy"
 
-:: –ö–æ—Å—Ç—ã–ª—å - —É—Å—Ç–∞–Ω–æ–≤–∏—Ç—å –≤ 1 –Ω–∞ —Ä–µ–¥–∫–∏–π —Å–ª—É—á–∞–π –µ—Å–ª–∏ –≤—Ö–æ–¥–Ω–æ–µ –≤–∏–¥–µ–æ -
-:: Full Range JPEG, –Ω–æ –Ω–µ YUVJ420P.
+:: äÆ·‚Î´Ï - „·‚†≠Æ¢®‚Ï ¢ 1 ≠† ‡•§™®© ·´„Á†© •·´® ¢ÂÆ§≠Æ• ¢®§•Æ -
+:: Full Range JPEG, ≠Æ ≠• YUVJ420P.
 set "FORCE_FULL_RANGE="
 
-:: FPS - —É—Å—Ç–∞–Ω–æ–≤–∫–∞ —Ü–µ–ª–µ–≤–æ–π —á–∞—Å—Ç–æ—Ç—ã –∫–∞–¥—Ä–æ–≤ (–Ω–µ–æ–±—è–∑–∞—Ç–µ–ª—å–Ω–æ)
-:: –ü—Ä–∏–º–µ—Ä—ã: 24, 25, 30, 50, 60, 24000/1001 (~23.976), 30000/1001 (~29.97) –∏ —Ç.–ø.
-:: –ï—Å–ª–∏ –Ω–µ –∑–∞–¥–∞–Ω–æ - —á–∞—Å—Ç–æ—Ç–∞ –∫–∞–¥—Ä–æ–≤ –±–µ—Ä—ë—Ç—Å—è –∏–∑ –∏—Å—Ö–æ–¥–Ω–∏–∫–∞ (FPS CFR –∏–ª–∏ VFR).
-:: –ü—Ä–∏–º–µ—Ä: set "FPS=30000/1001"
+:: FPS - „·‚†≠Æ¢™† Ê•´•¢Æ© Á†·‚Æ‚Î ™†§‡Æ¢ (≠•Æ°Ôß†‚•´Ï≠Æ)
+:: è‡®¨•‡Î: 24, 25, 30, 50, 60, 24000/1001 (~23.976), 30000/1001 (~29.97) ® ‚.Ø.
+:: Ö·´® ≠• ß†§†≠Æ - Á†·‚Æ‚† ™†§‡Æ¢ °•‡Ò‚·Ô ®ß ®·ÂÆ§≠®™† (FPS CFR ®´® VFR).
+:: è‡®¨•‡: set "FPS=30000/1001"
 set "FPS="
 
-:: –î–æ–ø—É—Å—Ç–∏–º—ã–µ –∑–Ω–∞—á–µ–Ω–∏—è: .mkv (—É–Ω–∏–≤–µ—Ä—Å–∞–ª—å–Ω–µ–µ) –∏–ª–∏ .mp4.
-:: –î–ª—è –∞–ø–ø–∞—Ä–∞—Ç–Ω—ã—Ö –∫–æ–¥–µ–∫–æ–≤ H.264 - –ª—É—á—à–µ –≤—ã–±—Ä–∞—Ç—å .mp4.
+:: ÑÆØ„·‚®¨Î• ß≠†Á•≠®Ô: .mkv („≠®¢•‡·†´Ï≠••) ®´® .mp4.
+:: Ñ´Ô †ØØ†‡†‚≠ÎÂ ™Æ§•™Æ¢ H.264 - ´„ÁË• ¢Î°‡†‚Ï .mp4.
 set "OUTPUT_EXT=.mkv"
 
-:: –ü—Ä–∏—Å—Ç–∞–≤–∫–∞ –∫ –≤—ã—Ö–æ–¥–Ω–æ–º—É –∏–º–µ–Ω–∏ —Ñ–∞–π–ª–∞ (–º–æ–∂–Ω–æ –∏–∑–º–µ–Ω—è—Ç—å –∏–ª–∏ –æ—Å—Ç–∞–≤–∏—Ç—å –ø—É—Å—Ç–æ–π)
+:: è‡®·‚†¢™† ™ ¢ÎÂÆ§≠Æ¨„ ®¨•≠® ‰†©´† (¨Æ¶≠Æ ®ß¨•≠Ô‚Ï ®´® Æ·‚†¢®‚Ï Ø„·‚Æ©)
 set "NAME_APPEND=_sm"
 
-:: === –û–∫–æ–Ω—á–∞–Ω–∏–µ –±–ª–æ–∫–∞ –Ω–∞—Å—Ç—Ä–æ–µ–∫ ===
+:: === é™Æ≠Á†≠®• °´Æ™† ≠†·‚‡Æ•™ ===
 
 
 
 
 
-:: === –ë–ª–æ–∫: –ü—Ä–æ–≤–µ—Ä–∫–∏ ===
+:: === Å´Æ™: è‡Æ¢•‡™® ===
 echo.
 echo.%VERS%
 echo.-----------------------------------
-:: –ü—Ä–æ–≤–µ—Ä–∫–∞ –Ω–∞–ª–∏—á–∏—è –≤—Ö–æ–¥–Ω—ã—Ö —Ñ–∞–π–ª–æ–≤
+:: è‡Æ¢•‡™† ≠†´®Á®Ô ¢ÂÆ§≠ÎÂ ‰†©´Æ¢
 if "%~1" == "" (
-    echo.–ò—Å–ø–æ–ª—å–∑–æ–≤–∞–Ω–∏–µ: –û—Ç—Ä–µ–¥–∞–∫—Ç–∏—Ä—É–π—Ç–µ SET –≤ –Ω–∞—á–∞–ª–µ —Å–∫—Ä–∏–ø—Ç–∞.
-    echo.–ó–∞—Ç–µ–º –ø–µ—Ä–µ—Ç—è–Ω–∏—Ç–µ –∏–ª–∏ –≤—Å—Ç–∞–≤—å—Ç–µ –≤–∏–¥–µ–æ—Ñ–∞–π–ª—ã –Ω–∞ —ç—Ç–æ—Ç —Ñ–∞–π–ª.
-    echo.–í—ã—Ö–æ–¥–∏–º.
+    echo.à·ØÆ´ÏßÆ¢†≠®•: é‚‡•§†™‚®‡„©‚• SET ¢ ≠†Á†´• ·™‡®Ø‚†.
+    echo.á†‚•¨ Ø•‡•‚Ô≠®‚• ®´® ¢·‚†¢Ï‚• ¢®§•Æ‰†©´Î ≠† Ì‚Æ‚ ‰†©´.
+    echo.ÇÎÂÆ§®¨.
     pause & exit /b
 )
-:: –ü—Ä–æ–≤–µ—Ä–∫–∞ –Ω–∞–ª–∏—á–∏—è —É—Ç–∏–ª–∏—Ç
+:: è‡Æ¢•‡™† ≠†´®Á®Ô „‚®´®‚
 set "FFM=%~dp0bin\ffmpeg.exe"
 set "FFP=%~dp0bin\ffprobe.exe"
 set "MI=%~dp0bin\mediainfo.exe"
-if not exist "%FFM%" echo.%FFM% –Ω–µ –Ω–∞–π–¥–µ–Ω, –≤—ã—Ö–æ–¥–∏–º.& pause & exit /b
-if not exist "%FFP%" echo.%FFP% –Ω–µ –Ω–∞–π–¥–µ–Ω, –≤—ã—Ö–æ–¥–∏–º.& pause & exit /b
-if not exist "%MI%" echo.%MI% –Ω–µ –Ω–∞–π–¥–µ–Ω, –≤—ã—Ö–æ–¥–∏–º.& pause & exit /b
+if not exist "%FFM%" echo.%FFM% ≠• ≠†©§•≠, ¢ÎÂÆ§®¨.& pause & exit /b
+if not exist "%FFP%" echo.%FFP% ≠• ≠†©§•≠, ¢ÎÂÆ§®¨.& pause & exit /b
+if not exist "%MI%" echo.%MI% ≠• ≠†©§•≠, ¢ÎÂÆ§®¨.& pause & exit /b
 
 
 
 
 
-:: === –ë–ª–æ–∫: –°—Ç–∞—Ä—Ç ===
+:: === Å´Æ™: ë‚†‡‚ ===
 :FILE_LOOP
-:: –ó–∞–ø–∏—Å—ã–≤–∞–µ–º –∏–º—è —Ñ–∞–π–ª–∞ –≤ –ø–µ—Ä–µ–º–µ–Ω–Ω—ã–µ —á—Ç–æ–±—ã %1 –Ω–µ —Å–ª–æ–º–∞–ª–æ—Å—å –≤ –ø—Ä–æ—Ü–µ—Å—Å–µ
+:: á†Ø®·Î¢†•¨ ®¨Ô ‰†©´† ¢ Ø•‡•¨•≠≠Î• Á‚Æ°Î %1 ≠• ·´Æ¨†´Æ·Ï ¢ Ø‡ÆÊ•··•
 set "FNF=%~1"
 set "FNN=%~n1"
 set "FNWE=%~nx1"
 
-:: –ï—Å–ª–∏ –±–æ–ª—å—à–µ –Ω–µ—Ç —Ñ–∞–π–ª–æ–≤ - –≤—ã—Ö–æ–¥–∏–º
+:: Ö·´® °Æ´ÏË• ≠•‚ ‰†©´Æ¢ - ¢ÎÂÆ§®¨
 if "%FNF%" == "" goto FILE_LOOP_END
 
-:: –í—Ä–µ–º–µ–Ω–Ω–æ–µ –∏–º—è OEM-–ª–æ–≥–∞
+:: Ç‡•¨•≠≠Æ• ®¨Ô OEM-´Æ£†
 set "td=%date:~0,2%"
 set "tm=%date:~3,2%"
 set "ty=%date:~6,4%"
@@ -126,7 +126,7 @@ set "tmm=%time:~3,2%"
 set "tss=%time:~6,2%"
 set "TYMDHMS=%ty%-%tm%-%td%_%thh%-%tmm%-%tss%"
 
-:: –ò–º–µ–Ω–∞ –∏ –ø–∞–ø–∫–∞ –ª–æ–≥–æ–≤
+:: à¨•≠† ® Ø†Ø™† ´Æ£Æ¢
 set "OUTPUT_DIR=%~dp1"
 set "OUTPUT_NAME=%FNN%%NAME_APPEND%"
 set "OUTPUT=%OUTPUT_DIR%%OUTPUT_NAME%%OUTPUT_EXT%"
@@ -135,24 +135,24 @@ set "LOG=%OUTPUT_DIR%logs\%LOGE%"
 set "LOGU=%TYMDHMS%utf"
 set "LOGN=%FNN%%NAME_APPEND%-log.txt"
 
-:: –°–æ–≤–º–µ—Å—Ç–∏—Ç—å –ª–æ–≥–∏ –≤ –æ–¥–∏–Ω —Ñ–∞–π–ª –Ω–µ –ø–æ–ª—É—á–∏—Ç—Å—è, —Ç.–∫. ffmpeg –≤—ã–≤–æ–¥–∏—Ç –ª–æ–≥ –≤ UTF-8, –∞ cmd –≤ OEM
+:: ëÆ¢¨•·‚®‚Ï ´Æ£® ¢ Æ§®≠ ‰†©´ ≠• ØÆ´„Á®‚·Ô, ‚.™. ffmpeg ¢Î¢Æ§®‚ ´Æ£ ¢ UTF-8, † cmd ¢ OEM
 set "FFMPEG_LOG_NAME=%OUTPUT_NAME%-log_ffmpeg.txt"
 set "FFMPEG_LOG=%OUTPUT_DIR%logs\%FFMPEG_LOG_NAME%"
 if not exist "%OUTPUT_DIR%logs" md "%OUTPUT_DIR%logs"
 
-:: –ü—Ä–æ–≤–µ—Ä—è–µ–º —á—Ç–æ –∫–æ–Ω–µ—á–Ω—ã–π —Ñ–∞–π–ª —É–∂–µ —Å—É—â–µ—Å—Ç–≤—É–µ—Ç –∏ –Ω–µ–Ω—É–ª–µ–≤–æ–≥–æ —Ä–∞–∑–º–µ—Ä–∞
+:: è‡Æ¢•‡Ô•¨ Á‚Æ ™Æ≠•Á≠Î© ‰†©´ „¶• ·„È•·‚¢„•‚ ® ≠•≠„´•¢Æ£Æ ‡†ß¨•‡†
 if not exist "%OUTPUT%" goto DONE_SIZE_CHK
 for %%F in ("%OUTPUT%") do set SIZE=%%~zF
 if %SIZE% EQU 0 (
     del "%OUTPUT%"
     goto DONE_SIZE_CHK
 )
-echo.%OUTPUT_NAME% —É–∂–µ —Å—É—â–µ—Å—Ç–≤—É–µ—Ç, –ø—Ä–æ–ø—É—Å–∫–∞–µ–º.
+echo.%OUTPUT_NAME% „¶• ·„È•·‚¢„•‚, Ø‡ÆØ„·™†•¨.
 goto NEXT
 :DONE_SIZE_CHK
-title –û–±—Ä–∞–±–æ—Ç–∫–∞ %FNWE%...
-echo.%DATE% %TIME:~0,8% –ù–∞—á–∞—Ç–∞ –æ–±—Ä–∞–±–æ—Ç–∫–∞ %FNWE%...
-echo.[INFO] %DATE% %TIME:~0,8% –ù–∞—á–∞—Ç–∞ –æ–±—Ä–∞–±–æ—Ç–∫–∞ %FNWE%...>"%LOG%"
+title é°‡†°Æ‚™† %FNWE%...
+echo.%DATE% %TIME:~0,8% ç†Á†‚† Æ°‡†°Æ‚™† %FNWE%...
+echo.[INFO] %DATE% %TIME:~0,8% ç†Á†‚† Æ°‡†°Æ‚™† %FNWE%...>"%LOG%"
 
 
 
@@ -161,34 +161,34 @@ echo.[INFO] %DATE% %TIME:~0,8% –ù–∞—á–∞—Ç–∞ –æ–±—Ä–∞–±–æ—Ç–∫–∞ %FNWE%...>"%LOG%"
 
 
 
-:: === –ë–ª–æ–∫: –í–†–ï–ú–Ø ===
-:: –ü–æ–ª—É—á–∞–µ–º –¥–ª–∏—Ç–µ–ª—å–Ω–æ—Å—Ç—å –≤–∏–¥–µ–æ. –ö–ª—é—á :nk=1 –æ—Ç–±—Ä–æ—Å–∏—Ç —Ç–µ–∫—Å—Ç "duration="
+:: === Å´Æ™: ÇêÖåü ===
+:: èÆ´„Á†•¨ §´®‚•´Ï≠Æ·‚Ï ¢®§•Æ. ä´ÓÁ :nk=1 Æ‚°‡Æ·®‚ ‚•™·‚ "duration="
 set "TMP_FILE=%TEMP%\ffprobe_time.tmp"
 "%FFP%" -v error -show_entries format=duration -of default=nw=1:nk=1 "%FNF%" > "%TMP_FILE%" 2>nul
 set /p LENGTH_SECONDS= <"%TMP_FILE%"
 del "%TMP_FILE%"
 if not defined LENGTH_SECONDS (
-    echo –ù–µ —É–¥–∞–ª–æ—Å—å –∏–∑–≤–ª–µ—á—å –¥–ª–∏—Ç–µ–ª—å–Ω–æ—Å—Ç—å –≤–∏–¥–µ–æ.
+    echo ç• „§†´Æ·Ï ®ß¢´•ÁÏ §´®‚•´Ï≠Æ·‚Ï ¢®§•Æ.
     goto DONE_LENGTH
 )
 
-:: –û—Å—Ç–∞–≤–ª—è–µ–º —Ç–æ–ª—å–∫–æ —Ü–µ–ª—ã–µ —Å–µ–∫—É–Ω–¥—ã
+:: é·‚†¢´Ô•¨ ‚Æ´Ï™Æ Ê•´Î• ·•™„≠§Î
 for /f "tokens=1 delims=." %%a in ("%LENGTH_SECONDS%") do set "LENGTH_SECONDS=%%a"
 
-:: –î–æ–±–∞–≤–ª—è–µ–º +1, —á—Ç–æ–±—ã –æ–∫—Ä—É–≥–ª–∏—Ç—å –≤–≤–µ—Ä—Ö
+:: ÑÆ°†¢´Ô•¨ +1, Á‚Æ°Î Æ™‡„£´®‚Ï ¢¢•‡Â
 set /a LENGTH_SECONDS+=1
 
-:: –†–∞—Å—Å—á–∏—Ç—ã–≤–∞–µ–º –≤—Ä–µ–º—è –∫–æ–¥–∏—Ä–æ–≤–∞–Ω–∏—è –∏—Å—Ö–æ–¥—è –∏–∑ X.X —Å–µ–∫—É–Ω–¥ –Ω–∞ —Å–µ–∫—É–Ω–¥—É –≤–∏–¥–µ–æ –¥–ª—è –∫–æ–¥–µ–∫–æ–≤ –Ω–∞ CPU i3-2120:
+:: ê†··Á®‚Î¢†•¨ ¢‡•¨Ô ™Æ§®‡Æ¢†≠®Ô ®·ÂÆ§Ô ®ß X.X ·•™„≠§ ≠† ·•™„≠§„ ¢®§•Æ §´Ô ™Æ§•™Æ¢ ≠† CPU i3-2120:
 :: 0.3 - *nvenc, libx264. 5.0 - libx265
-:: –î–ª—è –≤—Å—Ç–∞–≤–∫–∏ –≤ —Ñ–æ—Ä–º—É–ª—É - —É–º–Ω–æ–∂–∞–µ–º –≤—Ä–µ–º—è –Ω–∞ 10
+:: Ñ´Ô ¢·‚†¢™® ¢ ‰Æ‡¨„´„ - „¨≠Æ¶†•¨ ¢‡•¨Ô ≠† 10
 if /i "%CODEC:~5%" == "nvenc" set /a "ENCODE_SECONDS=(LENGTH_SECONDS * 3) / 10"
 if /i "%CODEC%" == "libx265" set /a "ENCODE_SECONDS=(LENGTH_SECONDS * 50) / 10"
 
-:: –ü–µ—Ä–µ–≤–æ–¥–∏–º –≤ —Ñ–æ—Ä–º–∞—Ç –º–∏–Ω—É—Ç—ã:—Å–µ–∫—É–Ω–¥—ã
+:: è•‡•¢Æ§®¨ ¢ ‰Æ‡¨†‚ ¨®≠„‚Î:·•™„≠§Î
 set /a "MINUTES=ENCODE_SECONDS / 60"
 set /a "SECONDS=ENCODE_SECONDS %% 60"
 if %SECONDS% LSS 10 set "SECONDS=0%SECONDS%"
-echo.–ü—Ä–∏–º–µ—Ä–Ω–æ–µ –≤—Ä–µ–º—è –∫–æ–¥–∏—Ä–æ–≤–∞–Ω–∏—è: %MINUTES% –º–∏–Ω—É—Ç %SECONDS% —Å–µ–∫—É–Ω–¥.
+echo.è‡®¨•‡≠Æ• ¢‡•¨Ô ™Æ§®‡Æ¢†≠®Ô: %MINUTES% ¨®≠„‚ %SECONDS% ·•™„≠§.
 :DONE_LENGTH
 
 
@@ -196,37 +196,37 @@ echo.–ü—Ä–∏–º–µ—Ä–Ω–æ–µ –≤—Ä–µ–º—è –∫–æ–¥–∏—Ä–æ–≤–∞–Ω–∏—è: %MINUTES% –º–∏–Ω—É—Ç 
 
 
 
-:: === –ë–ª–æ–∫: COLOR RANGE ===
+:: === Å´Æ™: COLOR RANGE ===
 set "PIX_FMT="
-:: –ï—Å–ª–∏ –∑–∞–¥–∞–Ω Force full range
+:: Ö·´® ß†§†≠ Force full range
 set "COLOR_RANGE="
 if defined FORCE_FULL_RANGE (
     set "COLOR_RANGE=1"
-    echo.[INFO] –ó–∞–¥–∞–Ω Force color range - –≤ -vf –±—É–¥–µ—Ç –¥–æ–±–∞–≤–ª–µ–Ω zscale color>>"%LOG%"
+    echo.[INFO] á†§†≠ Force color range - ¢ -vf °„§•‚ §Æ°†¢´•≠ zscale color>>"%LOG%"
     goto COLOR_RANGE_DONE
 )
-:: –û–ø—Ä–µ–¥–µ–ª–µ–Ω–∏–µ full range —á–µ—Ä–µ–∑ ffprobe. –ö–ª—é—á :nk=1 –æ—Ç–±—Ä–æ—Å–∏—Ç —Ç–µ–∫—Å—Ç "color_range="
+:: éØ‡•§•´•≠®• full range Á•‡•ß ffprobe. ä´ÓÁ :nk=1 Æ‚°‡Æ·®‚ ‚•™·‚ "color_range="
 set "TMP_FILE=%TEMP%\ffprobe_pix_fmt.tmp"
 "%FFP%" -v error -select_streams v:0 -show_entries stream=pix_fmt -of default=nw=1:nk=1 "%FNF%" > "%TMP_FILE%" 2>nul
 if not exist "%TMP_FILE%" (
-    echo.[ERROR] –ù–µ –ø–æ–ª—É—á–∏–ª–æ—Å—å —Å–æ–∑–¥–∞—Ç—å –≤—Ä–µ–º–µ–Ω–Ω—ã–π —Ñ–∞–π–ª %TMP_FILE%>>"%LOG%"
+    echo.[ERROR] ç• ØÆ´„Á®´Æ·Ï ·Æß§†‚Ï ¢‡•¨•≠≠Î© ‰†©´ %TMP_FILE%>>"%LOG%"
     goto COLOR_RANGE_DONE
 )
 set /p PIX_FMT= <"%TMP_FILE%"
 del "%TMP_FILE%"
 if not defined PIX_FMT (
-    echo.[ERROR] FFProbe –Ω–µ —Å–º–æ–≥ –æ–ø—Ä–µ–¥–µ–ª–∏—Ç—å —Ñ–æ—Ä–º–∞—Ç –ø–∏–∫—Å–µ–ª–µ–π>>"%LOG%"
+    echo.[ERROR] FFProbe ≠• ·¨Æ£ ÆØ‡•§•´®‚Ï ‰Æ‡¨†‚ Ø®™·•´•©>>"%LOG%"
     goto COLOR_RANGE_DONE
 )
-echo.[INFO] –û–ø—Ä–µ–¥–µ–ª—ë–Ω —Ñ–æ—Ä–º–∞—Ç –ø–∏–∫—Å–µ–ª–µ–π %PIX_FMT%>>"%LOG%"
-:: –û–±—Ä–µ–∑–∞–µ–º –≤–æ–∑–º–æ–∂–Ω—ã–µ —Ö–≤–æ—Å—Ç—ã –≤ —Å–∫–æ–±–∫–∞—Ö –≤—Ä–æ–¥–µ yuvj420p(tv, bt709)
+echo.[INFO] éØ‡•§•´Ò≠ ‰Æ‡¨†‚ Ø®™·•´•© %PIX_FMT%>>"%LOG%"
+:: é°‡•ß†•¨ ¢Æß¨Æ¶≠Î• Â¢Æ·‚Î ¢ ·™Æ°™†Â ¢‡Æ§• yuvj420p(tv, bt709)
 set "PIX_FMT=%PIX_FMT:(= %"
 set "PIX_FMT=%PIX_FMT:)= %"
 for /f "tokens=1" %%a in ("%PIX_FMT%") do set "PIX_FMT=%%a"
-:: –ê–≤—Ç–æ–æ–ø—Ä–µ–¥–µ–ª–µ–Ω–∏–µ full range –ø–æ pix_fmt
+:: Ä¢‚ÆÆØ‡•§•´•≠®• full range ØÆ pix_fmt
 if /i "%PIX_FMT%" == "yuvj420p" (
     set "COLOR_RANGE=1"
-    echo.[INFO] –ù–∞–π–¥–µ–Ω yuvj420p ^(full range^) - –≤ -vf –±—É–¥–µ—Ç –¥–æ–±–∞–≤–ª–µ–Ω zscale color, –∏ –¥–ª—è metadata -color_range>>"%LOG%"
+    echo.[INFO] ç†©§•≠ yuvj420p ^(full range^) - ¢ -vf °„§•‚ §Æ°†¢´•≠ zscale color, ® §´Ô metadata -color_range>>"%LOG%"
 )
 :COLOR_RANGE_DONE
 
@@ -234,55 +234,55 @@ if /i "%PIX_FMT%" == "yuvj420p" (
 
 
 
-:: === –ë–ª–æ–∫: CURRENT SIZE ===
-:: –ü–æ–ª—É—á–∞–µ–º –∏—Å—Ö–æ–¥–Ω—ã–µ —Ä–∞–∑–º–µ—Ä—ã –≤–∏–¥–µ–æ –¥–ª—è –ø–æ–≤–æ—Ä–æ—Ç–∞ –∏ –º–∞—Å—à—Ç–∞–±–∏—Ä–æ–≤–∞–Ω–∏—è —á–µ—Ä–µ–∑ ffprobe
-:: –ò—Å–ø–æ–ª—å–∑—É–µ–º –≤—Ä–µ–º–µ–Ω–Ω—ã–π —Ñ–∞–π–ª, —Ç–∞–∫ –∫–∞–∫ –∑–¥–µ—Å—å –≤—ã–≤–æ–¥ ffprobe –º–æ–∂–µ—Ç —Å–æ–¥–µ—Ä–∂–∞—Ç—å:
-::     - –ø—Ä–æ–±–µ–ª—ã (–Ω–∞–ø—Ä–∏–º–µ—Ä, "1920 1080")
-::     - —Å–ø–µ—Ü–∏–∞–ª—å–Ω—ã–µ —Å–∏–º–≤–æ–ª—ã (–Ω–∞–ø—Ä–∏–º–µ—Ä, escape-—Å–∏–º–≤–æ–ª—ã, –¥–≤–æ–µ—Ç–æ—á–∏—è)
-::     - –ø—É—Å—Ç—ã–µ —Å—Ç—Ä–æ–∫–∏ –∏–ª–∏ –æ—à–∏–±–∫–∏
-:: –ù–µ –∏—Å–ø–æ–ª—å–∑—É–µ–º for /f. –ü—Ä–∏–º–µ—Ä—ã, –∫–æ—Ç–æ—Ä—ã–µ —Å–ª–æ–º–∞—é—Ç —Ü–∏–∫–ª for /f:
-::     - "1920 1080" > –ø—Ä–∏ –Ω–æ—Ä–º–∞–ª–∏–∑–∞—Ü–∏–∏ —Å—Ç–∞–Ω–æ–≤–∏—Ç—Å—è "19201080" (–Ω–µ–≤–µ—Ä–Ω–æ)
-::     - "error" > –±—É–¥–µ—Ç —Å—á–∏—Ç–∞—Ç—å—Å—è –∫–∞–∫ —à–∏—Ä–∏–Ω–∞/–≤—ã—Å–æ—Ç–∞
-:: –ü–æ—ç—Ç–æ–º—É –±–µ–∑–æ–ø–∞—Å–Ω–µ–µ —á–∏—Ç–∞—Ç—å —á–µ—Ä–µ–∑ set /p < file
+:: === Å´Æ™: CURRENT SIZE ===
+:: èÆ´„Á†•¨ ®·ÂÆ§≠Î• ‡†ß¨•‡Î ¢®§•Æ §´Ô ØÆ¢Æ‡Æ‚† ® ¨†·Ë‚†°®‡Æ¢†≠®Ô Á•‡•ß ffprobe
+:: à·ØÆ´Ïß„•¨ ¢‡•¨•≠≠Î© ‰†©´, ‚†™ ™†™ ß§•·Ï ¢Î¢Æ§ ffprobe ¨Æ¶•‚ ·Æ§•‡¶†‚Ï:
+::     - Ø‡Æ°•´Î (≠†Ø‡®¨•‡, "1920 1080")
+::     - ·Ø•Ê®†´Ï≠Î• ·®¨¢Æ´Î (≠†Ø‡®¨•‡, escape-·®¨¢Æ´Î, §¢Æ•‚ÆÁ®Ô)
+::     - Ø„·‚Î• ·‚‡Æ™® ®´® ÆË®°™®
+:: ç• ®·ØÆ´Ïß„•¨ for /f. è‡®¨•‡Î, ™Æ‚Æ‡Î• ·´Æ¨†Ó‚ Ê®™´ for /f:
+::     - "1920 1080" > Ø‡® ≠Æ‡¨†´®ß†Ê®® ·‚†≠Æ¢®‚·Ô "19201080" (≠•¢•‡≠Æ)
+::     - "error" > °„§•‚ ·Á®‚†‚Ï·Ô ™†™ Ë®‡®≠†/¢Î·Æ‚†
+:: èÆÌ‚Æ¨„ °•ßÆØ†·≠•• Á®‚†‚Ï Á•‡•ß set /p < file
 set "CURRENT_DIM="
 set "TMP_FILE=%TEMP%\video_info.tmp"
 "%FFP%" -v error -select_streams v:0 -show_entries stream=width,height -of csv=p=0 "%FNF%" > "%TMP_FILE%" 2>nul
 if not exist "%TMP_FILE%" goto SKIP_CURRENT_DIM
-:: –ò–∑–≤–ª–µ–∫–∞–µ–º –ø–µ—Ä–≤—É—é –Ω–µ–ø—É—Å—Ç—É—é —Å—Ç—Ä–æ–∫—É (goto '–≤—ã—Ö–æ–¥' –Ω—É–∂–µ–Ω –¥–ª—è –ø—Ä–µ—Ä—ã–≤–∞–Ω–∏—è —Ü–∏–∫–ª–∞)
+:: àß¢´•™†•¨ Ø•‡¢„Ó ≠•Ø„·‚„Ó ·‚‡Æ™„ (goto '¢ÎÂÆ§' ≠„¶•≠ §´Ô Ø‡•‡Î¢†≠®Ô Ê®™´†)
 for /f "tokens=1,2 delims=," %%a in ('type "%TMP_FILE%"') do (
     set "CURRENT_W=%%a"
     set "CURRENT_H=%%b"
 )
 del "%TMP_FILE%"
 if not defined CURRENT_W (
-    echo.–û–®–ò–ë–ö–ê: FFProbe –Ω–µ —Å–º–æ–≥ –æ–ø—Ä–µ–¥–µ–ª–∏—Ç—å —à–∏—Ä–∏–Ω—É/–≤—ã—Å–æ—Ç—É>>"%LOG%"
+    echo.éòàÅäÄ: FFProbe ≠• ·¨Æ£ ÆØ‡•§•´®‚Ï Ë®‡®≠„/¢Î·Æ‚„>>"%LOG%"
     goto SKIP_CURRENT_DIM
 )
-echo.[INFO] –û–ø—Ä–µ–¥–µ–ª–µ–Ω–æ —Ä–∞–∑—Ä–µ—à–µ–Ω–∏–µ: %CURRENT_W%x%CURRENT_H%>>"%LOG%"
+echo.[INFO] éØ‡•§•´•≠Æ ‡†ß‡•Ë•≠®•: %CURRENT_W%x%CURRENT_H%>>"%LOG%"
 :SKIP_CURRENT_DIM
 
 
 
 
 
-:: === –ë–ª–æ–∫: ROTATION ===
-:: –ë–ª–æ–∫ –¥–æ–ª–∂–µ–Ω –±—ã—Ç—å –¥–æ –±–ª–æ–∫–∞ SCALE
+:: === Å´Æ™: ROTATION ===
+:: Å´Æ™ §Æ´¶•≠ °Î‚Ï §Æ °´Æ™† SCALE
 set "ROTATION_FILTER="
 set "ROTATION_METADATA="
 
-:: –ï—Å–ª–∏ ROTATION –Ω–µ –∑–∞–¥–∞–Ω - –ø—ã—Ç–∞–µ–º—Å—è –∏–∑–≤–ª–µ—á—å —Ç–µ–≥ Rotate –∏–∑ —Ñ–∞–π–ª–∞
+:: Ö·´® ROTATION ≠• ß†§†≠ - ØÎ‚†•¨·Ô ®ß¢´•ÁÏ ‚•£ Rotate ®ß ‰†©´†
 if not defined ROTATION goto NO_USER_ROTATION
 
-:: –ï—Å–ª–∏ –∑–∞–¥–∞–Ω–æ –∑–Ω–∞—á–µ–Ω–∏–µ –æ—Ç–ª–∏—á–Ω–æ–µ –æ—Ç 0 - –∏—Å–ø–æ–ª—å–∑—É–µ–º –µ–≥–æ
-echo.[INFO] –ó–∞–¥–∞–Ω USER ROTATION=%ROTATION%>>"%LOG%"
+:: Ö·´® ß†§†≠Æ ß≠†Á•≠®• Æ‚´®Á≠Æ• Æ‚ 0 - ®·ØÆ´Ïß„•¨ •£Æ
+echo.[INFO] á†§†≠ USER ROTATION=%ROTATION%>>"%LOG%"
 goto APPLY_ROTATION
 
 :NO_USER_ROTATION
 set "EXT=%~x1"
 if /i "%EXT%" == ".mp4" goto GET_ROTATE
 if /i "%EXT%" == ".mov" goto GET_ROTATE
-echo.[WARNING] –§–æ—Ä–º–∞—Ç %EXT% –Ω–µ –ø–æ–¥–¥–µ—Ä–∂–∏–≤–∞–µ—Ç —Ç–µ–≥ Rotate - –∏–∑–≤–ª–µ—á–µ–Ω–∏–µ –ø—Ä–æ–ø—É—â–µ–Ω–æ.>>"%LOG%"
-echo.[WARNING] –ï—Å–ª–∏ –≤–∏–¥–µ–æ –ø–æ–≤—ë—Ä–Ω—É—Ç–æ - –ø—Ä–∏–Ω—É–¥–∏—Ç–µ–ª—å–Ω–æ –∑–∞–¥–∞–π—Ç–µ set ROTATION.>>"%LOG%"
+echo.[WARNING] îÆ‡¨†‚ %EXT% ≠• ØÆ§§•‡¶®¢†•‚ ‚•£ Rotate - ®ß¢´•Á•≠®• Ø‡ÆØ„È•≠Æ.>>"%LOG%"
+echo.[WARNING] Ö·´® ¢®§•Æ ØÆ¢Ò‡≠„‚Æ - Ø‡®≠„§®‚•´Ï≠Æ ß†§†©‚• set ROTATION.>>"%LOG%"
 goto NO_ROTATION_TAG
 
 :GET_ROTATE
@@ -293,51 +293,51 @@ if not exist "%TMP_FILE%" goto NO_ROTATION_TAG
 set /p ROTATION_TAG= < "%TMP_FILE%"
 del "%TMP_FILE%"
 if not defined ROTATION_TAG goto NO_ROTATION_TAG
-:: –£–¥–∞–ª—è–µ–º –ø—Ä–æ–±–µ–ª—ã
+:: ì§†´Ô•¨ Ø‡Æ°•´Î
 set "ROTATION_TAG=%ROTATION_TAG: =%"
-echo.[INFO] –í metadata –Ω–∞–π–¥–µ–Ω —Ç–µ–≥ Rotate: "%ROTATION_TAG%">>"%LOG%"
-:: –£—Å—Ç–∞–Ω–∞–≤–ª–∏–≤–∞–µ–º ROTATION —Ç–æ–ª—å–∫–æ –µ—Å–ª–∏ –æ–Ω–∞ –µ—â—ë –Ω–µ –∑–∞–¥–∞–Ω–∞
+echo.[INFO] Ç metadata ≠†©§•≠ ‚•£ Rotate: "%ROTATION_TAG%">>"%LOG%"
+:: ì·‚†≠†¢´®¢†•¨ ROTATION ‚Æ´Ï™Æ •·´® Æ≠† •ÈÒ ≠• ß†§†≠†
 set "ROTATION=%ROTATION_TAG%"
 
-:: –ü—Ä–æ–≤–µ—Ä—è–µ–º, –ø–æ–¥–¥–µ—Ä–∂–∏–≤–∞–µ—Ç –ª–∏ –∫–æ–¥–µ–∫ –ø–æ–≤–æ—Ä–æ—Ç
+:: è‡Æ¢•‡Ô•¨, ØÆ§§•‡¶®¢†•‚ ´® ™Æ§•™ ØÆ¢Æ‡Æ‚
 :APPLY_ROTATION
 set "UNSUPPORTED_ROTATION_CODECS= hevc_qsv hevc_d3d12va h264_qsv h264_d3d12va "
 echo.%UNSUPPORTED_ROTATION_CODECS% | findstr /i /c:" %CODEC% " >nul && goto SAVE_ROTATION_METADATA
 
 :SET_TRANSPOSE
-:: –§–æ—Ä–º–∏—Ä—É–µ–º —Ñ–∏–ª—å—Ç—Ä –ø–æ–≤–æ—Ä–æ—Ç–∞
+:: îÆ‡¨®‡„•¨ ‰®´Ï‚‡ ØÆ¢Æ‡Æ‚†
 if "%ROTATION%" == "90" (
     set "ROTATION_FILTER=transpose=1"
-    echo.[INFO] –ü—Ä–∏–º–µ–Ω—ë–Ω –ø–æ–≤–æ—Ä–æ—Ç –Ω–∞ 90 –≥—Ä–∞–¥—É—Å–æ–≤ –ø–æ —á–∞—Å–æ–≤–æ–π —Å—Ç—Ä–µ–ª–∫–µ>>"%LOG%"
+    echo.[INFO] è‡®¨•≠Ò≠ ØÆ¢Æ‡Æ‚ ≠† 90 £‡†§„·Æ¢ ØÆ Á†·Æ¢Æ© ·‚‡•´™•>>"%LOG%"
     goto ROTATION_DONE
 )
 if "%ROTATION%" == "180" (
     set "ROTATION_FILTER=transpose=2,transpose=2"
-    echo.[INFO] –ü—Ä–∏–º–µ–Ω—ë–Ω –ø–æ–≤–æ—Ä–æ—Ç –Ω–∞ 180 –≥—Ä–∞–¥—É—Å–æ–≤>>"%LOG%"
+    echo.[INFO] è‡®¨•≠Ò≠ ØÆ¢Æ‡Æ‚ ≠† 180 £‡†§„·Æ¢>>"%LOG%"
     goto ROTATION_DONE
 )
 if "%ROTATION%" == "270" (
     set "ROTATION_FILTER=transpose=2"
-    echo.[INFO] –ü—Ä–∏–º–µ–Ω—ë–Ω –ø–æ–≤–æ—Ä–æ—Ç –Ω–∞ 90 –≥—Ä–∞–¥—É—Å–æ–≤ –ø—Ä–æ—Ç–∏–≤ —á–∞—Å–æ–≤–æ–π —Å—Ç—Ä–µ–ª–∫–∏>>"%LOG%"
+    echo.[INFO] è‡®¨•≠Ò≠ ØÆ¢Æ‡Æ‚ ≠† 90 £‡†§„·Æ¢ Ø‡Æ‚®¢ Á†·Æ¢Æ© ·‚‡•´™®>>"%LOG%"
     goto ROTATION_DONE
 )
 
 
-:: –°—é–¥–∞ –ø–æ–ø–∞–¥–∞–µ–º, –µ—Å–ª–∏ –ø–æ–≤–æ—Ä–æ—Ç –Ω–∞–ø—Ä—è–º—É—é –Ω–µ–≤–æ–∑–º–æ–∂–µ–Ω, –Ω–æ –º–æ–∂–Ω–æ —Å–æ—Ö—Ä–∞–Ω–∏—Ç—å –∫–∞–∫ metadata
+:: ëÓ§† ØÆØ†§†•¨, •·´® ØÆ¢Æ‡Æ‚ ≠†Ø‡Ô¨„Ó ≠•¢Æß¨Æ¶•≠, ≠Æ ¨Æ¶≠Æ ·ÆÂ‡†≠®‚Ï ™†™ metadata
 :SAVE_ROTATION_METADATA
-:: –ï—Å–ª–∏ OUTPUT_EXT == .mkv - –º–µ–Ω—è–µ–º –Ω–∞ .mp4
+:: Ö·´® OUTPUT_EXT == .mkv - ¨•≠Ô•¨ ≠† .mp4
 if /i "%OUTPUT_EXT%" == ".mkv" (
     set "OUTPUT_EXT=.mp4"
-    echo.[INFO] –ú–µ–Ω—è–µ–º —Ä–∞—Å—à–∏—Ä–µ–Ω–∏–µ –Ω–∞ .mp4 –¥–ª—è –∑–∞–ø–∏—Å–∏ —Ç–µ–≥–∞ Rotate>>"%LOG%"
+    echo.[INFO] å•≠Ô•¨ ‡†·Ë®‡•≠®• ≠† .mp4 §´Ô ß†Ø®·® ‚•£† Rotate>>"%LOG%"
 )
-:: –°–æ—Ö—Ä–∞–Ω—è–µ–º –∫–∞–∫ metadata
+:: ëÆÂ‡†≠Ô•¨ ™†™ metadata
 set "ROTATION_METADATA=-metadata:s:v:0 rotate=%ROTATION%"
-echo.[INFO] –¢–∞–∫ –∫–∞–∫ –ø–æ–≤–æ—Ä–æ—Ç –∫–æ–¥–µ–∫–æ–º –Ω–µ–≤–æ–∑–º–æ–∂–µ–Ω - —Ç–µ–≥ –ø–æ–≤–æ—Ä–æ—Ç–∞ –±—É–¥–µ—Ç —Å–æ—Ö—Ä–∞–Ω—ë–Ω –≤ —Ñ–∞–π–ª–µ MP4>>"%LOG%"
+echo.[INFO] í†™ ™†™ ØÆ¢Æ‡Æ‚ ™Æ§•™Æ¨ ≠•¢Æß¨Æ¶•≠ - ‚•£ ØÆ¢Æ‡Æ‚† °„§•‚ ·ÆÂ‡†≠Ò≠ ¢ ‰†©´• MP4>>"%LOG%"
 goto ROTATION_DONE
 
-:: –°—é–¥–∞ –ø–æ–ø–∞–¥–∞–µ–º, –µ—Å–ª–∏ –ø–æ–≤–æ—Ä–æ—Ç –Ω–µ –æ–ø—Ä–µ–¥–µ–ª—ë–Ω –∏–ª–∏ –Ω–µ–∫–æ—Ä—Ä–µ–∫—Ç–µ–Ω
+:: ëÓ§† ØÆØ†§†•¨, •·´® ØÆ¢Æ‡Æ‚ ≠• ÆØ‡•§•´Ò≠ ®´® ≠•™Æ‡‡•™‚•≠
 :NO_ROTATION_TAG
-echo.[INFO] –í metadata –Ω–µ –Ω–∞–π–¥–µ–Ω —Ç–µ–≥ rotate –∏–ª–∏ –æ–Ω –Ω–µ–∫–æ—Ä—Ä–µ–∫—Ç–µ–Ω. –ü—Ä–∏ –Ω–µ–æ–±—Ö–æ–¥–∏–º–æ—Å—Ç–∏ –∑–∞–¥–∞–π—Ç–µ set ROTATION –ø—Ä–∏–Ω—É–¥–∏—Ç–µ–ª—å–Ω–æ>>"%LOG%"
+echo.[INFO] Ç metadata ≠• ≠†©§•≠ ‚•£ rotate ®´® Æ≠ ≠•™Æ‡‡•™‚•≠. è‡® ≠•Æ°ÂÆ§®¨Æ·‚® ß†§†©‚• set ROTATION Ø‡®≠„§®‚•´Ï≠Æ>>"%LOG%"
 
 :ROTATION_DONE
 
@@ -347,36 +347,36 @@ echo.[INFO] –í metadata –Ω–µ –Ω–∞–π–¥–µ–Ω —Ç–µ–≥ rotate –∏–ª–∏ –æ–Ω –Ω–µ–∫–æ—Ä—Ä
 
 
 
-:: === –ë–ª–æ–∫: SCALE (–¥–æ–ª–∂–µ–Ω –±—ã—Ç—å –ø–æ—Å–ª–µ ROTATION) ===
-:: –ù–∞ –±—É–¥—É—â–µ–µ - –º–æ–∂–Ω–æ –ø–µ—Ä–µ–π—Ç–∏ –Ω–∞ –±–æ–ª–µ–µ —Å–æ–≤—Ä–µ–º–µ–Ω–Ω—ã–π zscale, –Ω–æ –æ–Ω –µ—Å—Ç—å –Ω–µ –≤–æ –≤—Å–µ—Ö —Å–±–æ—Ä–∫–∞—Ö:
+:: === Å´Æ™: SCALE (§Æ´¶•≠ °Î‚Ï ØÆ·´• ROTATION) ===
+:: ç† °„§„È•• - ¨Æ¶≠Æ Ø•‡•©‚® ≠† °Æ´•• ·Æ¢‡•¨•≠≠Î© zscale, ≠Æ Æ≠ •·‚Ï ≠• ¢Æ ¢·•Â ·°Æ‡™†Â:
 :: zscale=width=1280:height=720.
-:: –∏–ª–∏ zscale=width='if(lte(iw*9/16,ih*4/3),1280,-2)':height=720
-:: –Ω–æ —Ç—É—Ç –º–æ–≥—É—Ç –±—ã—Ç—å –ø—Ä–æ–±–ª–µ–º—ã —Å —ç–∫—Ä–∞–Ω–∏—Ä–æ–≤–∞–Ω–∏–µ–º –≤ cmd
-:: –ü–æ–ª–Ω–∞—è —Å—Ç—Ä–æ–∫–∞ -vf –∂–µ–ª–∞—Ç–µ–ª—å–Ω–æ —Ç–∞–∫–∞—è:
+:: ®´® zscale=width='if(lte(iw*9/16,ih*4/3),1280,-2)':height=720
+:: ≠Æ ‚„‚ ¨Æ£„‚ °Î‚Ï Ø‡Æ°´•¨Î · Ì™‡†≠®‡Æ¢†≠®•¨ ¢ cmd
+:: èÆ´≠†Ô ·‚‡Æ™† -vf ¶•´†‚•´Ï≠Æ ‚†™†Ô:
 :: zscale=width=1280:height=720:flags=bitexact+full_chroma_int:rangein=limited:range=full
 
-:: –û–±—Ä–∞–±–æ—Ç–∫–∞ –º–∞—Å—à—Ç–∞–±–∏—Ä–æ–≤–∞–Ω–∏—è –≤–∏–¥–µ–æ (Scale) —Å —É—á—ë—Ç–æ–º Rotation
+:: é°‡†°Æ‚™† ¨†·Ë‚†°®‡Æ¢†≠®Ô ¢®§•Æ (Scale) · „ÁÒ‚Æ¨ Rotation
 set "SCALE_EXPR="
-:: –ï—Å–ª–∏ SET SCALE –Ω–µ –∑–∞–¥–∞–Ω - –ø—Ä–æ–ø—É—Å–∫–∞–µ–º —Ñ–æ—Ä–º–∏—Ä–æ–≤–∞–Ω–∏–µ scale_expr
+:: Ö·´® SET SCALE ≠• ß†§†≠ - Ø‡ÆØ„·™†•¨ ‰Æ‡¨®‡Æ¢†≠®• scale_expr
 if not defined SCALE (
-    echo.[INFO] –í—ã—Å–æ—Ç–∞ –Ω–µ –∑–∞–¥–∞–Ω–∞, –º–∞—Å—à—Ç–∞–±–∏—Ä–æ–≤–∞–Ω–∏–µ –æ—Ç–∫–ª—é—á–µ–Ω–æ>>"%LOG%"
+    echo.[INFO] ÇÎ·Æ‚† ≠• ß†§†≠†, ¨†·Ë‚†°®‡Æ¢†≠®• Æ‚™´ÓÁ•≠Æ>>"%LOG%"
     goto SKIP_SCALE
 )
 set "TARGET_H=%SCALE%"
-:: –£—á–∏—Ç—ã–≤–∞–µ–º –ø–æ–≤–æ—Ä–æ—Ç: –ø—Ä–∏ 90/270 –º–µ–Ω—è–µ–º –æ—Å—å –º–∞—Å—à—Ç–∞–±–∏—Ä–æ–≤–∞–Ω–∏—è
+:: ìÁ®‚Î¢†•¨ ØÆ¢Æ‡Æ‚: Ø‡® 90/270 ¨•≠Ô•¨ Æ·Ï ¨†·Ë‚†°®‡Æ¢†≠®Ô
 if "%ROTATION%"=="90" (
     set "SCALE_EXPR=scale=%SCALE%:-2"
-    echo.[INFO] –ó–∞–¥–∞–Ω –ø–æ–≤–æ—Ä–æ—Ç –Ω–∞ 90 –≥—Ä–∞–¥—É—Å–æ–≤ –ø–æ —á–∞—Å–æ–≤–æ–π —Å—Ç—Ä–µ–ª–∫–µ - –º–∞—Å—à—Ç–∞–±–∏—Ä—É–µ–º –ø–æ —à–∏—Ä–∏–Ω–µ>>"%LOG%"
+    echo.[INFO] á†§†≠ ØÆ¢Æ‡Æ‚ ≠† 90 £‡†§„·Æ¢ ØÆ Á†·Æ¢Æ© ·‚‡•´™• - ¨†·Ë‚†°®‡„•¨ ØÆ Ë®‡®≠•>>"%LOG%"
     goto SKIP_SCALE
 )
 if "%ROTATION%"=="270" (
     set "SCALE_EXPR=scale=%SCALE%:-2"
-    echo.[INFO] –ó–∞–¥–∞–Ω –ø–æ–≤–æ—Ä–æ—Ç –Ω–∞ 90 –≥—Ä–∞–¥—É—Å–æ–≤ –ø—Ä–æ—Ç–∏–≤ —á–∞—Å–æ–≤–æ–π —Å—Ç—Ä–µ–ª–∫–∏ - –º–∞—Å—à—Ç–∞–±–∏—Ä—É–µ–º –ø–æ —à–∏—Ä–∏–Ω–µ>>"%LOG%"
+    echo.[INFO] á†§†≠ ØÆ¢Æ‡Æ‚ ≠† 90 £‡†§„·Æ¢ Ø‡Æ‚®¢ Á†·Æ¢Æ© ·‚‡•´™® - ¨†·Ë‚†°®‡„•¨ ØÆ Ë®‡®≠•>>"%LOG%"
     goto SKIP_SCALE
 )
-:: –ü–æ —É–º–æ–ª—á–∞–Ω–∏—é –º–∞—Å—à—Ç–∞–±–∏—Ä—É–µ–º –ø–æ –≤—ã—Å–æ—Ç–µ
+:: èÆ „¨Æ´Á†≠®Ó ¨†·Ë‚†°®‡„•¨ ØÆ ¢Î·Æ‚•
 set "SCALE_EXPR=scale=-2:%SCALE%"
-echo.[INFO] –ú–∞—Å—à—Ç–∞–±–∏—Ä–æ–≤–∞–Ω–∏–µ –ø–æ –≤—ã—Å–æ—Ç–µ: scale=-2:%SCALE%>>"%LOG%"
+echo.[INFO] å†·Ë‚†°®‡Æ¢†≠®• ØÆ ¢Î·Æ‚•: scale=-2:%SCALE%>>"%LOG%"
 :SKIP_SCALE
 
 
@@ -385,46 +385,46 @@ echo.[INFO] –ú–∞—Å—à—Ç–∞–±–∏—Ä–æ–≤–∞–Ω–∏–µ –ø–æ –≤—ã—Å–æ—Ç–µ: scale=-2:%SCALE%>>
 
 
 :: === HEIGHT_CHECK ===
-:: –ü—Ä–æ–≤–µ—Ä–∫–∞ —Å–æ–≤–ø–∞–¥–µ–Ω–∏—è –≤—ã—Å–æ—Ç—ã —Å user set SCALE —á—Ç–æ–±—ã –Ω–µ –¥–µ–ª–∞—Ç—å –ø–µ—Ä–µ–∫–æ–¥–∏—Ä–æ–≤–∞–Ω–∏–µ 1–∫1 –≤ -vf
+:: è‡Æ¢•‡™† ·Æ¢Ø†§•≠®Ô ¢Î·Æ‚Î · user set SCALE Á‚Æ°Î ≠• §•´†‚Ï Ø•‡•™Æ§®‡Æ¢†≠®• 1™1 ¢ -vf
 set "SRC_H="
 set "SKIP_SCALE_FILTER="
-:: –ï—Å–ª–∏ SCALE –Ω–µ –∑–∞–¥–∞–Ω - –ø—Ä–æ–ø—É—Å–∫–∞–µ–º –ø—Ä–æ–≤–µ—Ä–∫—É
+:: Ö·´® SCALE ≠• ß†§†≠ - Ø‡ÆØ„·™†•¨ Ø‡Æ¢•‡™„
 if not defined SCALE goto SKIP_HEIGHT_CHECK
 
-:: –ü–æ–ª—É—á–∞–µ–º –∏—Å—Ö–æ–¥–Ω—É—é –≤—ã—Å–æ—Ç—É —á–µ—Ä–µ–∑ ffprobe, –∫–ª—é—á :nk=1 –æ—Ç–±—Ä–æ—Å–∏—Ç —Ç–µ–∫—Å—Ç "height="
+:: èÆ´„Á†•¨ ®·ÂÆ§≠„Ó ¢Î·Æ‚„ Á•‡•ß ffprobe, ™´ÓÁ :nk=1 Æ‚°‡Æ·®‚ ‚•™·‚ "height="
 set "TMP_FILE=%TEMP%\ffprobe_height.tmp"
 "%FFP%" -v error -show_entries stream^=height -of default=nw=1:nk=1 "%FNF%" > "%TMP_FILE%" 2>nul
 if not exist "%TMP_FILE%" (
-    echo.[WARNING] –ù–µ —É–¥–∞–ª–æ—Å—å –ø–æ–ª—É—á–∏—Ç—å –≤—ã—Å–æ—Ç—É –≤–∏–¥–µ–æ –∏–∑ —Ñ–∞–π–ª–∞>>"%LOG%"
+    echo.[WARNING] ç• „§†´Æ·Ï ØÆ´„Á®‚Ï ¢Î·Æ‚„ ¢®§•Æ ®ß ‰†©´†>>"%LOG%"
     goto SKIP_HEIGHT_CHECK
 )
 set /p SRC_H= < "%TMP_FILE%"
 del "%TMP_FILE%"
 
-:: –£–¥–∞–ª—è–µ–º –ø—Ä–æ–±–µ–ª—ã
+:: ì§†´Ô•¨ Ø‡Æ°•´Î
 set "SRC_H=%SRC_H: =%"
 
-:: –ü—Ä–æ–≤–µ—Ä—è–µ–º, –∑–∞–¥–∞–Ω –ª–∏ ROTATION –Ω–µ —Ä–∞–≤–Ω–æ 0 (–ø—Ä–∏–Ω—É–¥–∏—Ç–µ–ª—å–Ω—ã–π –ø–æ–≤–æ—Ä–æ—Ç)
+:: è‡Æ¢•‡Ô•¨, ß†§†≠ ´® ROTATION ≠• ‡†¢≠Æ 0 (Ø‡®≠„§®‚•´Ï≠Î© ØÆ¢Æ‡Æ‚)
 set "FORCE_ROTATE="
 if not defined ROTATION goto CHECK_SRC_HEIGHT
 if "%ROTATION%" == "0" goto CHECK_SRC_HEIGHT
 set "FORCE_ROTATE=1"
 
 :CHECK_SRC_HEIGHT
-:: –ü—Ä–æ–≤–µ—Ä—è–µ–º —Å–æ–≤–ø–∞–¥–µ–Ω–∏–µ –≤—ã—Å–æ—Ç—ã
+:: è‡Æ¢•‡Ô•¨ ·Æ¢Ø†§•≠®• ¢Î·Æ‚Î
 if "%SRC_H%" == "%SCALE%" goto HANDLE_SKIP_SCALE
 
-:: –í—ã—Å–æ—Ç–∞ –æ—Ç–ª–∏—á–∞–µ—Ç—Å—è - –º–∞—Å—à—Ç–∞–±–∏—Ä—É–µ–º
-echo.[INFO] –í–∏–¥–µ–æ –±—É–¥–µ—Ç –º–∞—Å—à—Ç–∞–±–∏—Ä–æ–≤–∞–Ω–æ. –ò—Å—Ö–æ–¥–Ω–∞—è –≤—ã—Å–æ—Ç–∞: %SRC_H%, —Ü–µ–ª–µ–≤–∞—è: %SCALE%>>"%LOG%"
+:: ÇÎ·Æ‚† Æ‚´®Á†•‚·Ô - ¨†·Ë‚†°®‡„•¨
+echo.[INFO] Ç®§•Æ °„§•‚ ¨†·Ë‚†°®‡Æ¢†≠Æ. à·ÂÆ§≠†Ô ¢Î·Æ‚†: %SRC_H%, Ê•´•¢†Ô: %SCALE%>>"%LOG%"
 goto SKIP_HEIGHT_CHECK
 
 :HANDLE_SKIP_SCALE
-:: –í—ã—Å–æ—Ç–∞ —Å–æ–≤–ø–∞–¥–∞–µ—Ç, –ø—Ä–æ–≤–µ—Ä—è–µ–º –Ω–µ–æ–±—Ö–æ–¥–∏–º–æ—Å—Ç—å –ø–æ–≤–æ—Ä–æ—Ç–∞
+:: ÇÎ·Æ‚† ·Æ¢Ø†§†•‚, Ø‡Æ¢•‡Ô•¨ ≠•Æ°ÂÆ§®¨Æ·‚Ï ØÆ¢Æ‡Æ‚†
 if defined FORCE_ROTATE goto SKIP_HEIGHT_CHECK
 if defined ROTATION_METADATA goto SKIP_HEIGHT_CHECK
 
-:: –ù–∏ –ø–æ–≤–æ—Ä–æ—Ç–∞, –Ω–∏ –º–µ—Ç–∞–¥–∞–Ω–Ω—ã—Ö –Ω–µ—Ç - –º–æ–∂–Ω–æ –ø—Ä–æ–ø—É—Å—Ç–∏—Ç—å scale
-echo.[INFO] –í—ã—Å–æ—Ç–∞ %SCALE% —É–∂–µ —Å–æ–æ—Ç–≤–µ—Ç—Å—Ç–≤—É–µ—Ç —Ñ–∞–π–ª—É. –ú–∞—Å—à—Ç–∞–±–∏—Ä–æ–≤–∞–Ω–∏–µ –ø—Ä–æ–ø—É—â–µ–Ω–æ>>"%LOG%"
+:: ç® ØÆ¢Æ‡Æ‚†, ≠® ¨•‚†§†≠≠ÎÂ ≠•‚ - ¨Æ¶≠Æ Ø‡ÆØ„·‚®‚Ï scale
+echo.[INFO] ÇÎ·Æ‚† %SCALE% „¶• ·ÆÆ‚¢•‚·‚¢„•‚ ‰†©´„. å†·Ë‚†°®‡Æ¢†≠®• Ø‡ÆØ„È•≠Æ>>"%LOG%"
 set "SKIP_SCALE_FILTER=1"
 :SKIP_HEIGHT_CHECK
 
@@ -432,62 +432,62 @@ set "SKIP_SCALE_FILTER=1"
 
 
 
-:: === –ë–ª–æ–∫ FPS ===
+:: === Å´Æ™ FPS ===
 if defined FPS (
-    echo.[INFO] FPS –∑–∞–¥–∞–Ω –ø—Ä–∏–Ω—É–¥–∏—Ç–µ–ª—å–Ω–æ: %FPS%, –ø—Ä–æ–ø—É—Å–∫–∞–µ–º –µ–≥–æ –∏–∑–≤–ª–µ—á–µ–Ω–∏–µ.>>"%LOG%"
+    echo.[INFO] FPS ß†§†≠ Ø‡®≠„§®‚•´Ï≠Æ: %FPS%, Ø‡ÆØ„·™†•¨ •£Æ ®ß¢´•Á•≠®•.>>"%LOG%"
     goto FPS_DONE
 )
-:: –ü–æ–ª—É—á–µ–Ω–∏–µ —á–∞—Å—Ç–æ—Ç—ã –∫–∞–¥—Ä–æ–≤ —á–µ—Ä–µ–∑ ffprobe
+:: èÆ´„Á•≠®• Á†·‚Æ‚Î ™†§‡Æ¢ Á•‡•ß ffprobe
 set "TMP_FILE=%TEMP%\ffprobe_fps.tmp"
 "%FFP%" -v error -select_streams v:0 -show_entries stream=r_frame_rate,avg_frame_rate -of default=nw=1 "%FNF%" > "%TMP_FILE%" 2>nul
 if not exist "%TMP_FILE%" (
-    echo.[WARNING] –ù–µ —É–¥–∞–ª–æ—Å—å –ø–æ–ª—É—á–∏—Ç—å FPS - —Ñ–∞–π–ª –Ω–µ —Å–æ–∑–¥–∞–Ω>>"%LOG%"
+    echo.[WARNING] ç• „§†´Æ·Ï ØÆ´„Á®‚Ï FPS - ‰†©´ ≠• ·Æß§†≠>>"%LOG%"
     goto FPS_DONE
 )
-:: –ò–∑–≤–ª–µ—á–µ–Ω–∏–µ r_frame_rate
+:: àß¢´•Á•≠®• r_frame_rate
 for /f "tokens=2 delims==" %%a in ('find "r_frame_rate" "%TMP_FILE%"') do set "R_FPS=%%a"
-:: –ò–∑–≤–ª–µ—á–µ–Ω–∏–µ avg_frame_rate
+:: àß¢´•Á•≠®• avg_frame_rate
 for /f "tokens=2 delims==" %%a in ('find "avg_frame_rate" "%TMP_FILE%"') do set "A_FPS=%%a"
 del "%TMP_FILE%"
 if not defined R_FPS (
-    echo.[WARNING] –ù–µ —É–¥–∞–ª–æ—Å—å –Ω–∞–π—Ç–∏ r_frame_rate>>"%LOG%"
+    echo.[WARNING] ç• „§†´Æ·Ï ≠†©‚® r_frame_rate>>"%LOG%"
     goto FPS_DONE
 )
 if not defined A_FPS (
-    echo.[WARNING] –ù–µ —É–¥–∞–ª–æ—Å—å –Ω–∞–π—Ç–∏ avg_frame_rate>>"%LOG%"
+    echo.[WARNING] ç• „§†´Æ·Ï ≠†©‚® avg_frame_rate>>"%LOG%"
     goto FPS_DONE
 )
 
-:: –°—Ä–∞–≤–Ω–∏–≤–∞–µ–º –∑–Ω–∞—á–µ–Ω–∏—è –∫–∞–∫ —Å—Ç—Ä–æ–∫–∏
+:: ë‡†¢≠®¢†•¨ ß≠†Á•≠®Ô ™†™ ·‚‡Æ™®
 if "%R_FPS%" == "%A_FPS%" goto FPS_DONE
-echo.[INFO] –û–±–Ω–∞—Ä—É–∂–µ–Ω FPS VFR. –ò–∑–≤–ª–µ–∫–∞–µ–º Maximum Frame Rate –∏–∑ MediaInfo>>"%LOG%"
+echo.[INFO] é°≠†‡„¶•≠ FPS VFR. àß¢´•™†•¨ Maximum Frame Rate ®ß MediaInfo>>"%LOG%"
 
-:: –ü–æ–ª—É—á–∞–µ–º Max FPS –∏–∑ MediaInfo
+:: èÆ´„Á†•¨ Max FPS ®ß MediaInfo
 set "FPS="
 set "MAX_FPS="
 "%MI%" --Inform="Video;%%FrameRate_Maximum%%" "%FNF%" > "%TMP_FILE%" 2>nul
 if not exist "%TMP_FILE%" (
-    echo.[WARNING] –ù–µ —É–¥–∞–ª–æ—Å—å –ø–æ–ª—É—á–∏—Ç—å FPS - —Ñ–∞–π–ª –Ω–µ —Å–æ–∑–¥–∞–Ω>>"%LOG%"
+    echo.[WARNING] ç• „§†´Æ·Ï ØÆ´„Á®‚Ï FPS - ‰†©´ ≠• ·Æß§†≠>>"%LOG%"
     goto FPS_DONE
 )
 set /p MAX_FPS= < "%TMP_FILE%"
 del "%TMP_FILE%"
 if not defined MAX_FPS (
-    echo.[WARNING] –ù–µ —É–¥–∞–ª–æ—Å—å –ø–æ–ª—É—á–∏—Ç—å Maximum Frame Rate –∏–∑ MediaInfo>>"%LOG%"
+    echo.[WARNING] ç• „§†´Æ·Ï ØÆ´„Á®‚Ï Maximum Frame Rate ®ß MediaInfo>>"%LOG%"
     goto FPS_DONE
 )
 
-:: –û—Å—Ç–∞–≤–ª—è–µ–º —Ç–æ–ª—å–∫–æ —Ü–µ–ª—ã–µ –∑–Ω–∞—á–µ–Ω–∏—è FPS
+:: é·‚†¢´Ô•¨ ‚Æ´Ï™Æ Ê•´Î• ß≠†Á•≠®Ô FPS
 for /f "tokens=1 delims=." %%m in ("%MAX_FPS%") do set "MAX_FPS=%%m"
 
-:: –ü—Ä–∏–Ω—É–¥–∏—Ç–µ–ª—å–Ω–æ —É—Å—Ç–∞–Ω–∞–≤–ª–∏–≤–∞–µ–º –±–ª–∏–∂–∞–π—à–∏–π FPS CFR
+:: è‡®≠„§®‚•´Ï≠Æ „·‚†≠†¢´®¢†•¨ °´®¶†©Ë®© FPS CFR
 set "FPS_MODE="
 set "FPS=25"
 if %MAX_FPS% GTR 25 set "FPS=30"
-:: 35 - —Å–ø–µ—Ü–∏–∞–ª—å–Ω–æ –¥–ª—è —Ñ–∞–π–ª–æ–≤ —Å VFR ~31.4 fps
+:: 35 - ·Ø•Ê®†´Ï≠Æ §´Ô ‰†©´Æ¢ · VFR ~31.4 fps
 if %MAX_FPS% GTR 35 set "FPS=50"
 if %MAX_FPS% GTR 50 set "FPS=60"
-echo.[INFO] –£—Å—Ç–∞–Ω–æ–≤–ª–µ–Ω FPS CFR: %FPS%>>"%LOG%"
+echo.[INFO] ì·‚†≠Æ¢´•≠ FPS CFR: %FPS%>>"%LOG%"
 set "FPS_MODE=-r %FPS%"
 :FPS_DONE
 
@@ -496,8 +496,8 @@ set "FPS_MODE=-r %FPS%"
 
 
 
-:: === –ë–ª–æ–∫: PROFILE ===
-:: –ü—Ä–æ—Ñ–∏–ª—å –∫–æ–¥–∏—Ä–æ–≤–∞–Ω–∏—è (profile:v)
+:: === Å´Æ™: PROFILE ===
+:: è‡Æ‰®´Ï ™Æ§®‡Æ¢†≠®Ô (profile:v)
 set "USE_PROFILE=main"
 if /i "%CODEC%" == "hevc_qsv" goto PROFILE_DONE
 if /i "%CODEC%" == "hevc_d3d12va" goto PROFILE_DONE
@@ -507,34 +507,34 @@ if /i "%CODEC%" == "libx264" goto PROFILE_DONE
 set "USE_PROFILE=main10"
 if /i "%PROFILE%" == "main" set "USE_PROFILE=main"
 :PROFILE_DONE
-echo.[INFO] –£—Å—Ç–∞–Ω–æ–≤–ª–µ–Ω –ø—Ä–æ—Ñ–∏–ª—å –∫–æ–¥–∏—Ä–æ–≤–∞–Ω–∏—è %USE_PROFILE%>>"%LOG%"
+echo.[INFO] ì·‚†≠Æ¢´•≠ Ø‡Æ‰®´Ï ™Æ§®‡Æ¢†≠®Ô %USE_PROFILE%>>"%LOG%"
 
 
 
 
 
-:: === –ë–ª–æ–∫: PIX_FMT_ARGS ===
+:: === Å´Æ™: PIX_FMT_ARGS ===
 set "PIX_FMT_ARGS=-pix_fmt p010le"
 
-:: –ï—Å–ª–∏ –Ω–µ main10 - —Å—Ä–∞–∑—É —É—Å—Ç–∞–Ω–∞–≤–ª–∏–≤–∞–µ–º 8 –±–∏—Ç
+:: Ö·´® ≠• main10 - ·‡†ß„ „·‚†≠†¢´®¢†•¨ 8 °®‚
 if /i not "%USE_PROFILE%" == "main10" goto SET_PIXFMT8
 
-:: –ü—Ä–æ–≤–µ—Ä—è–µ–º, –ø–æ–¥–¥–µ—Ä–∂–∏–≤–∞–µ—Ç –ª–∏ —Ç–µ–∫—É—â–∏–π –∫–æ–¥–µ–∫ main10
+:: è‡Æ¢•‡Ô•¨, ØÆ§§•‡¶®¢†•‚ ´® ‚•™„È®© ™Æ§•™ main10
 if /i "%CODEC%" == "libx264" goto NO_MAIN10
 if /i "%CODEC:~0,5%" == "h264_" goto NO_MAIN10
 
-:: –î–ª—è libx265 –∏—Å–ø–æ–ª—å–∑—É–µ–º yuv420p10le
+:: Ñ´Ô libx265 ®·ØÆ´Ïß„•¨ yuv420p10le
 if /i "%CODEC%" == "libx265" set "PIX_FMT_ARGS=-pix_fmt yuv420p10le"
 goto DONE_PIXFMT
 
 :NO_MAIN10
-echo.[WARNING] –ö–æ–¥–µ–∫ %CODEC% –Ω–µ –ø–æ–¥–¥–µ—Ä–∂–∏–≤–∞–µ—Ç –ø—Ä–æ—Ñ–∏–ª—å main10. –ü–∞—Ä–∞–º–µ—Ç—Ä –ø—Ä–æ–∏–≥–Ω–æ—Ä–∏—Ä–æ–≤–∞–Ω.>>"%LOG%"
+echo.[WARNING] äÆ§•™ %CODEC% ≠• ØÆ§§•‡¶®¢†•‚ Ø‡Æ‰®´Ï main10. è†‡†¨•‚‡ Ø‡Æ®£≠Æ‡®‡Æ¢†≠.>>"%LOG%"
 
 :SET_PIXFMT8
 set "PIX_FMT_ARGS=-pix_fmt yuv420p"
 
 :DONE_PIXFMT
-echo.[INFO] –î–ª—è –∫–æ–¥–µ–∫–∞ %CODEC% —Å –ø—Ä–æ—Ñ–∏–ª–µ–º %USE_PROFILE% —É—Å—Ç–∞–Ω–æ–≤–ª–µ–Ω —Ñ–æ—Ä–º–∞—Ç –ø–∏–∫—Å–µ–ª–µ–π: %PIX_FMT_ARGS%>>"%LOG%"
+echo.[INFO] Ñ´Ô ™Æ§•™† %CODEC% · Ø‡Æ‰®´•¨ %USE_PROFILE% „·‚†≠Æ¢´•≠ ‰Æ‡¨†‚ Ø®™·•´•©: %PIX_FMT_ARGS%>>"%LOG%"
 
 
 
@@ -542,7 +542,7 @@ echo.[INFO] –î–ª—è –∫–æ–¥–µ–∫–∞ %CODEC% —Å –ø—Ä–æ—Ñ–∏–ª–µ–º %USE_PROFILE% —É—Å—Ç
 
 
 
-:: === –ë–ª–æ–∫: CRF ===
+:: === Å´Æ™: CRF ===
 set "FINAL_CRF="
 if not defined CRF goto SKIP_CRF
 if /i "%CODEC%" == "hevc_nvenc" set "FINAL_CRF=-cq %CRF%"
@@ -553,7 +553,7 @@ if /i "%CODEC%" == "h264_nvenc" set "FINAL_CRF=-cq %CRF%"
 if /i "%CODEC%" == "h264_amf"   set "FINAL_CRF=-quality %CRF%"
 if /i "%CODEC%" == "h264_qsv"   set "FINAL_CRF=-global_quality %CRF%"
 if /i "%CODEC%" == "libx264"    set "FINAL_CRF=-crf %CRF%"
-echo.[INFO] CRF —É—Å—Ç–∞–Ω–æ–≤–ª–µ–Ω: %CRF%>>"%LOG%"
+echo.[INFO] CRF „·‚†≠Æ¢´•≠: %CRF%>>"%LOG%"
 :SKIP_CRF
 
 
@@ -561,41 +561,41 @@ echo.[INFO] CRF —É—Å—Ç–∞–Ω–æ–≤–ª–µ–Ω: %CRF%>>"%LOG%"
 
 
 
-:: === –ë–ª–æ–∫: VF ===
-:: –≠—Ç–æ—Ç –±–ª–æ–∫ –¥–æ–ª–∂–µ–Ω –±—ã—Ç—å –ø–æ—Å–ª–µ –±–ª–æ–∫–æ–≤ ROTATION, SCALE
+:: === Å´Æ™: VF ===
+:: ù‚Æ‚ °´Æ™ §Æ´¶•≠ °Î‚Ï ØÆ·´• °´Æ™Æ¢ ROTATION, SCALE
 set "FILTER_LIST="
-:: –°–Ω–∞—á–∞–ª–∞ scale, —á—Ç–æ–±—ã —É–º–µ–Ω—å—à–∏—Ç—å —Ä–∞–∑–º–µ—Ä –ø–µ—Ä–µ–¥ –ø–æ–≤–æ—Ä–æ—Ç–æ–º, –µ—Å–ª–∏ –Ω–µ –ø—Ä–æ–ø—É—â–µ–Ω
+:: ë≠†Á†´† scale, Á‚Æ°Î „¨•≠ÏË®‚Ï ‡†ß¨•‡ Ø•‡•§ ØÆ¢Æ‡Æ‚Æ¨, •·´® ≠• Ø‡ÆØ„È•≠
 if not "%SKIP_SCALE_FILTER%" == "1" if defined SCALE_EXPR set "FILTER_LIST=%FILTER_LIST%%SCALE_EXPR%,"
 
-:: –ó–∞—Ç–µ–º rotate
+:: á†‚•¨ rotate
 if defined ROTATION_FILTER set "FILTER_LIST=%FILTER_LIST%%ROTATION_FILTER%,"
 
-:: –£–¥–∞–ª—è–µ–º –∑–∞–≤–µ—Ä—à–∞—é—â—É—é –∑–∞–ø—è—Ç—É—é
+:: ì§†´Ô•¨ ß†¢•‡Ë†ÓÈ„Ó ß†ØÔ‚„Ó
 if defined FILTER_LIST if "%FILTER_LIST:~-1%" == "," set "FILTER_LIST=%FILTER_LIST:~0,-1%"
 
-:: –ó–∞—Ç–µ–º color_range
+:: á†‚•¨ color_range
 if defined COLOR_RANGE set "FILTER_LIST=%FILTER_LIST%,zscale=rangein=limited:range=full"
 
-:: –§–æ—Ä–º–∏—Ä—É–µ–º —Ñ–ª–∞–≥ -vf
+:: îÆ‡¨®‡„•¨ ‰´†£ -vf
 set "VF="
 if defined FILTER_LIST set "VF=-vf "%FILTER_LIST%""
 
-:: –õ–æ–≥–∏—Ä—É–µ–º —Ä–µ–∑—É–ª—å—Ç–∞—Ç. –í–Ω–∏–º–∞–Ω–∏–µ - –≤ -vf –µ—Å—Ç—å –∫–∞–≤—ã—á–∫–∏ !
-if defined VF echo.[INFO] –ü—Ä–∏–º–µ–Ω—ë–Ω –≤–∏–¥–µ–æ—Ñ–∏–ª—å—Ç—Ä: "%VF%">>"%LOG%"
+:: ãÆ£®‡„•¨ ‡•ß„´Ï‚†‚. Ç≠®¨†≠®• - ¢ -vf •·‚Ï ™†¢ÎÁ™® !
+if defined VF echo.[INFO] è‡®¨•≠Ò≠ ¢®§•Æ‰®´Ï‚‡: "%VF%">>"%LOG%"
 
 
 
 
 
-:: === –ë–ª–æ–∫: FINALKEYS ===
-:: –ü–æ—Ä—è–¥–æ–∫ –∫–ª—é—á–µ–π –¥–æ–ª–∂–µ–Ω –±—ã—Ç—å —Ç–∞–∫–æ–π, –æ—Å–æ–±–µ–Ω–Ω–æ –¥–ª—è –∞–ø–ø–∞—Ä–∞—Ç–Ω—ã—Ö –∫–æ–¥–µ–∫–æ–≤:
+:: === Å´Æ™: FINALKEYS ===
+:: èÆ‡Ô§Æ™ ™´ÓÁ•© §Æ´¶•≠ °Î‚Ï ‚†™Æ©, Æ·Æ°•≠≠Æ §´Ô †ØØ†‡†‚≠ÎÂ ™Æ§•™Æ¢:
 :: -hide_banner -c:v codec [-profile:v] [-fps_mode] [-preset] [-vf] [-pix_fmt] [-crf] [-tune] [-level] [-r FPS] [-metadata] [-color_range] -c:a -c:s
 set "FINAL_KEYS=-hide_banner"
-:: –ö–æ–¥–µ–∫ –∏ –ø—Ä–æ—Ñ–∏–ª—å
+:: äÆ§•™ ® Ø‡Æ‰®´Ï
 set "FINAL_KEYS=%FINAL_KEYS% -c:v %CODEC% -profile:v %USE_PROFILE%"
 :: FPS VFR
 if defined FPS_MODE set "FINAL_KEYS=%FINAL_KEYS% %FPS_MODE%"
-:: Preset –∏ quality
+:: Preset ® quality
 if not defined PRESET goto SKIP_PRESET
 if /i "%CODEC%" == "hevc_nvenc" set "FINAL_KEYS=%FINAL_KEYS% -preset %PRESET%"
 if /i "%CODEC%" == "h264_nvenc" set "FINAL_KEYS=%FINAL_KEYS% -preset %PRESET%"
@@ -603,24 +603,24 @@ if /i "%CODEC%" == "hevc_amf"   set "FINAL_KEYS=%FINAL_KEYS% -quality %PRESET%"
 if /i "%CODEC%" == "h264_amf"   set "FINAL_KEYS=%FINAL_KEYS% -quality %PRESET%"
 if /i "%CODEC%" == "hevc_qsv"   set "FINAL_KEYS=%FINAL_KEYS% -preset %PRESET%"
 if /i "%CODEC%" == "h264_qsv"   set "FINAL_KEYS=%FINAL_KEYS% -preset %PRESET%"
-echo.[INFO] –£—Å—Ç–∞–Ω–æ–≤–ª–µ–Ω preset %PRESET%>>"%LOG%"
+echo.[INFO] ì·‚†≠Æ¢´•≠ preset %PRESET%>>"%LOG%"
 :SKIP_PRESET
-:: –í–∏–¥–µ–æ—Ñ–∏–ª—å—Ç—Ä -vf
+:: Ç®§•Æ‰®´Ï‚‡ -vf
 if defined VF set "FINAL_KEYS=%FINAL_KEYS% %VF%"
-:: –§–æ—Ä–º–∞—Ç –ø–∏–∫—Å–µ–ª–µ–π (8 bit yuv420p –∏–ª–∏ 10 bit yuv420p10le)
+:: îÆ‡¨†‚ Ø®™·•´•© (8 bit yuv420p ®´® 10 bit yuv420p10le)
 if defined PIX_FMT_ARGS set "FINAL_KEYS=%FINAL_KEYS% %PIX_FMT_ARGS%"
 :: CRF/CQ
 if defined FINAL_CRF set "FINAL_KEYS=%FINAL_KEYS% %FINAL_CRF%"
-:: Tune –∏ Level
+:: Tune ® Level
 if /i "%CODEC%" == "libx264" set "FINAL_KEYS=%FINAL_KEYS% -tune film"
 if /i "%CODEC:~0,5%" == "h264_" set "FINAL_KEYS=%FINAL_KEYS% -level 4.0"
 :: FPS
 if defined FPS set "FINAL_KEYS=%FINAL_KEYS% -r %FPS%"
-:: Metadata (—Ç–µ–≥ Rotate –µ—Å–ª–∏ –Ω–µ –ø–æ–≤–æ—Ä–∞—á–∏–≤–∞–µ–º –≤–∏–¥–µ–æ –∏–∑-–∑–∞ –Ω–µ–ø–æ–¥–¥–µ—Ä–∂–∏–≤–∞–µ–º–æ–≥–æ –∞–ø–ø–∞—Ä–∞—Ç–Ω–æ–≥–æ –∫–æ–¥–µ–∫–∞)
+:: Metadata (‚•£ Rotate •·´® ≠• ØÆ¢Æ‡†Á®¢†•¨ ¢®§•Æ ®ß-ß† ≠•ØÆ§§•‡¶®¢†•¨Æ£Æ †ØØ†‡†‚≠Æ£Æ ™Æ§•™†)
 if defined ROTATION_METADATA set "FINAL_KEYS=%FINAL_KEYS% %ROTATION_METADATA%"
 :: Full color range
 if defined COLOR_RANGE set "FINAL_KEYS=%FINAL_KEYS% -color_range 1"
-:: –ê—É–¥–∏–æ –∏ —Å—É–±—Ç–∏—Ç—Ä—ã
+:: Ä„§®Æ ® ·„°‚®‚‡Î
 set "FINAL_KEYS=%FINAL_KEYS% %AUDIO_ARGS% -c:s copy"
 
 
@@ -628,12 +628,12 @@ set "FINAL_KEYS=%FINAL_KEYS% %AUDIO_ARGS% -c:s copy"
 
 
 
-:: === –ë–ª–æ–∫: FFMPEG ===
+:: === Å´Æ™: FFMPEG ===
 set "CMD_LINE="%FFM%" -i "%FNF%" %FINAL_KEYS% "%OUTPUT%""
-echo.[CMD] –°—Ç—Ä–æ–∫–∞ –∫–æ–¥–∏—Ä–æ–≤–∞–Ω–∏—è: %CMD_LINE%>>"%LOG%"
+echo.[CMD] ë‚‡Æ™† ™Æ§®‡Æ¢†≠®Ô: %CMD_LINE%>>"%LOG%"
 %CMD_LINE% 2>"%FFMPEG_LOG%"
 
-:: –í—Ä–µ–º–µ–Ω–Ω–æ –∫–æ–Ω–≤–µ—Ä—Ç–∏—Ä—É–µ–º UTF8-–ª–æ–≥ FFmpeg –≤ OEM –¥–ª—è –ø–æ–∏—Å–∫–∞ –æ—à–∏–±–æ–∫ —á–µ—Ä–µ–∑ findstr
+:: Ç‡•¨•≠≠Æ ™Æ≠¢•‡‚®‡„•¨ UTF8-´Æ£ FFmpeg ¢ OEM §´Ô ØÆ®·™† ÆË®°Æ™ Á•‡•ß findstr
 set "VT=%temp%\tmp.vbs"
 pushd "%OUTPUT_DIR%logs"
 set "TMPFLUTF=$flogutf"
@@ -651,24 +651,24 @@ cscript //nologo "%VT%"
 del "%TMPFLUTF%"
 findstr /i "error failed" "%TMPFLOEM%">nul
 if %ERRORLEVEL% EQU 0 (
-    echo.FFmpeg –∑–∞–≤–µ—Ä—à–∏–ª—Å—è —Å –æ—à–∏–±–∫–æ–π - —Å–º. "%FFMPEG_LOG_NAME%"
-    echo.[ERROR] FFmpeg –∑–∞–≤–µ—Ä—à–∏–ª—Å—è —Å –æ—à–∏–±–∫–æ–π - —Å–º. "%FFMPEG_LOG_NAME%">>"%LOG%"
+    echo.FFmpeg ß†¢•‡Ë®´·Ô · ÆË®°™Æ© - ·¨. "%FFMPEG_LOG_NAME%"
+    echo.[ERROR] FFmpeg ß†¢•‡Ë®´·Ô · ÆË®°™Æ© - ·¨. "%FFMPEG_LOG_NAME%">>"%LOG%"
 )
 del "%TMPFLOEM%"
 popd
 del "%VT%"
 
-:: –ó–∞–≤–µ—Ä—à–∏–ª–∏ –æ–±—Ä–∞–±–æ—Ç–∫—É —Ñ–∞–π–ª–∞
-echo.%DATE% %TIME:~0,8% –û–±—Ä–∞–±–æ—Ç–∫–∞ %FNWE% –∑–∞–≤–µ—Ä—à–µ–Ω–∞.
-echo.–°–æ–∑–¥–∞–Ω "%OUTPUT_NAME%%OUTPUT_EXT%".
-echo.C–º. –ª–æ–≥–∏ –≤ –ø–∞–ø–∫–µ "%OUTPUT_DIR%logs".
+:: á†¢•‡Ë®´® Æ°‡†°Æ‚™„ ‰†©´†
+echo.%DATE% %TIME:~0,8% é°‡†°Æ‚™† %FNWE% ß†¢•‡Ë•≠†.
+echo.ëÆß§†≠ "%OUTPUT_NAME%%OUTPUT_EXT%".
+echo.C¨. ´Æ£® ¢ Ø†Ø™• "%OUTPUT_DIR%logs".
 echo.---
-echo.[INFO] %DATE% %TIME:~0,8% –û–±—Ä–∞–±–æ—Ç–∫–∞ %FNWE% –∑–∞–≤–µ—Ä—à–µ–Ω–∞. –°–æ–∑–¥–∞–Ω "%OUTPUT_NAME%%OUTPUT_EXT%".>>"%LOG%"
+echo.[INFO] %DATE% %TIME:~0,8% é°‡†°Æ‚™† %FNWE% ß†¢•‡Ë•≠†. ëÆß§†≠ "%OUTPUT_NAME%%OUTPUT_EXT%".>>"%LOG%"
 echo.--->>"%LOG%"
 
-:: –ö–æ–Ω–≤–µ—Ä—Ç–∏—Ä—É–µ–º OEM-–ª–æ–≥ –≤ UTF-8:
-:: %LOGE% - –≤—Ö–æ–¥–Ω–æ–π OEM-–ª–æ–≥, %LOGU% - –≤—ã—Ö–æ–¥–Ω–æ–π UTF-8-–ª–æ–≥. –î–æ–ª–∂–Ω–æ –±—ã—Ç—å –±–µ–∑ –∫–∏—Ä–∏–ª–ª–∏—Ü—ã –≤ –ø—É—Ç—è—Ö.
-:: –ü–µ—Ä–µ—Ö–æ–¥–∏–º –≤ –ø–∞–ø–∫—É Logs
+:: äÆ≠¢•‡‚®‡„•¨ OEM-´Æ£ ¢ UTF-8:
+:: %LOGE% - ¢ÂÆ§≠Æ© OEM-´Æ£, %LOGU% - ¢ÎÂÆ§≠Æ© UTF-8-´Æ£. ÑÆ´¶≠Æ °Î‚Ï °•ß ™®‡®´´®ÊÎ ¢ Ø„‚ÔÂ.
+:: è•‡•ÂÆ§®¨ ¢ Ø†Ø™„ Logs
 set "VT=%temp%\tmp.vbs"
 pushd "%OUTPUT_DIR%logs"
 echo.With CreateObject("ADODB.Stream"^)>"%VT%"
@@ -684,16 +684,16 @@ ren "%LOGU%" "%LOGN%"
 popd
 del "%VT%"
 
-:: –ü–µ—Ä–µ—Ö–æ–¥ –∫ —Å–ª–µ–¥—É—é—â–µ–º—É —Ñ–∞–π–ª—É
+:: è•‡•ÂÆ§ ™ ·´•§„ÓÈ•¨„ ‰†©´„
 :NEXT
 shift
 goto FILE_LOOP
 
-:: –ó–∞–≤–µ—Ä—à–µ–Ω–∏–µ —Ä–∞–±–æ—Ç—ã —Å–∫—Ä–∏–ø—Ç–∞
+:: á†¢•‡Ë•≠®• ‡†°Æ‚Î ·™‡®Ø‚†
 :FILE_LOOP_END
-echo.–í—Å–µ —Ñ–∞–π–ª—ã –æ–±—Ä–∞–±–æ—Ç–∞–Ω—ã.
+echo.Ç·• ‰†©´Î Æ°‡†°Æ‚†≠Î.
 set ev="%temp%\$%~n0$.vbs"
-set emsg="–ü–∞–∫–µ—Ç–Ω—ã–π —Ñ–∞–π–ª '%~nx0' –∑–∞–∫–æ–Ω—á–∏–ª —Ä–∞–±–æ—Ç—É."
+set emsg="è†™•‚≠Î© ‰†©´ '%~nx0' ß†™Æ≠Á®´ ‡†°Æ‚„."
 chcp 1251 >nul
 echo MsgBox %emsg%,,"%~nx0">%ev%
 chcp 866 >nul
