@@ -1,14 +1,15 @@
 @echo off
-set "VERS=Froz video recode script 26.06.2025"
+set "VERS=Froz video recode script v27.06.2025"
 :: Цель скрипта: перекодирование видеофайлов с телефонов/фотоаппаратов
 :: в уменьшенный размер для видеоархива без существенной потери качества.
 
 
 :: === Блок: Настройки ===
 
-:: Новая высота видео (опционально). Примеры: 1080, 720, 480
-::  Если не задано - остаётся без изменений.
-set "SCALE=720"
+:: Новая высота видео (опционально). Примеры: 720, 480
+:: Если не задано - остаётся без изменений.
+:: Нет особого смысла понижать 1080 до 720 - размер увеличивается незначительно
+set "SCALE="
 
 :: Поворот видео (Rotation tag).
 :: ВАЖНО: Аппаратные кодеки hevc_qsv hevc_d3d12va h264_qsv h264_d3d12va
@@ -68,9 +69,9 @@ set "FORCE_FULL_RANGE="
 :: Пример: set "FPS=30000/1001"
 set "FPS="
 
-:: Допустимые значения: .mkv (универсальнее) или .mp4.
-:: Для аппаратных кодеков H.264 - лучше выбрать .mp4.
-set "OUTPUT_EXT=.mkv"
+:: Допустимые значения: mkv (универсальнее) или mp4.
+:: Для аппаратных кодеков H.264 - лучше выбрать mp4.
+set "OUTPUT_EXT=mkv"
 
 :: Приставка к выходному имени файла (можно изменять или оставить пустой)
 set "NAME_APPEND=_sm"
@@ -84,7 +85,7 @@ set "NAME_APPEND=_sm"
 :: === Блок: Проверки ===
 echo.
 echo.%VERS%
-echo.-----------------------------------
+echo.------------------------------------
 :: Проверка наличия входных файлов
 if "%~1" == "" (
     echo.Использование: Отредактируйте SET в начале скрипта.
@@ -131,7 +132,7 @@ set "TYMDHMS=%ty%-%tm%-%td%_%thh%-%tmm%-%tss%"
 :: Имена и папка логов
 set "OUTPUT_DIR=%~dp1"
 set "OUTPUT_NAME=%FNN%%NAME_APPEND%"
-set "OUTPUT=%OUTPUT_DIR%%OUTPUT_NAME%%OUTPUT_EXT%"
+set "OUTPUT=%OUTPUT_DIR%%OUTPUT_NAME%.%OUTPUT_EXT%"
 set "LOGE=%TYMDHMS%oem"
 set "LOG=%OUTPUT_DIR%logs\%LOGE%"
 set "LOGU=%TYMDHMS%utf"
@@ -220,20 +221,20 @@ if not defined PIX_FMT (
     echo.[ERROR] FFProbe не смог определить формат пикселей>>"%LOG%"
     goto COLOR_RANGE_DONE
 )
-echo.[INFO] Определён формат пикселей %PIX_FMT%>>"%LOG%"
+echo.[INFO] Формат пикселей исходника: %PIX_FMT%>>"%LOG%"
 for /f "tokens=1" %%a in ("%PIX_FMT%") do set "PIX_FMT=%%a"
 :: Автоопределение full range по pix_fmt
 if /i "%PIX_FMT%" == "yuvj420p" (
     set "COLOR_RANGE=1"
-    echo.[INFO] Найден yuvj420p - full-range.>>"%LOG%"
 )
 
-:: Если OUTPUT_EXT = .mp4 - меняем на .mkv
-if not /i "%OUTPUT_EXT%" == ".mp4" goto COLOR_RANGE_DONE
-echo.[INFO] Для записи metadata full color с помощью mkvpropedit - меняем расширение c .mp4 на .mkv>>"%LOG%"
-set "OUTPUT_EXT=.mkv"
-set "OUTPUT=%OUTPUT_DIR%%OUTPUT_NAME%%OUTPUT_EXT%"
+:: Если OUTPUT_EXT = mp4 - меняем на mkv
+if not "%OUTPUT_EXT%" == "mp4" goto COLOR_RANGE_DONE
+echo.[INFO] Для записи metadata full color с помощью mkvpropedit - меняем расширение c mp4 на mkv>>"%LOG%"
+set "OUTPUT_EXT=mkv"
+set "OUTPUT=%OUTPUT_DIR%%OUTPUT_NAME%.%OUTPUT_EXT%"
 :COLOR_RANGE_DONE
+
 
 
 
@@ -263,9 +264,8 @@ if not defined CURRENT_W (
     echo.ОШИБКА: FFProbe не смог определить ширину/высоту>>"%LOG%"
     goto SKIP_CURRENT_DIM
 )
-echo.[INFO] Определено разрешение: %CURRENT_W%x%CURRENT_H%>>"%LOG%"
+echo.[INFO] Разрешение исходника: %CURRENT_W%x%CURRENT_H%>>"%LOG%"
 :SKIP_CURRENT_DIM
-
 
 
 
@@ -343,11 +343,11 @@ if defined COLOR_RANGE (
     goto NEXT
 )
 
-:: Если OUTPUT_EXT = .mkv - меняем на .mp4
-if not /i "%OUTPUT_EXT%" == ".mkv" goto ROT_EXT_OK
-echo.[INFO] Меняем расширение на .mp4 для записи тега Rotate>>"%LOG%"
-set "OUTPUT_EXT=.mp4"
-set "OUTPUT=%OUTPUT_DIR%%OUTPUT_NAME%%OUTPUT_EXT%"
+:: Если OUTPUT_EXT = mkv - меняем на mp4
+if not "%OUTPUT_EXT%" == "mkv" goto ROT_EXT_OK
+echo.[INFO] Меняем расширение на mp4 для записи тега Rotate>>"%LOG%"
+set "OUTPUT_EXT=mp4"
+set "OUTPUT=%OUTPUT_DIR%%OUTPUT_NAME%.%OUTPUT_EXT%"
 :ROT_EXT_OK
 
 :: Сохраняем как metadata
@@ -396,7 +396,6 @@ if "%ROTATION%"=="270" (
 )
 :: По умолчанию масштабируем по высоте
 set "SCALE_EXPR=scale=-2:%SCALE%"
-echo.[INFO] Масштабирование по высоте: scale=-2:%SCALE%>>"%LOG%"
 :SKIP_SCALE
 
 
@@ -480,7 +479,7 @@ if not defined A_FPS (
 
 :: Сравниваем значения как строки
 if "%R_FPS%" == "%A_FPS%" goto FPS_DONE
-echo.[INFO] Обнаружен FPS VFR. Извлекаем Maximum Frame Rate из MediaInfo>>"%LOG%"
+echo.[INFO] Обнаружен FPS VFR. Извлекаем max frame rate из mediainfo>>"%LOG%"
 
 :: Получаем Max FPS из MediaInfo
 set "FPS="
@@ -493,9 +492,11 @@ if not exist "%TMP_FILE%" (
 set /p MAX_FPS= < "%TMP_FILE%"
 del "%TMP_FILE%"
 if not defined MAX_FPS (
-    echo.[WARNING] Не удалось получить Maximum Frame Rate из MediaInfo>>"%LOG%"
+    echo.[WARNING] Не удалось извлечь max frame rate из mediainfo>>"%LOG%"
     goto FPS_DONE
 )
+
+echo.[INFO] Извлечен max frame rate: %MAX_FPS%>>"%LOG%"
 
 :: Оставляем только целые значения FPS
 for /f "tokens=1 delims=." %%m in ("%MAX_FPS%") do set "MAX_FPS=%%m"
@@ -506,7 +507,7 @@ if %MAX_FPS% GTR 25 set "FPS=30"
 :: 35 - специально для файлов с VFR ~31.4 fps
 if %MAX_FPS% GTR 35 set "FPS=50"
 if %MAX_FPS% GTR 50 set "FPS=60"
-echo.[INFO] Установлен FPS CFR: %FPS%>>"%LOG%"
+echo.[INFO] По диапазонам установлен FPS CFR: %FPS%>>"%LOG%"
 :FPS_DONE
 
 
@@ -525,7 +526,7 @@ if /i "%CODEC%" == "libx264" goto PROFILE_DONE
 set "USE_PROFILE=main10"
 if /i "%PROFILE%" == "main" set "USE_PROFILE=main"
 :PROFILE_DONE
-echo.[INFO] Установлен профиль кодирования %USE_PROFILE%>>"%LOG%"
+echo.[INFO] Установлен профиль кодирования: %USE_PROFILE%>>"%LOG%"
 
 
 
@@ -552,7 +553,7 @@ echo.[WARNING] Кодек %CODEC% не поддерживает профиль main10. Параметр проигнорир
 set "PIX_FMT_ARGS=-pix_fmt yuv420p"
 
 :DONE_PIXFMT
-echo.[INFO] Для кодека %CODEC% с профилем %USE_PROFILE% установлен формат пикселей: %PIX_FMT_ARGS%>>"%LOG%"
+echo.[INFO] Для кодека %CODEC% с профилем %USE_PROFILE% добавляем флаг: %PIX_FMT_ARGS%>>"%LOG%"
 
 
 
@@ -588,6 +589,9 @@ if not "%SKIP_SCALE_FILTER%" == "1" if defined SCALE_EXPR set "FILTER_LIST=%FILT
 :: Затем rotate
 if defined ROTATION_FILTER set "FILTER_LIST=%FILTER_LIST%%ROTATION_FILTER%,"
 
+:: FPS
+if defined FPS set "FILTER_LIST=%FILTER_LIST%fps=%FPS%,"
+
 :: Удаляем завершающую запятую
 if defined FILTER_LIST if "%FILTER_LIST:~-1%" == "," set "FILTER_LIST=%FILTER_LIST:~0,-1%"
 
@@ -596,7 +600,7 @@ set "VF="
 if defined FILTER_LIST set "VF=-vf "%FILTER_LIST%""
 
 :: Логируем результат. Внимание - в -vf есть кавычки !
-if defined VF echo.[INFO] Применён видеофильтр: "%VF%">>"%LOG%"
+if defined VF echo.[INFO] Видеофильтр: %VF%>>"%LOG%"
 
 
 
@@ -604,7 +608,7 @@ if defined VF echo.[INFO] Применён видеофильтр: "%VF%">>"%LOG%"
 
 :: === Блок: FINALKEYS ===
 :: Порядок ключей должен быть такой, особенно для аппаратных кодеков:
-:: -hide_banner -c:v codec [-profile:v] [-preset] [-vf] [-pix_fmt] [-crf] [-tune] [-level] [-r FPS] [-metadata] [-color_range] -c:a -c:s
+:: -hide_banner -c:v codec [-profile:v] [-preset] [-vf] [-pix_fmt] [-crf] [-tune] [-level] [-r FPS] [-metadata rotate] -c:a -c:s [-metadata lng]
 set "FINAL_KEYS=-hide_banner"
 
 :: Кодек и профиль
@@ -635,7 +639,7 @@ if /i "%CODEC%" == "libx264" set "FINAL_KEYS=%FINAL_KEYS% -tune film"
 if /i "%CODEC:~0,5%" == "h264_" set "FINAL_KEYS=%FINAL_KEYS% -level 4.0"
 
 :: FPS
-if defined FPS set "FINAL_KEYS=%FINAL_KEYS% -r %FPS%"
+rem if defined FPS set "FINAL_KEYS=%FINAL_KEYS% -r %FPS%"
 
 :: Metadata (тег Rotate если не поворачиваем видео из-за неподдерживаемого аппаратного кодека)
 if defined ROTATION_METADATA set "FINAL_KEYS=%FINAL_KEYS% %ROTATION_METADATA%"
@@ -643,6 +647,8 @@ if defined ROTATION_METADATA set "FINAL_KEYS=%FINAL_KEYS% %ROTATION_METADATA%"
 :: Аудио и субтитры
 set "FINAL_KEYS=%FINAL_KEYS% %AUDIO_ARGS% -c:s copy"
 
+:: Меняем язык дорожек на русский кроме видео (для MKV - добавит позже mkvpropedit)
+set "FINAL_KEYS=%FINAL_KEYS% -metadata language=rus -metadata:s:a:0 language=rus -metadata:s:s:0 language=rus"
 
 
 
@@ -656,10 +662,17 @@ echo.[CMD] Строка кодирования: %CMD_LINE%>>"%LOG%"
 
 :: Если full-range добавляем metadata через mkvpropedit
 if not defined COLOR_RANGE goto SKIPMKVPROP
-%MKVP% "%OUTPUT%" --edit track:v1 --set "colour-range=1" --set "color-matrix-coefficients=1"
-echo.[INFO] Добавляем в MKV дополнительные теги для full color range>>"%LOG%"
+echo.[INFO] Full color range: добавляем в MKV дополнительные теги c помощью mkvpropedit>>"%LOG%"
+echo.[INFO] В MKV меняем язык видеодорожки на русский>>"%LOG%"
+:: Заодним ставим языки дорожек - Русский
+"%MKVP%" "%OUTPUT%" --edit track:v1 --set "language=rus" --set "colour-range=1" --set "color-matrix-coefficients=1">nul
+goto DONEMKVPROP
 :SKIPMKVPROP
-
+:: Если OUTPUT_EXT=mkv - ставим языки дорожек - Русский
+if not "%OUTPUT_EXT%" == "mkv" goto DONEMKVPROP
+echo.[INFO] В MKV меняем язык видеодорожки на русский>>"%LOG%"
+"%MKVP%" "%OUTPUT%" --edit track:v1 --set "language=rus">nul
+:DONEMKVPROP
 
 
 
@@ -692,11 +705,10 @@ del "%VT%"
 
 :: Завершили обработку файла
 echo.%DATE% %TIME:~0,8% Обработка %FNWE% завершена.
-echo.Создан "%OUTPUT_NAME%%OUTPUT_EXT%".
+echo.Создан "%OUTPUT_NAME%.%OUTPUT_EXT%".
 echo.Cм. логи в папке "%OUTPUT_DIR%logs".
 echo.---
-echo.[INFO] %DATE% %TIME:~0,8% Обработка %FNWE% завершена. Создан "%OUTPUT_NAME%%OUTPUT_EXT%".>>"%LOG%"
-echo.--->>"%LOG%"
+echo.[INFO] %DATE% %TIME:~0,8% Создан %OUTPUT_NAME%.%OUTPUT_EXT%>>"%LOG%"
 
 :: Конвертируем OEM-лог в UTF-8:
 :: %LOGE% - входной OEM-лог, %LOGU% - выходной UTF-8-лог. Должно быть без кириллицы в путях.
