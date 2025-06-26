@@ -1,5 +1,5 @@
 @echo off
-set "VERS=Froz video recode script 23.06.2025"
+set "VERS=Froz video recode script 26.06.2025"
 :: Цель скрипта: перекодирование видеофайлов с телефонов/фотоаппаратов
 :: в уменьшенный размер для видеоархива без существенной потери качества.
 
@@ -96,9 +96,11 @@ if "%~1" == "" (
 set "FFM=%~dp0bin\ffmpeg.exe"
 set "FFP=%~dp0bin\ffprobe.exe"
 set "MI=%~dp0bin\mediainfo.exe"
+set "MKVP=%~dp0bin\mkvpropedit.exe"
 if not exist "%FFM%" echo.%FFM% не найден, выходим.& pause & exit /b
 if not exist "%FFP%" echo.%FFP% не найден, выходим.& pause & exit /b
 if not exist "%MI%" echo.%MI% не найден, выходим.& pause & exit /b
+if not exist "%MKVP%" echo.%MKVP% не найден, выходим.& pause & exit /b
 
 
 
@@ -202,10 +204,10 @@ set "PIX_FMT="
 set "COLOR_RANGE="
 if defined FORCE_FULL_RANGE (
     set "COLOR_RANGE=1"
-    echo.[INFO] Задан Force color range - в -vf будет добавлен zscale color>>"%LOG%"
+    echo.[INFO] Задан Force color range>>"%LOG%"
     goto COLOR_RANGE_DONE
 )
-:: Определение full range через ffprobe. Ключ :nk=1 отбросит текст "color_range="
+:: Определение full range через ffprobe. Ключ :nk=1 отбросит текст "pix_fmt="
 set "TMP_FILE=%TEMP%\ffprobe_pix_fmt.tmp"
 "%FFP%" -v error -select_streams v:0 -show_entries stream=pix_fmt -of default=nw=1:nk=1 "%FNF%" > "%TMP_FILE%" 2>nul
 if not exist "%TMP_FILE%" (
@@ -219,15 +221,18 @@ if not defined PIX_FMT (
     goto COLOR_RANGE_DONE
 )
 echo.[INFO] Определён формат пикселей %PIX_FMT%>>"%LOG%"
-:: Обрезаем возможные хвосты в скобках вроде yuvj420p(tv, bt709)
-set "PIX_FMT=%PIX_FMT:(= %"
-set "PIX_FMT=%PIX_FMT:)= %"
 for /f "tokens=1" %%a in ("%PIX_FMT%") do set "PIX_FMT=%%a"
 :: Автоопределение full range по pix_fmt
 if /i "%PIX_FMT%" == "yuvj420p" (
     set "COLOR_RANGE=1"
-    echo.[INFO] Найден yuvj420p ^(full range^) - в -vf будет добавлен zscale color, и для metadata -color_range>>"%LOG%"
+    echo.[INFO] Найден yuvj420p - full-range.>>"%LOG%"
 )
+
+:: Если OUTPUT_EXT = .mp4 - меняем на .mkv
+if not /i "%OUTPUT_EXT%" == ".mp4" goto COLOR_RANGE_DONE
+echo.[INFO] Для записи metadata full color с помощью mkvpropedit - меняем расширение c .mp4 на .mkv>>"%LOG%"
+set "OUTPUT_EXT=.mkv"
+set "OUTPUT=%OUTPUT_DIR%%OUTPUT_NAME%%OUTPUT_EXT%"
 :COLOR_RANGE_DONE
 
 
@@ -293,9 +298,11 @@ if not exist "%TMP_FILE%" goto NO_ROTATION_TAG
 set /p ROTATION_TAG= < "%TMP_FILE%"
 del "%TMP_FILE%"
 if not defined ROTATION_TAG goto NO_ROTATION_TAG
+
 :: Удаляем пробелы
 set "ROTATION_TAG=%ROTATION_TAG: =%"
 echo.[INFO] В metadata найден тег Rotate: "%ROTATION_TAG%">>"%LOG%"
+
 :: Устанавливаем ROTATION только если она ещё не задана
 set "ROTATION=%ROTATION_TAG%"
 
@@ -322,14 +329,27 @@ if "%ROTATION%" == "270" (
     goto ROTATION_DONE
 )
 
-
 :: Сюда попадаем, если поворот напрямую невозможен, но можно сохранить как metadata
 :SAVE_ROTATION_METADATA
-:: Если OUTPUT_EXT == .mkv - меняем на .mp4
-if /i "%OUTPUT_EXT%" == ".mkv" (
-    set "OUTPUT_EXT=.mp4"
-    echo.[INFO] Меняем расширение на .mp4 для записи тега Rotate>>"%LOG%"
+
+:: Если ранее был установлен full color range и кодек который не умеет поворот видео - имеем проблему:
+:: MP4 нужен для записи тега Rotate, MKV нужен для записи metadata color range. Поэтому ошибка и выход.
+if defined COLOR_RANGE (
+    echo.[ERROR] Для %CODEC% не получится совместить запись тега Rotate и тегов Color Range в одном контейнере.
+    echo.[ERROR] Так как тег Color Range важнее, а повернуть можно кодеком - измените кодек.>>"%LOG%"
+    echo.Внимание: Найдены Full Color Range и тег Rotate.
+    echo.Для %CODEC% не получится совместить запись тега Rotate и тегов Color Range в одном контейнере.
+    echo.Так как тег Color Range важнее, а повернуть можно кодеком - измените кодек. Пропускаем файл.
+    goto NEXT
 )
+
+:: Если OUTPUT_EXT = .mkv - меняем на .mp4
+if not /i "%OUTPUT_EXT%" == ".mkv" goto ROT_EXT_OK
+echo.[INFO] Меняем расширение на .mp4 для записи тега Rotate>>"%LOG%"
+set "OUTPUT_EXT=.mp4"
+set "OUTPUT=%OUTPUT_DIR%%OUTPUT_NAME%%OUTPUT_EXT%"
+:ROT_EXT_OK
+
 :: Сохраняем как metadata
 set "ROTATION_METADATA=-metadata:s:v:0 rotate=%ROTATION%"
 echo.[INFO] Так как поворот кодеком невозможен - тег поворота будет сохранён в файле MP4>>"%LOG%"
@@ -481,14 +501,12 @@ if not defined MAX_FPS (
 for /f "tokens=1 delims=." %%m in ("%MAX_FPS%") do set "MAX_FPS=%%m"
 
 :: Принудительно устанавливаем ближайший FPS CFR
-set "FPS_MODE="
 set "FPS=25"
 if %MAX_FPS% GTR 25 set "FPS=30"
 :: 35 - специально для файлов с VFR ~31.4 fps
 if %MAX_FPS% GTR 35 set "FPS=50"
 if %MAX_FPS% GTR 50 set "FPS=60"
 echo.[INFO] Установлен FPS CFR: %FPS%>>"%LOG%"
-set "FPS_MODE=-r %FPS%"
 :FPS_DONE
 
 
@@ -573,9 +591,6 @@ if defined ROTATION_FILTER set "FILTER_LIST=%FILTER_LIST%%ROTATION_FILTER%,"
 :: Удаляем завершающую запятую
 if defined FILTER_LIST if "%FILTER_LIST:~-1%" == "," set "FILTER_LIST=%FILTER_LIST:~0,-1%"
 
-:: Затем color_range
-if defined COLOR_RANGE set "FILTER_LIST=%FILTER_LIST%,zscale=rangein=limited:range=full"
-
 :: Формируем флаг -vf
 set "VF="
 if defined FILTER_LIST set "VF=-vf "%FILTER_LIST%""
@@ -589,12 +604,12 @@ if defined VF echo.[INFO] Применён видеофильтр: "%VF%">>"%LOG%"
 
 :: === Блок: FINALKEYS ===
 :: Порядок ключей должен быть такой, особенно для аппаратных кодеков:
-:: -hide_banner -c:v codec [-profile:v] [-fps_mode] [-preset] [-vf] [-pix_fmt] [-crf] [-tune] [-level] [-r FPS] [-metadata] [-color_range] -c:a -c:s
+:: -hide_banner -c:v codec [-profile:v] [-preset] [-vf] [-pix_fmt] [-crf] [-tune] [-level] [-r FPS] [-metadata] [-color_range] -c:a -c:s
 set "FINAL_KEYS=-hide_banner"
+
 :: Кодек и профиль
 set "FINAL_KEYS=%FINAL_KEYS% -c:v %CODEC% -profile:v %USE_PROFILE%"
-:: FPS VFR
-if defined FPS_MODE set "FINAL_KEYS=%FINAL_KEYS% %FPS_MODE%"
+
 :: Preset и quality
 if not defined PRESET goto SKIP_PRESET
 if /i "%CODEC%" == "hevc_nvenc" set "FINAL_KEYS=%FINAL_KEYS% -preset %PRESET%"
@@ -605,23 +620,29 @@ if /i "%CODEC%" == "hevc_qsv"   set "FINAL_KEYS=%FINAL_KEYS% -preset %PRESET%"
 if /i "%CODEC%" == "h264_qsv"   set "FINAL_KEYS=%FINAL_KEYS% -preset %PRESET%"
 echo.[INFO] Установлен preset %PRESET%>>"%LOG%"
 :SKIP_PRESET
+
 :: Видеофильтр -vf
 if defined VF set "FINAL_KEYS=%FINAL_KEYS% %VF%"
+
 :: Формат пикселей (8 bit yuv420p или 10 bit yuv420p10le)
 if defined PIX_FMT_ARGS set "FINAL_KEYS=%FINAL_KEYS% %PIX_FMT_ARGS%"
+
 :: CRF/CQ
 if defined FINAL_CRF set "FINAL_KEYS=%FINAL_KEYS% %FINAL_CRF%"
+
 :: Tune и Level
 if /i "%CODEC%" == "libx264" set "FINAL_KEYS=%FINAL_KEYS% -tune film"
 if /i "%CODEC:~0,5%" == "h264_" set "FINAL_KEYS=%FINAL_KEYS% -level 4.0"
+
 :: FPS
 if defined FPS set "FINAL_KEYS=%FINAL_KEYS% -r %FPS%"
+
 :: Metadata (тег Rotate если не поворачиваем видео из-за неподдерживаемого аппаратного кодека)
 if defined ROTATION_METADATA set "FINAL_KEYS=%FINAL_KEYS% %ROTATION_METADATA%"
-:: Full color range
-if defined COLOR_RANGE set "FINAL_KEYS=%FINAL_KEYS% -color_range 1"
+
 :: Аудио и субтитры
 set "FINAL_KEYS=%FINAL_KEYS% %AUDIO_ARGS% -c:s copy"
+
 
 
 
@@ -632,6 +653,17 @@ set "FINAL_KEYS=%FINAL_KEYS% %AUDIO_ARGS% -c:s copy"
 set "CMD_LINE="%FFM%" -i "%FNF%" %FINAL_KEYS% "%OUTPUT%""
 echo.[CMD] Строка кодирования: %CMD_LINE%>>"%LOG%"
 %CMD_LINE% 2>"%FFMPEG_LOG%"
+
+:: Если full-range добавляем metadata через mkvpropedit
+if not defined COLOR_RANGE goto SKIPMKVPROP
+%MKVP% "%OUTPUT%" --edit track:v1 --set "colour-range=1" --set "color-matrix-coefficients=1"
+echo.[INFO] Добавляем в MKV дополнительные теги для full color range>>"%LOG%"
+:SKIPMKVPROP
+
+
+
+
+
 
 :: Временно конвертируем UTF8-лог FFmpeg в OEM для поиска ошибок через findstr
 set "VT=%temp%\tmp.vbs"
