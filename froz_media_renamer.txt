@@ -1,4 +1,4 @@
-Froz media renamer v06.08.2025
+﻿Froz media renamer v06.08.2025
 (froz_media_renamer.cmd)
 
 Пакетное переименование файлов по маске: YYYY-MM-DD_HHMMSS_имя_[PROGR].ext
