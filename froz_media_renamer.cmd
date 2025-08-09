@@ -1,5 +1,5 @@
 @echo off
-set "VERS=Froz media renamer v06.08.2025"
+set "VERS=Froz media renamer v09.08.2025"
 
 if not "%~1"=="" goto chk
 echo(%VERS%
@@ -95,11 +95,6 @@ pushd "%FLD%"
 echo(Обработка папки "%FLD%"...
 echo --------------------------------------------
 echo.
-goto scan_folder
-
-
-:: ========== ОБРАБОТКА ФАЙЛОВ В ПАПКЕ ==========
-:scan_folder
 set "LIST=%temp%\list_%random%.tmp"
 dir /b /a-d "%FLD%\*" > "%LIST%" 2>nul
 if not exist "%LIST%" goto done
@@ -107,8 +102,17 @@ for /f "usebackq delims=" %%i in ("%LIST%") do call :process_file_in_folder "%%i
 del "%LIST%"
 goto done
 
+:: Эту подпрограмму пришлось врезать в тело основного потока выше метки done иначе скрипт не видит эту метку
+:process_file_in_folder
+set "FN=%~1"
+set /a CNTALL+=1
+call :process_file
+exit /b
 
 
+
+
+:: === ПРОДОЛЖЕНИЕ ОСНОВНОГО ПОТОКА ===
 :done
 popd
 if exist "%TV%" del "%TV%" >nul
@@ -148,16 +152,9 @@ exit /b 0
 
 
 
+
+
 :: === ПОДПРОГРАММЫ ===
-:process_file_in_folder
-set "FN=%~1"
-set /a CNTALL+=1
-call :process_file
-exit /b
-
-
-
-
 :process_file
 :: Инициализация переменных
 set "BASE="
@@ -292,7 +289,25 @@ call :extract_date_from_name
 if not defined NAME_Y goto build_name
 :: Если время в имени не извлечено - сравниваем только дату
 if not defined NAME_HH goto ext_jpg_compare_date_only
-:: Сравниваем дату и время полностью
+
+:: --- Проверка: совпадает ли имя с главной маской? ---
+:: Формат: YYYY-MM-DD_HHMMSS_...
+set "MASK_PATTERN=____-__-__"
+set "PART=%FN:~0,10%"
+if not "%PART:~4,1%"=="-" goto build_name
+if not "%PART:~7,1%"=="-" goto build_name
+echo(%PART%| findstr /r "^[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]$" >nul
+if errorlevel 1 goto build_name
+
+:: Проверяем, что после даты - подчёркивание
+if "%FN:~10,1%" neq "_" goto build_name
+
+:: Проверяем, что после даты - 6 цифр времени
+set "TIME_PART=%FN:~11,6%"
+echo(%TIME_PART%| findstr /r "^[0-9][0-9][0-9][0-9][0-9][0-9]$" >nul
+if errorlevel 1 goto build_name
+
+:: --- Теперь проверяем совпадение даты ---
 set "NAME_COMP=%NAME_Y%-%NAME_M%-%NAME_D% %NAME_HH%:%NAME_MM%:%NAME_SS%"
 if not "%NAME_COMP%"=="%DTO_COMP%" goto build_name
 
@@ -307,6 +322,14 @@ exit /b
 :: Сравниваем только дату (время из имени не извлечено)
 set "NAME_DATE=%NAME_Y%-%NAME_M%-%NAME_D%"
 if not "%NAME_DATE%"=="%DTO_DATE%" goto build_name
+
+:: --- Проверка формата маски для случая без времени ---
+set "PART=%FN:~0,10%"
+if not "%PART:~4,1%"=="-" goto build_name
+if not "%PART:~7,1%"=="-" goto build_name
+echo(%PART%| findstr /r "^[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]$" >nul
+if errorlevel 1 goto build_name
+if "%FN:~10,1%" neq "_" goto build_name
 
 :: --- Файл уже соответствует маске ---
 echo(%FN% - пропущен, переименование не требуется.
@@ -651,16 +674,17 @@ if errorlevel 1 exit /b
 echo(%NAME_D%| findstr /r "^[0-9][0-9]$" >nul
 if errorlevel 1 exit /b
 :: Диапазоны
-set /a Y=1%NAME_Y% %% 10000
-set /a M=1%NAME_M% %% 100
-set /a D=1%NAME_D% %% 100
+set "Y_CHK=" & set "M_CHK=" & set "D_CHK="
+set /a Y_CHK=1%NAME_Y% %% 10000
+set /a M_CHK=1%NAME_M% %% 100
+set /a D_CHK=1%NAME_D% %% 100
 :: Минимальный и максимальный год
-if %Y% lss 1900 exit /b
-if %Y% gtr 2100 exit /b
-if %M% lss 1 exit /b
-if %M% gtr 12 exit /b
-if %D% lss 1 exit /b
-if %D% gtr 31 exit /b
+if %Y_CHK% lss 1900 exit /b
+if %Y_CHK% gtr 2100 exit /b
+if %M_CHK% lss 1 exit /b
+if %M_CHK% gtr 12 exit /b
+if %D_CHK% lss 1 exit /b
+if %D_CHK% gtr 31 exit /b
 set "DATE_VALID=1"
 exit /b
 
@@ -679,17 +703,18 @@ set "TIME_VALID=0"
 echo(%HMSCAND%|findstr /r "^[0-9][0-9][0-9][0-9][0-9][0-9]$" >nul
 if errorlevel 1 exit /b
 :: Извлекаем HH, MM, SS с обходом ведущих нулей
-set /a H=100%HMScand:~0,2% %% 100
-set /a M=100%HMScand:~2,2% %% 100
-set /a S=100%HMScand:~4,2% %% 100
+set "HH_CHK=" & set "MM_CHK=" & set "SS_CHK="
+set /a HH_CHK=100%HMScand:~0,2% %% 100
+set /a MM_CHK=100%HMScand:~2,2% %% 100
+set /a SS_CHK=100%HMScand:~4,2% %% 100
 :: Проверяем диапазоны
-if %H% gtr 23 exit /b
-if %M% gtr 59 exit /b
-if %S% gtr 59 exit /b
+if %HH_CHK% gtr 23 exit /b
+if %MM_CHK% gtr 59 exit /b
+if %SS_CHK% gtr 59 exit /b
 :: Форматируем с ведущими нулями
-set "HH=%H%" & if %H% lss 10 set "HH=0%H%"
-set "MM=%M%" & if %M% lss 10 set "MM=0%M%"
-set "SS=%S%" & if %S% lss 10 set "SS=0%S%"
+set "HH=%HH_CHK%" & if %HH_CHK% lss 10 set "HH=0%HH_CHK%"
+set "MM=%MM_CHK%" & if %MM_CHK% lss 10 set "MM=0%MM_CHK%"
+set "SS=%SS_CHK%" & if %SS_CHK% lss 10 set "SS=0%SS_CHK%"
 set "TIME_VALID=1"
 exit /b
 
