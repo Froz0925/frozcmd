@@ -1,1 +1,9 @@
-
+В папку bin нужно сложить:
+aapt2_64.exe из Android Asset Packaging Tool (apktool)
+ffmpeg.exe
+ffprobe.exe
+exiv2.exe
+lame.exe
+mediainfo.exe
+mkvpropedit.exe
+opusenc.exe
