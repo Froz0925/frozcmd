@@ -1,9 +1,11 @@
 В папку bin нужно сложить:
 aapt2_64.exe из Android Asset Packaging Tool (apktool)
+exiv2.dll
+exiv2.exe
 ffmpeg.exe
 ffprobe.exe
-exiv2.exe
 lame.exe
-mediainfo.exe
+MediaInfo.exe
 mkvpropedit.exe
 opusenc.exe
+yt-dlp.exe
