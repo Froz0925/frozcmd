@@ -23,7 +23,7 @@
 
 Следующие скрипты поддерживают **два режима работы**:
 - `media-renamer.cmd`
-- Все скрипты с префиксом `sound-*`
+- все скрипты с префиксом `sound-*`
 - `sound-aac2m4a-mux.cmd`
 - `video-all2mp4-remux.cmd`
 
