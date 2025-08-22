@@ -1,10 +1,10 @@
 @echo off
 :: FMTS: список поддерживаемых расширений. Обязательны пробелы по краям и между, и точки.
 :: EOUT: выходное расширение - без точки.
-set "FMTS= .ac3 .aac .eac3 .flac .m4a .m4b .mka .mp3 .ogg .opus .wma .wv "
-set "EOUT=wav"
+set "FMTS= .aac "
+set "EOUT=m4a"
 
-set "DO=All audio to .%EOUT%"
+set "DO=AAC mux to M4A"
 title %DO%
 set "VRS=Froz %DO% v21.08.2025"
 echo(%VRS%
@@ -61,7 +61,7 @@ goto loop
 :folder
 echo(Обработка папки "%~n1"
 echo(
-:: Используем pushd+popd, а не cd /d на редкий случай обработки файлов в сетевых папках \\server\share\file.ext
+:: Используем pushd+popd, а не cd /d на случай обработки файлов в сетевых папках \\server\share\file.ext
 pushd "%~f1"
 for /f "delims=" %%F in ('dir /b /a-d') do (
     set "FNF=%%~fF"
@@ -83,7 +83,7 @@ if errorlevel 1 goto skip
 if /i "%EXT%"==".%EOUT%" goto skip
 if exist "%OUTF%" goto skip
 echo(Конвертируем: "%FN%%EXT%" -^> "%FN%.%EOUT%"
-"%EX%" -hide_banner -i "%FNF%" -f %EOUT% -c:a pcm_s16le "%OUTF%"
+"%EX%" -hide_banner -i "%FNF%" -c copy "%OUTF%"
 echo(
 set "FOUND=1"
 exit /b

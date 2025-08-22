@@ -1,49 +1,43 @@
 @echo off
-:: В начале и конце FMTS - обязательно пробелы
+:: FMTS: список поддерживаемых расширений. Обязательны пробелы по краям и между, и точки.
+:: EOUT: выходное расширение - без точки.
 set "FMTS= .ac3 .aac .eac3 .flac .m4a .m4b .mka .mp3 .ogg .opus .wma .wv "
 set "EOUT=wav"
 
 set "DO=All audio to .%EOUT%"
 title %DO%
-set "VRS=Froz %DO% v15.08.2025"
+set "VRS=Froz %DO% v21.08.2025"
 echo(%VRS%
-echo.
+echo(
 
 set "EX=%~dp0bin\ffmpeg.exe"
-if not exist "%EX%" (
-    echo(%EX% не найден, выходим.
-    echo.
-    pause
-    exit /b
-)
+if not exist "%EX%" echo("%EX%" не найден, выходим.& echo(& pause & exit /b
 if "%~1"=="" (
-    echo Поддерживаемые форматы:%FMTS%
-    echo Перетащите на скрипт файлы или одну папку.
-    echo.
+    echo(Поддерживаемые форматы:%FMTS%
+    echo(Перетащите на скрипт файлы или одну папку.
+    echo(
     pause
     exit /b
 )
-:: Проверка длины аргументов CMD через VBS
-:: так как в CMD нет безопасного способа парсить строку с &)(
+:: Проверка длины аргументов: лимит Windows 8191 символ - путь может быть обрезан, а остальные утеряны
+:: CMD ломается при передаче &)( в %* - используем VBS
+:: Нельзя удалять проверку "%~1"=="" - VBS не сможет посчитать длину
 set "TV=%temp%\%~nx0_len_%random%.vbs"
 set "TO=%temp%\%~nx0_out_%random%.txt"
-:: Подсчёт длины всех аргументов с пробелами - для проверки лимита CMD (8191)
-:: Массив + Join, т.к. WScript.Arguments не совместим с Join напрямую
-:: Проверка на "%~1"=="" выше гарантирует a.Count >= 1 , значит ReDim безопасен
-echo Set a=WScript.Arguments.Unnamed:ReDim b(a.Count-1)>"%TV%"
-echo For i=0To a.Count-1:b(i)=a(i):Next>>"%TV%"
-echo WScript.Echo Len(Join(b," "))>>"%TV%"
+>"%TV%" echo(Set a=WScript.Arguments.Unnamed:ReDim b(a.Count-1)
+>>"%TV%" echo(For i=0To a.Count-1:b(i)=a(i):Next
+>>"%TV%" echo(WScript.Echo Len(Join(b," "))
 cscript //nologo "%TV%" %* >"%TO%"
 set "ALEN=0"
 set /p "ALEN=" <"%TO%"
 del "%TV%" & del "%TO%"
 if %ALEN% gtr 7500 (
-    echo ВНИМАНИЕ: слишком длинная команда.
-    echo Общая длина путей к файлам больше 7500 символов - возможна потеря данных.
-    echo Ограничение Windows - 8191 символ, остальное будет обрезано.
-    echo.
-    echo Перетащите папку вместо отдельных файлов, или подавайте частями. Выходим.
-    echo.
+    echo(ВНИМАНИЕ: слишком длинная команда.
+    echo(Общая длина путей к файлам больше 7500 символов - возможна потеря данных.
+    echo(Ограничение Windows - 8191 символ, остальное будет обрезано.
+    echo(
+    echo(Перетащите папку вместо отдельных файлов, или подавайте частями. Выходим.
+    echo(
     pause
     exit /b
 )
@@ -52,8 +46,8 @@ set FOUND=
 :: Проверяем первый аргумент - папка или файл
 set "ATR=%~a1"
 if /I "%ATR:~0,1%"=="d" goto folder
-echo Обработка файлов...
-echo.
+echo(Обработка файлов...
+echo(
 :loop
 if "%~1"=="" goto e
 set "FNF=%~f1"
@@ -66,43 +60,46 @@ goto loop
 
 :folder
 echo(Обработка папки "%~n1"
-echo.
-cd /d "%~f1"
-for /f "delims=" %%F in ('dir /b /a-d 2^>nul') do (
+echo(
+:: Используем pushd+popd, а не cd /d на редкий случай обработки файлов в сетевых папках \\server\share\file.ext
+pushd "%~f1"
+for /f "delims=" %%F in ('dir /b /a-d') do (
     set "FNF=%%~fF"
     set "FN=%%~nF"
     set "EXT=%%~xF"
     set "OUTF=%%~nF.%EOUT%"
     call :go
 )
-echo.
-echo Папка "%~n1" обработана.
+popd
+echo(
+echo(Папка "%~n1" обработана.
 goto e
 
 :go
 if not exist "%FNF%" goto skip
 if /i "%EXT%"=="" goto skip
-echo %FMTS% | findstr /i /c:" %EXT% " >nul
+echo(%FMTS% | findstr /i /c:" %EXT% " >nul
 if errorlevel 1 goto skip
 if /i "%EXT%"==".%EOUT%" goto skip
 if exist "%OUTF%" goto skip
 echo(Конвертируем: "%FN%%EXT%" -^> "%FN%.%EOUT%"
 "%EX%" -hide_banner -i "%FNF%" -f %EOUT% -c:a pcm_s16le "%OUTF%"
-echo.
+echo(
 set "FOUND=1"
 exit /b
 :skip
 echo("%FN%%EXT%" - пропущен (неподдерживаемый или уже обработан)
-echo.
+echo(
 exit /b
 
 
 :e
-if not defined FOUND echo Нет файлов поддерживаемых форматов.
+if not defined FOUND echo(Нет файлов поддерживаемых форматов.
 set "EV=%temp%\%~nx0-end-%random%.vbs"
 set "EMSG=Все файлы обработаны."
 chcp 1251 >nul
-echo MsgBox "%EMSG%",,"%~nx0">"%EV%"
+>"%EV%" echo(MsgBox "%EMSG%",,"%~nx0"
 chcp 866 >nul
-"%EV%" & del "%EV%"
+cscript //nologo "%EV%"
+del "%EV%"
 pause

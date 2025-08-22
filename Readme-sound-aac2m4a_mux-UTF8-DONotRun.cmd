@@ -1,17 +1,16 @@
 @echo off
 :: FMTS: список поддерживаемых расширений. Обязательны пробелы по краям и между, и точки.
 :: EOUT: выходное расширение - без точки.
-set "FMTS= .wav "
-set "EOUT=mp3"
-set "QUAL=320"
+set "FMTS= .aac "
+set "EOUT=m4a"
 
-set "DO=All%FMTS%to .%EOUT%"
+set "DO=AAC mux to M4A"
 title %DO%
 set "VRS=Froz %DO% v21.08.2025"
 echo(%VRS%
 echo(
 
-set "EX=%~dp0bin\lame.exe"
+set "EX=%~dp0bin\ffmpeg.exe"
 if not exist "%EX%" echo("%EX%" не найден, выходим.& echo(& pause & exit /b
 if "%~1"=="" (
     echo(Поддерживаемые форматы:%FMTS%
@@ -62,7 +61,7 @@ goto loop
 :folder
 echo(Обработка папки "%~n1"
 echo(
-:: Используем pushd+popd, а не cd /d на редкий случай обработки файлов в сетевых папках \\server\share\file.ext
+:: Используем pushd+popd, а не cd /d на случай обработки файлов в сетевых папках \\server\share\file.ext
 pushd "%~f1"
 for /f "delims=" %%F in ('dir /b /a-d') do (
     set "FNF=%%~fF"
@@ -84,7 +83,7 @@ if errorlevel 1 goto skip
 if /i "%EXT%"==".%EOUT%" goto skip
 if exist "%OUTF%" goto skip
 echo(Конвертируем: "%FN%%EXT%" -^> "%FN%.%EOUT%"
-"%EX%" -b %QUAL% -q 0 "%FNF%" "%OUTF%"
+"%EX%" -hide_banner -i "%FNF%" -c copy "%OUTF%"
 echo(
 set "FOUND=1"
 exit /b

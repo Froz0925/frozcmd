@@ -1,29 +1,29 @@
 @echo off
 set "DO=Media Renamer"
 title %DO%
-set "VRS=Froz %DO% v15.08.2025"
+set "VRS=Froz %DO% v22.08.2025"
 echo(%VRS%
-echo.
+echo(
 
 if not "%~1"=="" goto chk
-echo Пакетное переименование файлов по маске: YYYY-MM-DD_HHMMSS_имя_[PROGR].ext
-echo.
-echo Перетащите папку или файлы на скрипт.
-echo Если первый аргумент - папка, обработает все файлы в ней.
-echo.
-echo Работает с:
-echo   - EXIF в JPG ^(DTO^) - приоритет
-echo   - Датой в имени файла ^(разные форматы, пробелы, разделители^)
-echo   - Датой изменения файла ^(DLM^)
-echo.
-echo Особенности:
-echo   - Помечает Progressive JPEG как _PROGR
-echo   - Удаляет префиксы: IMG_, VID_, DSC_, PIC_
-echo   - Не переименовывает файлы, уже соответствующие маске
-echo   - При конфликтах имён добавляет _1, _2 и т.д.
-echo   - Приоритет: EXIF ^> имя ^> DLM
-echo.
-echo.
+echo(Пакетное переименование файлов по маске: ГГГГ-ММ-ДД_ЧЧММСС_имя_[PROGR].ext
+echo(
+echo(Перетащите папку или файлы на скрипт.
+echo(Если первый аргумент - папка, обработает все файлы в ней.
+echo(
+echo(Работает с:
+echo(  - EXIF в JPG ^(DTO^) - приоритет
+echo(  - Датой в имени файла ^(разные форматы, пробелы, разделители^)
+echo(  - Датой изменения файла ^(DLM^)
+echo(
+echo(Особенности:
+echo(  - Помечает Progressive JPEG как _PROGR
+echo(  - Удаляет префиксы: IMG_, VID_, DSC_, PIC_
+echo(  - Не переименовывает файлы, уже соответствующие маске
+echo(  - При конфликтах имён добавляет _1, _2 и т.д.
+echo(  - Приоритет: EXIF ^> имя ^> DLM
+echo(
+echo(
 pause
 exit /b
 
@@ -35,36 +35,36 @@ set "TO=%temp%\%~nx0_out_%random%.txt"
 :: Подсчёт длины всех аргументов с пробелами - для проверки лимита CMD (8191)
 :: Массив + Join, т.к. WScript.Arguments не совместим с Join напрямую
 :: Проверка на "%~1"=="" выше гарантирует a.Count >= 1 , значит ReDim безопасен
-echo Set a=WScript.Arguments.Unnamed:ReDim b(a.Count-1)>"%TV%"
-echo For i=0To a.Count-1:b(i)=a(i):Next>>"%TV%"
-echo WScript.Echo Len(Join(b," "))>>"%TV%"
+>"%TV%" echo(Set a=WScript.Arguments.Unnamed:ReDim b(a.Count-1)
+>>"%TV%" echo(For i=0To a.Count-1:b(i)=a(i):Next
+>>"%TV%" echo(WScript.Echo Len(Join(b," "))
 cscript //nologo "%TV%" %* >"%TO%"
 set "ALEN=0"
 set /p "ALEN=" <"%TO%"
 del "%TV%" & del "%TO%"
 if %ALEN% gtr 7500 (
-    echo ВНИМАНИЕ: слишком длинная команда.
-    echo Общая длина путей к файлам больше 7500 символов - возможна потеря данных.
-    echo Ограничение Windows - 8191 символ, остальное будет обрезано.
-    echo.
-    echo Перетащите папку вместо отдельных файлов, или подавайте частями. Выходим.
-    echo.
+    echo(ВНИМАНИЕ: слишком длинная команда.
+    echo(Общая длина путей к файлам больше 7500 символов - возможна потеря данных.
+    echo(Ограничение Windows - 8191 символ, остальное будет обрезано.
+    echo(
+    echo(Перетащите папку вместо отдельных файлов, или подавайте частями. Выходим.
+    echo(
     pause
     exit /b
 )
 
 set "EX=%~dp0bin\exiv2.exe"
 if not exist "%EX%" (
-    echo.
+    echo(
     echo(Ошибка: Не найден "%EX%".
-    echo Положите exiv2.exe и exiv2.dll в папку bin рядом с cmd-файлом
-    echo.
+    echo(Положите exiv2.exe и exiv2.dll в папку bin рядом с cmd-файлом
+    echo(
     pause
     exit /b
 )
 
 set "TV=%temp%\dltm$.vbs"
-> "%TV%" echo Wscript.Echo CreateObject("Scripting.FileSystemObject").GetFile(WScript.Arguments.Item(0)).DateLastModified
+>"%TV%" echo(Wscript.Echo CreateObject("Scripting.FileSystemObject").GetFile(WScript.Arguments.Item(0)).DateLastModified
 
 set "CNT=0"
 set "CNTALL=0"
@@ -83,8 +83,8 @@ goto mode_files
 :mode_files
 set "FLD=%~dp1"
 pushd "%FLD%"
-echo Обработка списка файлов...
-echo.
+echo(Обработка списка файлов...
+echo(
 goto start_loop
 
 
@@ -106,8 +106,8 @@ goto start_loop
 :: Режим работы: Папка
 :mode_folder
 pushd "%~f1"
-echo(Обработка папки %~f1 ...
-echo.
+echo(Обработка папки "%~f1"...
+echo(
 for /f "delims=" %%i in ('dir /b /a-d') do call :process_file_in_folder "%%i"
 goto done
 
@@ -129,7 +129,7 @@ if exist "%TV%" del "%TV%"
 set "TXT_ALL="
 set "TXT_PROGR="
 set "TXT_DTO="
-echo.
+echo(
 echo(--- Готово ---
 if %CNT% gtr 0 set "TXT_ALL=Переименовано: %CNT% из %CNTALL% файлов."
 if %CNTP% gtr 0 set "TXT_PROGR=Помечено как PROGR: %CNTP% файлов."
@@ -138,26 +138,22 @@ if %CNT% gtr 0 echo(%TXT_ALL%
 if %CNTP% gtr 0 echo(%TXT_PROGR%
 if %CNTT% gtr 0 echo(%TXT_DTO%
 
-set "HF=%temp%\%CMDN%-hlp_%random%.txt"
-set "VB=%temp%\%CMDN%-hlp_%random%.vbs"
-if exist "%HF%" del "%HF%"
-if exist "%VB%" del "%VB%"
->nul chcp 1251&>>"%HF%" (
-  cmd /c echo(%CMDN% закончил работу.
-  cmd /c echo.
-  cmd /c echo(%TXT_ALL%
-  cmd /c echo.
-  cmd /c echo(%TXT_PROGR%
-  cmd /c echo(%TXT_DTO%
-)&>nul chcp 866
-echo MsgBox CreateObject("Scripting.FileSystemObject").OpenTextFile("%HF%").ReadAll,,"%CMDN%">"%VB%"
-start "" /wait "%VB%"
-if exist "%VB%" del "%VB%"
-if exist "%HF%" del "%HF%"
+set "HF=%temp%\%CMDN%-hlp-%random%.txt"
+set "VB=%temp%\%CMDN%-hlp-%random%.vbs"
+>"%HF%" echo(%VRS%
+>>"%HF%" echo(%CMDN% закончил работу.
+>>"%HF%" echo(
+>>"%HF%" echo(%TXT_ALL%
+>>"%HF%" echo(
+>>"%HF%" echo(%TXT_PROGR%
+>>"%HF%" echo(%TXT_DTO%
+>"%VB%" echo(With CreateObject("ADODB.Stream"):.Type=2:.Charset="cp866"
+>>"%VB%" echo(.Open:.LoadFromFile"%HF%":MsgBox .ReadText,,"%~n0":.Close:End With
+cscript //nologo "%VB%"
+del "%VB%" & del "%HF%"
 pause
 exit /b
 :: === КОНЕЦ ОСНОВНОГО ПОТОКА ===
-
 
 
 
@@ -292,7 +288,7 @@ if %SS% gtr 59 goto choose_date
 set "DTO_COMP=%Y%-%M%-%D% %HH%:%MM%:%SS%"
 set "DTO_DATE=%Y%-%M%-%D%"
 
-call :extract_date_from_name
+call :try_name_date
 
 :: Если дата в имени извлечена - сравниваем
 if not defined NAME_Y goto build_name
@@ -322,7 +318,7 @@ if not "%NAME_COMP%"=="%DTO_COMP%" goto build_name
 
 :: --- Файл уже соответствует маске ---
 echo(%FN% - пропущен, переименование не требуется.
-echo.
+echo(
 exit /b
 
 
@@ -342,7 +338,7 @@ if "%FN:~10,1%" neq "_" goto build_name
 
 :: --- Файл уже соответствует маске ---
 echo(%FN% - пропущен, переименование не требуется.
-echo.
+echo(
 exit /b
 
 
@@ -379,7 +375,7 @@ set "MM_DLM=%MM%"
 set "SS_DLM=%SS%"
 
 :: Извлекаем дату и время из имени
-call :extract_date_from_name
+call :try_name_date
 
 :: --- DTOALL: флаг для автоматической обработки ---
 :: Устанавливается в [a], но EXIF записывается ТОЛЬКО в handle_a_choice
@@ -447,22 +443,22 @@ goto build_name
 :: Переменная YMDHMS_NAME используется ТОЛЬКО для echo, не влияет на переименование
 :ask_user
 echo(--- Нет EXIF.DateTimeOriginal ^(DTO^) в %FN% ---
-echo.
+echo(
 set "YMDHMS_NAME="
 
-if not defined NAME_Y goto show_user_use_dlm_fallback
-if not defined NAME_HH goto show_user_use_name_date_dlm_time
+if not defined NAME_Y goto show_use_dlm
+if not defined NAME_HH goto show_use_name_date_dlm
 
 set "YMDHMS_NAME=%NAME_Y%-%NAME_M%-%NAME_D% %NAME_HH%:%NAME_MM%:%NAME_SS%"
 goto show_user_suggestion
 
-:show_user_use_name_date_dlm_time
+:show_use_name_date_dlm
 :: --- Дата в имени есть, но времени нет - используем для отображения: дата из имени, время из DLM ---
 :: Только для показа пользователю; реальное присвоение - в use_name_date_dlm_time
 set "YMDHMS_NAME=%NAME_Y%-%NAME_M%-%NAME_D% %HH_DLM%:%MM_DLM%:%SS_DLM%"
 goto show_suggestion
 
-:show_user_use_dlm_fallback
+:show_use_dlm
 :: --- Ни даты, ни времени не извлечено из имени - используем только DLM ---
 :: Пример: Photo123.txt - всё берётся из даты изменения файла
 set "YMDHMS_NAME=%Y_DLM%-%M_DLM%-%D_DLM% %HH_DLM%:%MM_DLM%:%SS_DLM%"
@@ -470,48 +466,50 @@ set "YMDHMS_NAME=%Y_DLM%-%M_DLM%-%D_DLM% %HH_DLM%:%MM_DLM%:%SS_DLM%"
 :show_user_suggestion
 echo(Предлагаемая дата-время: %YMDHMS_NAME%
 echo(Дата изменения файла ^(DLM^): %Y_DLM%-%M_DLM%-%D_DLM% %HH_DLM%:%MM_DLM%:%SS_DLM%
-echo.
+echo(
 echo([a] - записать предложенное в EXIF для всех JPG без DTO
 echo([w] - записать предложенное в EXIF
 echo([m] - ввести DTO вручую
 echo(Любая другая клавиша - пропустить
 set /p "USRCHOICE=Выбор: "
+
 if /i "%USRCHOICE%"=="a" goto handle_a_choice
 if /i "%USRCHOICE%"=="w" goto handle_w_choice
 if /i not "%USRCHOICE%"=="m" (
-    echo.
-    echo Отменена запись в EXIF.
+    echo(
+    echo(Отменена запись в EXIF.
     echo(%FN% пропущен.
-    echo.
+    echo(
     exit /b
 )
-goto manual_input_start
 
 :manual_input_start
 set "MANUAL="
-echo.
+echo(
 echo(Введите дату ГГГГ-ММ-ДД ЧЧ:ММ:СС или [q] для отмены
 set /p "MANUAL=Дата: "
 set "MANUAL=%MANUAL:"=%"
 if /i "%MANUAL%"=="q" (
-    echo.
-    echo Отменён ручной ввод.
+    echo(
+    echo(Отменён ручной ввод.
     echo(%FN% пропущен.
-    echo.
+    echo(
     exit /b
 )
 
+:: Проверка формата через временный файл
 set "TMP=%temp%\man_%random%.tmp"
 echo(%MANUAL%>"%TMP%"
 findstr /r "^[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9] [0-9][0-9]:[0-9][0-9]:[0-9][0-9]$" "%TMP%" >nul
 set "ERR=%errorlevel%"
 if exist "%TMP%" del "%TMP%"
 if %ERR% equ 1 (
-    echo.
+    echo(
     echo(Неверный формат. Пример: 2023-12-31 23:59:59
-    echo.
+    echo(
     goto manual_input_start
 )
+
 :: --- Начало обработки ручного ввода ---
 :: Проверяем, что дата в формате ГГГГ-ММ-ДД ЧЧ:ММ:СС
 :: Удаляем кавычки и проверяем формат через временный файл
@@ -550,7 +548,7 @@ if %SS% GTR 59 set "DT_VALID=0"
 :: Пользователь может исправить ошибку
 if %DT_VALID% equ 0 (
     echo(Недопустимые значения даты/времени.
-    echo.
+    echo(
     goto manual_input_start
 )
 
@@ -596,7 +594,7 @@ exit /b
 
 
 
-:extract_date_from_name
+:try_name_date
 :: Пытаемся извлечь дату и время из имени файла.
 :: HMSCAND - "HMS Candidate" - может быть битым, нецифровым, вне диапазона
 set "NAME_Y=" & set "NAME_M=" & set "NAME_D=" & set "NAME_HH=" & set "NAME_MM=" & set "NAME_SS="
@@ -734,7 +732,7 @@ exit /b
 :build_name
 set "YMDHMS=%Y%-%M%-%D%_%HH%%MM%%SS%"
 
-:: --- Универсальная очистка SUFFIX от лишних символов и __ ---
+:: === Очистка SUFFIX: пробелы, __, дубли даты/времени ===
 :clean_suffix
 if not defined SUFFIX goto skip_suffix_processing
 :clean_loop
@@ -797,7 +795,7 @@ set "NEWNAME=%NEWNAME%%EXT%"
 :: --- Если имя уже правильное - отмечаем и выходим через общую метку ---
 if /i "%NEWNAME%"=="%FN%" (
     echo(%FN% - пропущен, переименование не требуется.
-    echo.
+    echo(
     exit /b
 )
 
@@ -818,6 +816,6 @@ set "NEWNAME=%TESTNAME%"
 :do_rename
 ren "%FN%" "%NEWNAME%"
 echo(%FN% -^> %NEWNAME%
-echo.
+echo(
 set /a CNT+=1
 exit /b
