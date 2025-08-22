@@ -43,7 +43,7 @@
 ### 📱 `APK-minAndroidVersion.cmd`
 Извлекает минимальную версию Android из указанных `.apk`-файлов и записывает результат в `txt`-файл.  
 **Требуется**:  
-- `aapt2-64.exe` — из Android Asset Packaging Tool (apktool)
+- `aapt2_64.exe` — из Android Asset Packaging Tool (apktool)
 
 ---
 
