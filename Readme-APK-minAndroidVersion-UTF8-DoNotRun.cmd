@@ -7,16 +7,16 @@ echo(%VRS%
 echo(
 set "CMDN=%~n0"
 set "EX=%~dp0bin\aapt2_64.exe"
-if not exist "%EX%" echo("%EX%" ≠• ≠†©§•≠, ¢ÎÂÆ§®¨.& echo(& pause & exit /b
+if not exist "%EX%" echo("%EX%" –Ω–µ –Ω–∞–π–¥–µ–Ω, –≤—ã—Ö–æ–¥–∏–º.& echo(& pause & exit /b
 if "%~1"=="" (
-    echo(àß „™†ß†≠≠ÎÂ %IN% ®ß¢´•™†•‚·Ô ¨®≠®¨†´Ï≠†Ô ¢•‡·®Ô Android.
-    echo(Ç Ø†Ø™• · %IN%-‰†©´†¨® °„§•‚ ·Æß§†≠ ‰†©´ %CMDN%-log.txt.
-    echo(è•‡•‚†È®‚• %IN%-‰†©´Î ≠† ·™‡®Ø‚.
+    echo(–ò–∑ —É–∫–∞–∑–∞–Ω–Ω—ã—Ö %IN% –∏–∑–≤–ª–µ–∫–∞–µ—Ç—Å—è –º–∏–Ω–∏–º–∞–ª—å–Ω–∞—è –≤–µ—Ä—Å–∏—è Android.
+    echo(–í –ø–∞–ø–∫–µ —Å %IN%-—Ñ–∞–π–ª–∞–º–∏ –±—É–¥–µ—Ç —Å–æ–∑–¥–∞–Ω —Ñ–∞–π–ª %CMDN%-log.txt.
+    echo(–ü–µ—Ä–µ—Ç–∞—â–∏—Ç–µ %IN%-—Ñ–∞–π–ª—ã –Ω–∞ —Å–∫—Ä–∏–ø—Ç.
     echo(
     pause
     exit /b
 )
-:: ù‚® set ≠„¶≠Æ ß†§†‚Ï §Æ ¢ÂÆ§† ¢ loop
+:: –≠—Ç–∏ set –Ω—É–∂–Ω–æ –∑–∞–¥–∞—Ç—å –¥–æ –≤—Ö–æ–¥–∞ –≤ loop
 set "TMPF=%temp%\aapt_%random%%random%.tmp"
 set "DST=%~dp1%CMDN%-log.txt"
 set "HAS_DST="
@@ -26,23 +26,23 @@ set "FILE=%~1"
 set "NAME=%~nx1"
 if "%~1"=="" goto finish
 if not exist "%FILE%" (
-    echo("%NAME%" - Æ‚·„‚·‚¢„•‚, Ø‡ÆØ„È•≠.
+    echo("%NAME%" - –æ—Ç—Å—É—Ç—Å—Ç–≤—É–µ—Ç, –ø—Ä–æ–ø—É—â–µ–Ω.
     echo(
     shift
     goto loop
 )
 if /i not "%~x1"=="%IN%" (
-    echo("%NAME%" - ≠•ØÆ§§•‡¶®¢†•¨Î© ‰Æ‡¨†‚ ‰†©´†, Ø‡ÆØ„È•≠.
+    echo("%NAME%" - –Ω–µ–ø–æ–¥–¥–µ—Ä–∂–∏–≤–∞–µ–º—ã–π —Ñ–æ—Ä–º–∞—Ç —Ñ–∞–π–ª–∞, –ø—Ä–æ–ø—É—â–µ–Ω.
     echo(
     shift
     goto loop
 )
-:: Ö·´® ¨Î ß§•·Ï, ß≠†Á®‚ ≠†©§•≠ APK-î†©´ §´Ô Æ°‡†°Æ‚™®
-:: Ö·´® ‰†©´ %DST% „¶• ·„È•·‚¢„•‚, ‚Æ Ø•‡•ß†Ø®·Î¢†•¨ •£Æ ‚Æ´Ï™Æ •·´® °Î´ Æ°‡†°Æ‚†≠ ÂÆ‚Ô °Î Æ§®≠ APK
-:: HAS_DST = 1 Æß≠†Á†•‚, Á‚Æ ß†£Æ´Æ¢Æ™ „¶• ß†Ø®·†≠ (® ´Æ£ Ø•‡•ß†Ø®·†≠)
-:: ù‚Æ Ø‡•§Æ‚¢‡†È†•‚ ØÆ¢‚Æ‡≠„Ó Ø•‡•ß†Ø®·Ï ß†£Æ´Æ¢™† ® ß†È®È†•‚ ·‚†‡Î© ´Æ£, •·´® ≠® Æ§®≠ ‰†©´ ≠• °„§•‚ Æ°‡†°Æ‚†≠
+:: –ï—Å–ª–∏ –º—ã –∑–¥–µ—Å—å, –∑–Ω–∞—á–∏—Ç –Ω–∞–π–¥–µ–Ω APK-–§–∞–π–ª –¥–ª—è –æ–±—Ä–∞–±–æ—Ç–∫–∏
+:: –ï—Å–ª–∏ —Ñ–∞–π–ª %DST% —É–∂–µ —Å—É—â–µ—Å—Ç–≤—É–µ—Ç, —Ç–æ –ø–µ—Ä–µ–∑–∞–ø–∏—Å—ã–≤–∞–µ–º –µ–≥–æ —Ç–æ–ª—å–∫–æ –µ—Å–ª–∏ –±—ã–ª –æ–±—Ä–∞–±–æ—Ç–∞–Ω —Ö–æ—Ç—è –±—ã –æ–¥–∏–Ω APK
+:: HAS_DST = 1 –æ–∑–Ω–∞—á–∞–µ—Ç, —á—Ç–æ –∑–∞–≥–æ–ª–æ–≤–æ–∫ —É–∂–µ –∑–∞–ø–∏—Å–∞–Ω (–∏ –ª–æ–≥ –ø–µ—Ä–µ–∑–∞–ø–∏—Å–∞–Ω)
+:: –≠—Ç–æ –ø—Ä–µ–¥–æ—Ç–≤—Ä–∞—â–∞–µ—Ç –ø–æ–≤—Ç–æ—Ä–Ω—É—é –ø–µ—Ä–µ–∑–∞–ø–∏—Å—å –∑–∞–≥–æ–ª–æ–≤–∫–∞ –∏ –∑–∞—â–∏—â–∞–µ—Ç —Å—Ç–∞—Ä—ã–π –ª–æ–≥, –µ—Å–ª–∏ –Ω–∏ –æ–¥–∏–Ω —Ñ–∞–π–ª –Ω–µ –±—É–¥–µ—Ç –æ–±—Ä–∞–±–æ—Ç–∞–Ω
 if defined HAS_DST goto go
-:: ç†Á®≠†•¨ ≠Æ¢Î© ´Æ£ · ß†£Æ´Æ¢™Æ¨ ® ØÆ§≠®¨†•¨ ‰´†£
+:: –ù–∞—á–∏–Ω–∞–µ–º –Ω–æ–≤—ã–π –ª–æ–≥ —Å –∑–∞–≥–æ–ª–æ–≤–∫–æ–º –∏ –ø–æ–¥–Ω–∏–º–∞–µ–º —Ñ–ª–∞–≥
 >"%DST%" echo(%date%, %time%
 >>"%DST%" echo(APK filename, min. Android version, APK CPU architectures:
 >>"%DST%" echo(from 'minSDKversion' and 'native-code'
@@ -51,7 +51,7 @@ if defined HAS_DST goto go
 set "HAS_DST=1"
 
 :go
-echo(é°‡†°Æ‚™† "%NAME%" ...
+echo(–û–±—Ä–∞–±–æ—Ç–∫–∞ "%NAME%" ...
 "%EX%" dump badging "%FILE%">"%TMPF%"
 set "SDKLINE="
 set "SDKF=%TMPF%.sdk"
@@ -63,13 +63,13 @@ if not defined SDKLINE (
     set "ANDR=not found"
     goto after_sdk
 )
-:: é°‡•ß†•¨ minSdkVersion:'xxx' -> xxx
+:: –û–±—Ä–µ–∑–∞–µ–º minSdkVersion:'xxx' -> xxx
 set "SDK=%SDKLINE:*minSdkVersion:'=%"
 set "SDK=%SDK:'=%"
 set "SDK=%SDK:~0,2%"
 
 :after_sdk
-:: éØ‡•§•´•≠®• Android-¢•‡·®® ØÆ SDK
+:: –û–ø—Ä–µ–¥–µ–ª–µ–Ω–∏–µ Android-–≤–µ—Ä—Å–∏–∏ –ø–æ SDK
 set "ANDR="
 if "%SDK%"=="14" set "ANDR=<4.0.3"
 if "%SDK%"=="15" set "ANDR=4.0.3"
@@ -83,7 +83,7 @@ if "%SDK:~0,1%"=="2" if %SDK% GTR 22 set "ANDR=6.0+"
 if "%SDK:~0,1%"=="3" set "ANDR=6.0+"
 if not defined ANDR set "ANDR=unknown (SDK=%SDK%)"
 
-:: àß¢´•Á•≠®• native-code
+:: –ò–∑–≤–ª–µ—á–µ–Ω–∏–µ native-code
 set "ARCHF=%TMPF%.arch"
 findstr /c:"native-code" "%TMPF%" >"%ARCHF%"
 set "ARCH="
@@ -108,14 +108,14 @@ goto loop
 if exist "%TMPF%" del "%TMPF%"
 if not defined HAS_DST (
     echo(
-    echo(ç® Æ§≠Æ£Æ APK-‰†©´† ≠• Æ°‡†°Æ‚†≠Æ.
-    echo(ãÆ£ ≠• ·Æß§†≠, ·‚†‡Î© ‰†©´ ´Æ£† (•·´® Æ≠ °Î´) ≠• ®ß¨•≠Ò≠.
+    echo(–ù–∏ –æ–¥–Ω–æ–≥–æ APK-—Ñ–∞–π–ª–∞ –Ω–µ –æ–±—Ä–∞–±–æ—Ç–∞–Ω–æ.
+    echo(–õ–æ–≥ –Ω–µ —Å–æ–∑–¥–∞–Ω, —Å—Ç–∞—Ä—ã–π —Ñ–∞–π–ª –ª–æ–≥–∞ (–µ—Å–ª–∏ –æ–Ω –±—ã–ª) –Ω–µ –∏–∑–º–µ–Ω—ë–Ω.
     echo(
     pause
     exit /b
 )
 set "EV=%temp%\%CMDN%_%random%%random%.vbs"
-set "EMSG=ëÆß§†≠ ‰†©´ %DST%"
+set "EMSG=–°–æ–∑–¥–∞–Ω —Ñ–∞–π–ª %DST%"
 chcp 1251 >nul
 >"%EV%" echo(MsgBox "%EMSG%",,"%CMDN%"
 chcp 866 >nul

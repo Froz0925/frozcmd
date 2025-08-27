@@ -1,6 +1,6 @@
 @echo off
 set "DO=Video recode script"
-set "VRS=Froz %DO% v22.08.2025"
+set "VRS=Froz %DO% v27.08.2025"
 :: Цель скрипта: перекодирование видеофайлов с телефонов/фотоаппаратов
 :: в уменьшенный размер для видеоархива без существенной потери качества.
 
@@ -159,7 +159,7 @@ echo(
 
 :: === Блок: ВРЕМЯ ===
 :: Получаем длительность видео. Ключ :nk=1 отбросит текст "duration="
-set "TMP_FILE=%TEMP%\ffprobe_time_%random%.tmp"
+set "TMP_FILE=%TEMP%\ffprobe_time_%random%%random%.tmp"
 "%FFP%" -v error -show_entries format=duration -of default=nw=1:nk=1 "%FNF%" >"%TMP_FILE%"
 set /p LENGTH_SECONDS= <"%TMP_FILE%"
 del "%TMP_FILE%"
@@ -208,7 +208,6 @@ echo(
 
 
 
-
 :: === Блок: COLOR RANGE ===
 set "PIX_FMT="
 :: Если задан Force full range
@@ -219,7 +218,7 @@ if defined FORCE_FULL_RANGE (
     goto COLOR_RANGE_DONE
 )
 :: Определение full range через ffprobe. Ключ :nk=1 отбросит текст "pix_fmt="
-set "TMP_FILE=%TEMP%\ffprobe_pix_fmt_%random%.tmp"
+set "TMP_FILE=%TEMP%\ffprobe_pix_fmt_%random%%random%.tmp"
 "%FFP%" -v error -select_streams v:0 -show_entries stream=pix_fmt -of default=nw=1:nk=1 "%FNF%" >"%TMP_FILE%"
 if not exist "%TMP_FILE%" (
     >>"%LOG%" echo([ERROR] Не получилось создать временный файл "%TMP_FILE%"
@@ -258,7 +257,7 @@ set "OUTPUT=%OUTPUT_DIR%%OUTPUT_NAME%.%OUTPUT_EXT%"
 ::     - пустые строки или ошибки
 :: которые могут сломать for /f
 set "CURRENT_DIM="
-set "TMP_FILE=%TEMP%\video_info_%random%.tmp"
+set "TMP_FILE=%TEMP%\video_info_%random%%random%.tmp"
 "%FFP%" -v error -select_streams v:0 -show_entries stream=width,height -of csv=p=0 "%FNF%" >"%TMP_FILE%"
 if not exist "%TMP_FILE%" goto SKIP_CURRENT_DIM
 :: Извлекаем первую непустую строку (goto 'выход' нужен для прерывания цикла)
@@ -293,13 +292,13 @@ goto APPLY_ROTATION
 :NO_USER_ROTATION
 if /i "%EXT%" == ".mp4" goto GET_ROTATE
 if /i "%EXT%" == ".mov" goto GET_ROTATE
->>"%LOG%" echo([WARNING] Формат %EXT% не поддерживает тег Rotate - извлечение пропущено.
+>>"%LOG%" echo([INFO] Формат %EXT% не поддерживает тег Rotate - извлечение пропущено.
 >>"%LOG%" echo([WARNING] Если видео повёрнуто - принудительно задайте set ROTATION.
 goto NO_ROTATION_TAG
 
 :GET_ROTATE
 set "ROTATION_TAG="
-set "TMP_FILE=%TEMP%\ffprobe_rotation_%random%.tmp"
+set "TMP_FILE=%TEMP%\ffprobe_rotation_%random%%random%.tmp"
 "%FFP%" -v error -show_entries stream_tags=rotate -of default=nw=1:nk=1 "%FNF%" >"%TMP_FILE%"
 if not exist "%TMP_FILE%" goto NO_ROTATION_TAG
 set /p ROTATION_TAG= < "%TMP_FILE%"
@@ -374,7 +373,7 @@ goto ROTATION_DONE
 :: Сюда попадаем, если поворот не определён или некорректен
 :NO_ROTATION_TAG
 >>"%LOG%" echo([INFO] В metadata не найден тег rotate или он некорректен.
->>"%LOG%" echo(При необходимости задайте set ROTATION принудительно
+>>"%LOG%" echo([INFO] При необходимости задайте set ROTATION принудительно
 
 :ROTATION_DONE
 
@@ -425,7 +424,7 @@ set "SKIP_SCALE_FILTER="
 if not defined SCALE goto SKIP_HEIGHT_CHECK
 
 :: Получаем исходную высоту через ffprobe, ключ :nk=1 отбросит текст "height="
-set "TMP_FILE=%TEMP%\ffprobe_height_%random%.tmp"
+set "TMP_FILE=%TEMP%\ffprobe_height_%random%%random%.tmp"
 "%FFP%" -v error -show_entries stream^=height -of default=nw=1:nk=1 "%FNF%" >"%TMP_FILE%"
 if not exist "%TMP_FILE%" (
     >>"%LOG%" echo([WARNING] Не удалось получить высоту видео из файла
@@ -475,7 +474,7 @@ if defined FPS (
     goto FPS_DONE
 )
 :: Получение частоты кадров через ffprobe
-set "TMP_FILE=%TEMP%\ffprobe_fps_%random%.tmp"
+set "TMP_FILE=%TEMP%\ffprobe_fps_%random%%random%.tmp"
 "%FFP%" -v error -select_streams v:0 -show_entries stream=r_frame_rate,avg_frame_rate -of default=nw=1 "%FNF%" >"%TMP_FILE%"
 if not exist "%TMP_FILE%" (
     >>"%LOG%" echo([WARNING] Не удалось получить FPS - файл не создан
@@ -615,7 +614,11 @@ if defined ROTATION_FILTER set "FILTER_LIST=%FILTER_LIST%%ROTATION_FILTER%,"
 if defined FPS set "FILTER_LIST=%FILTER_LIST%fps=%FPS%,"
 
 :: Удаляем завершающую запятую
-if defined FILTER_LIST if "%FILTER_LIST:~-1%" == "," set "FILTER_LIST=%FILTER_LIST:~0,-1%"
+if not defined FILTER_LIST goto :SKIP_COMMA_REMOVAL
+set "LAST_CHAR=%FILTER_LIST:~-1%"
+if not "%LAST_CHAR%" == "," goto :SKIP_COMMA_REMOVAL
+set "FILTER_LIST=%FILTER_LIST:~0,-1%"
+:SKIP_COMMA_REMOVAL
 
 :: Формируем флаг -vf
 set "VF="
@@ -681,14 +684,12 @@ set "FINAL_KEYS=%FINAL_KEYS% -metadata language=rus -metadata:s:a:0 language=rus
 
 
 
-
 :: === Блок: FFMPEG ===
 set "CMD_LINE="%FFM%" -i "%FNF%" %FINAL_KEYS% "%OUTPUT%""
 >>"%LOG%" echo([CMD] Строка кодирования: %CMD_LINE%
 :: В CMD_LINE уже есть кавычки - нельзя писать "%CMD_LINE%"
 :: FFMPEG пишет лог в stderr, а не в stdout - поэтому 2>"%FFMPEG_LOG%"
 %CMD_LINE% 2>"%FFMPEG_LOG%"
-
 
 if not defined COLOR_RANGE goto SKIPMKVPROP
 :: Здесь уже только MKV - даже если OUTEXT был MP4, выше мы его уже принудительно сменили.
@@ -716,10 +717,10 @@ if not "%OUTPUT_EXT%" == "mkv" goto DONEMKVPROP
 :: Это позволяет искать ошибки в FFmpeg-логе - findstr работает только с OEM.
 
 :: Временно конвертируем UTF8-лог FFmpeg в OEM для поиска ошибок через findstr
-set "VT=%temp%\%CMDN%-utf2oem-%random%.vbs"
+set "VT=%temp%\%CMDN%-utf2oem-%random%%random%.vbs"
 pushd "%OUTPUT_DIR%logs"
-set "TMPFLUTF=flogutf_%random%"
-set "TMPFLOEM=flogoem_%random%"
+set "TMPFLUTF=flogutf_%random%%random%"
+set "TMPFLOEM=flogoem_%random%%random%"
 if exist "%TMPFLUTF%" del "%TMPFLUTF%"
 if exist "%TMPFLOEM%" del "%TMPFLOEM%"
 copy "%FFMPEG_LOG_NAME%" "%TMPFLUTF%">nul
@@ -752,7 +753,7 @@ echo(---
 :: %LOGE% - входной OEM-лог, %LOGU% - выходной UTF-8-лог.
 :: Пути должны быть без кириллицы из-за разных кодировок CMD и VBS
 :: Переходим в папку Logs
-set "VT=%temp%\%CMDN%-oem2utf-%random%.vbs"
+set "VT=%temp%\%CMDN%-oem2utf-%random%%random%.vbs"
 pushd "%OUTPUT_DIR%logs"
 >"%VT%" echo(With CreateObject("ADODB.Stream"^)
 >>"%VT%" echo(.Type=2:.Charset="cp866":.Open:.LoadFromFile "%LOGE%"
@@ -776,10 +777,10 @@ goto FILE_LOOP
 :FILE_LOOP_END
 echo(Все файлы обработаны.
 echo(
-set "EV=%temp%\%CMDN%-end-%random%.vbs"
-set "EMSG=Пакетный файл '%~nx0' закончил работу."
+set "EV=%temp%\%CMDN%-end-%random%%random%.vbs"
+set "EMSG=Пакетный файл %CMDN% закончил работу."
 chcp 1251 >nul
->"%EV%" echo(MsgBox "%EMSG%",,"%~nx0"
+>"%EV%" echo(MsgBox "%EMSG%",,"%CMDN%"
 chcp 866 >nul
 cscript //nologo "%EV%"
 del "%EV%"

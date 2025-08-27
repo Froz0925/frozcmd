@@ -1,5 +1,5 @@
 @echo off
-set "DSTFLD=D:\”®âª¨\!à §¡¨à âì\‚¨¤¥®"
+set "DSTFLD=D:\Ð¤Ð¾Ñ‚ÐºÐ¸\!Ñ€Ð°Ð·Ð±Ð¸Ñ€Ð°Ñ‚ÑŒ\Ð’Ð¸Ð´ÐµÐ¾"
 
 set "DO=Import .MTS to .MKV"
 title %DO%
@@ -13,13 +13,13 @@ set "FLD2DEL=PRIVATE"
 set "CMDN=%~n0"
 set "EX=%~dp0bin\ffmpeg.exe"
 if not exist "%EX%" (
-    echo(%EX% ­¥ ­ ©¤¥­, ¢ëå®¤¨¬.
+    echo(%EX% Ð½Ðµ Ð½Ð°Ð¹Ð´ÐµÐ½, Ð²Ñ‹Ñ…Ð¾Ð´Ð¸Ð¼.
     echo(
     pause
     exit /b
 )
 
-:: €¢â®®¯à¥¤¥«¥­¨¥ áêñ¬­®£® ­®á¨â¥«ï (DriveType=1 + Ready=True)
+:: ÐÐ²Ñ‚Ð¾Ð¾Ð¿Ñ€ÐµÐ´ÐµÐ»ÐµÐ½Ð¸Ðµ ÑÑŠÑ‘Ð¼Ð½Ð¾Ð³Ð¾ Ð½Ð¾ÑÐ¸Ñ‚ÐµÐ»Ñ (DriveType=1 + Ready=True)
 set "USBDIR="
 set "TV=%temp%\%CMDN%_d_%random%%random%.vbs"
 >"%TV%" echo(With CreateObject("Scripting.FileSystemObject"):For Each D In .Drives
@@ -33,13 +33,13 @@ for /f "delims=" %%D in ('cscript //nologo "%TV%"') do (
 )
 del "%TV%"
 if not defined USBDIR (
-    echo(¥ ­ ©¤¥­ áêñ¬­ë© ­®á¨â¥«ì á ¯ ¯ª®© %FLD%
+    echo(ÐÐµ Ð½Ð°Ð¹Ð´ÐµÐ½ ÑÑŠÑ‘Ð¼Ð½Ñ‹Ð¹ Ð½Ð¾ÑÐ¸Ñ‚ÐµÐ»ÑŒ Ñ Ð¿Ð°Ð¿ÐºÐ¾Ð¹ %FLD%
     echo(
     pause
     goto help
 )
 if not exist "%USBDIR%\*%IN%" (
-    echo(‚ %USBDIR% ­¥â ä ©«®¢ %IN%, ¢ëå®¤¨¬.
+    echo(Ð’ %USBDIR% Ð½ÐµÑ‚ Ñ„Ð°Ð¹Ð»Ð¾Ð² %IN%, Ð²Ñ‹Ñ…Ð¾Ð´Ð¸Ð¼.
     echo(
     pause
     goto help
@@ -52,7 +52,7 @@ for %%F in ("%USBDIR%\*%IN%") do (
 )
 rd /s /q "%UD2DEL%"
 set "EV=%temp%\%CMDN%-end-%random%%random%.vbs"
-set "EMSG=‚á¥ ä ©«ë ®¡à ¡®â ­ë. à®¢¥àìâ¥ ª®àà¥ªâ­®áâì ª®­¢¥àâ æ¨¨ ¨ ã¤ «¨â¥ ä ©«ë %IN%."
+set "EMSG=Ð’ÑÐµ Ñ„Ð°Ð¹Ð»Ñ‹ Ð¾Ð±Ñ€Ð°Ð±Ð¾Ñ‚Ð°Ð½Ñ‹. ÐŸÑ€Ð¾Ð²ÐµÑ€ÑŒÑ‚Ðµ ÐºÐ¾Ñ€Ñ€ÐµÐºÑ‚Ð½Ð¾ÑÑ‚ÑŒ ÐºÐ¾Ð½Ð²ÐµÑ€Ñ‚Ð°Ñ†Ð¸Ð¸ Ð¸ ÑƒÐ´Ð°Ð»Ð¸Ñ‚Ðµ Ñ„Ð°Ð¹Ð»Ñ‹ %IN%."
 chcp 1251 >nul
 >"%EV%" echo(MsgBox "%EMSG%",,"%CMDN%"
 chcp 866 >nul
@@ -66,30 +66,30 @@ set "HF=%temp%\%CMDN%-hlp-%random%%random%.txt"
 set "VB=%temp%\%CMDN%-hlp-%random%%random%.vbs"
 >"%HF%" echo %VRS%
 >>"%HF%" echo(
->>"%HF%" echo ¥à¥­®á .mts á ä®â® ¯¯ à â  ¨ à¥¬ãªá ¢ .mkv.
+>>"%HF%" echo ÐŸÐµÑ€ÐµÐ½Ð¾Ñ .mts Ñ Ñ„Ð¾Ñ‚Ð¾Ð°Ð¿Ð¿Ð°Ñ€Ð°Ñ‚Ð° Ð¸ Ñ€ÐµÐ¼ÑƒÐºÑ Ð² .mkv.
 >>"%HF%" echo(
->>"%HF%" echo ®¤£®â®¢ª :
->>"%HF%" echo 1. Žâªàëâì áªà¨¯â â¥ªáâ®¢ë¬ à¥¤ ªâ®à®¬ á ¯®¤¤¥à¦ª®© ª®¤®¢®© áâà ­¨æë
->>"%HF%" echo    OEM866, ­ ¯à¨¬¥à Far Manager, Total Commander, Notepad++
->>"%HF%" echo 2. “â®ç­¨âì ¯ãâì ­ §­ ç¥­¨ï DSTFLD: %DSTFLD%
+>>"%HF%" echo ÐŸÐ¾Ð´Ð³Ð¾Ñ‚Ð¾Ð²ÐºÐ°:
+>>"%HF%" echo 1. ÐžÑ‚ÐºÑ€Ñ‹Ñ‚ÑŒ ÑÐºÑ€Ð¸Ð¿Ñ‚ Ñ‚ÐµÐºÑÑ‚Ð¾Ð²Ñ‹Ð¼ Ñ€ÐµÐ´Ð°ÐºÑ‚Ð¾Ñ€Ð¾Ð¼ Ñ Ð¿Ð¾Ð´Ð´ÐµÑ€Ð¶ÐºÐ¾Ð¹ ÐºÐ¾Ð´Ð¾Ð²Ð¾Ð¹ ÑÑ‚Ñ€Ð°Ð½Ð¸Ñ†Ñ‹
+>>"%HF%" echo    OEM866, Ð½Ð°Ð¿Ñ€Ð¸Ð¼ÐµÑ€ Far Manager, Total Commander, Notepad++
+>>"%HF%" echo 2. Ð£Ñ‚Ð¾Ñ‡Ð½Ð¸Ñ‚ÑŒ Ð¿ÑƒÑ‚ÑŒ Ð½Ð°Ð·Ð½Ð°Ñ‡ÐµÐ½Ð¸Ñ DSTFLD: %DSTFLD%
 >>"%HF%" echo(
->>"%HF%" echo —â® ¤¥« ¥â:
->>"%HF%" echo 1. ˆé¥â áêñ¬­ë© ­®á¨â¥«ì á ¯ ¯ª®© %FLD%
->>"%HF%" echo 2. ¥à¥­®á¨â .mts ¢
+>>"%HF%" echo Ð§Ñ‚Ð¾ Ð´ÐµÐ»Ð°ÐµÑ‚:
+>>"%HF%" echo 1. Ð˜Ñ‰ÐµÑ‚ ÑÑŠÑ‘Ð¼Ð½Ñ‹Ð¹ Ð½Ð¾ÑÐ¸Ñ‚ÐµÐ»ÑŒ Ñ Ð¿Ð°Ð¿ÐºÐ¾Ð¹ %FLD%
+>>"%HF%" echo 2. ÐŸÐµÑ€ÐµÐ½Ð¾ÑÐ¸Ñ‚ .mts Ð²
 >>"%HF%" echo    %DSTFLD%
->>"%HF%" echo 3. ¥à¥¨¬¥­®¢ë¢ ¥â ¯® ¬ áª¥ ƒƒƒƒ-ŒŒ-„„_——ŒŒ‘‘_¨¬ï.
->>"%HF%" echo 4. “¤ «ï¥â ¯ ¯ªã %FLD2DEL% á ­®á¨â¥«ï,
->>"%HF%" echo    çâ®¡ë ­  ä®â® ¯¯ à â¥ ­¥ ¡ë«® ®è¨¡®ª ¯à®á¬®âà  "ä ©« ­¥ ­ ©¤¥­".
->>"%HF%" echo 5. ¥¬ãªá¨â .mts ¢ .mkv.
+>>"%HF%" echo 3. ÐŸÐµÑ€ÐµÐ¸Ð¼ÐµÐ½Ð¾Ð²Ñ‹Ð²Ð°ÐµÑ‚ Ð¿Ð¾ Ð¼Ð°ÑÐºÐµ Ð“Ð“Ð“Ð“-ÐœÐœ-Ð”Ð”_Ð§Ð§ÐœÐœÐ¡Ð¡_Ð¸Ð¼Ñ.
+>>"%HF%" echo 4. Ð£Ð´Ð°Ð»ÑÐµÑ‚ Ð¿Ð°Ð¿ÐºÑƒ %FLD2DEL% Ñ Ð½Ð¾ÑÐ¸Ñ‚ÐµÐ»Ñ,
+>>"%HF%" echo    Ñ‡Ñ‚Ð¾Ð±Ñ‹ Ð½Ð° Ñ„Ð¾Ñ‚Ð¾Ð°Ð¿Ð¿Ð°Ñ€Ð°Ñ‚Ðµ Ð½Ðµ Ð±Ñ‹Ð»Ð¾ Ð¾ÑˆÐ¸Ð±Ð¾Ðº Ð¿Ñ€Ð¾ÑÐ¼Ð¾Ñ‚Ñ€Ð° "Ñ„Ð°Ð¹Ð» Ð½Ðµ Ð½Ð°Ð¹Ð´ÐµÐ½".
+>>"%HF%" echo 5. Ð ÐµÐ¼ÑƒÐºÑÐ¸Ñ‚ .mts Ð² .mkv.
 >"%VB%" echo(With CreateObject("ADODB.Stream"):.Type=2:.Charset="cp866"
 >>"%VB%" echo(.Open:.LoadFromFile"%HF%":MsgBox .ReadText,,"%CMDN%":.Close:End With
 cscript //nologo "%VB%"
 del "%VB%" & del "%HF%"
 exit /b
-:: === Žª®­ç ­¨¥ ®á­®¢­®£® ª®¤  ===
+:: === ÐžÐºÐ¾Ð½Ñ‡Ð°Ð½Ð¸Ðµ Ð¾ÑÐ½Ð¾Ð²Ð½Ð¾Ð³Ð¾ ÐºÐ¾Ð´Ð° ===
 
 
-:: === ®¤¯à®£à ¬¬ë ===
+:: === ÐŸÐ¾Ð´Ð¿Ñ€Ð¾Ð³Ñ€Ð°Ð¼Ð¼Ñ‹ ===
 :chkusb
 if exist "%DL%\%FLD%" (
     set "USBDIR=%DL%\%FLD%"
@@ -98,7 +98,7 @@ if exist "%DL%\%FLD%" (
 exit /b
 
 :go
-:: ˆ§¢«¥ª ¥¬ DateLastModified
+:: Ð˜Ð·Ð²Ð»ÐµÐºÐ°ÐµÐ¼ DateLastModified
 set "TV=%temp%\dlm-%random%%random%.vbs"
 >"%TV%" echo(Wscript.Echo CreateObject("Scripting.FileSystemObject").GetFile(WScript.Arguments.Item(0)).DateLastModified
 for /f "delims=" %%t in ('cscript //nologo "%TV%" "%FNF%"') do set "DT=%%t"
@@ -109,7 +109,7 @@ set "Y=%DT:~6,4%"
 set "HH=%DT:~11,2%"
 set "MM=%DT:~14,2%"
 set "SS=%DT:~17,2%"
-:: Š®àà¥ªæ¨ï ®¤­®§­ ç­®£® ç á  (­ ¯à¨¬¥à, "8:08:08")
+:: ÐšÐ¾Ñ€Ñ€ÐµÐºÑ†Ð¸Ñ Ð¾Ð´Ð½Ð¾Ð·Ð½Ð°Ñ‡Ð½Ð¾Ð³Ð¾ Ñ‡Ð°ÑÐ° (Ð½Ð°Ð¿Ñ€Ð¸Ð¼ÐµÑ€, "8:08:08")
 if not "%HH%"=="%HH::=%" (
     set "HH=0%HH:~0,1%"
     set "MM=%DT:~13,2%"
@@ -117,7 +117,7 @@ if not "%HH%"=="%HH::=%" (
 )
 set "DSTNAMEIN=%Y%-%M%-%D%_%HH%%MM%%SS%_%FNX%"
 set "DSTNAME=%Y%-%M%-%D%_%HH%%MM%%SS%_%FN%%OUT%"
-echo(Š®­¢¥àâ æ¨ï: "%FNX%" -^> "%DSTNAME%"...
+echo(ÐšÐ¾Ð½Ð²ÐµÑ€Ñ‚Ð°Ñ†Ð¸Ñ: "%FNX%" -^> "%DSTNAME%"...
 if not exist "%DSTFLD%" md "%DSTFLD%"
 move "%FNF%" "%DSTFLD%\%DSTNAMEIN%" >nul
 "%EX%" -hide_banner -i "%DSTFLD%\%DSTNAMEIN%" -c copy "%DSTFLD%\%DSTNAME%"

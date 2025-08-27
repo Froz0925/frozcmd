@@ -2,56 +2,56 @@
 set "DO=Video Downloader"
 set "VRS=Froz %DO% v21.08.2025"
 
-:: ‘¯¨á®ª ¢¨¤¥®å®áâ¨­£®¢ ¤«ï Help ¨ Title:
+:: Ð¡Ð¿Ð¸ÑÐ¾Ðº Ð²Ð¸Ð´ÐµÐ¾Ñ…Ð¾ÑÑ‚Ð¸Ð½Ð³Ð¾Ð² Ð´Ð»Ñ Help Ð¸ Title:
 set "SERV=RuTube, VK Video, Dzen, OK, Boosty, YouTube"
-set "ERRC=¥ª®àà¥ªâ­ë© ­®¬¥à, ¢¢®¤¨¬ § ­®¢®."
-set "ERRL=¥¢¥à­ ï ááë«ª , ¢¢®¤¨¬ § ­®¢®."
+set "ERRC=ÐÐµÐºÐ¾Ñ€Ñ€ÐµÐºÑ‚Ð½Ñ‹Ð¹ Ð½Ð¾Ð¼ÐµÑ€, Ð²Ð²Ð¾Ð´Ð¸Ð¼ Ð·Ð°Ð½Ð¾Ð²Ð¾."
+set "ERRL=ÐÐµÐ²ÐµÑ€Ð½Ð°Ñ ÑÑÑ‹Ð»ÐºÐ°, Ð²Ð²Ð¾Ð´Ð¸Ð¼ Ð·Ð°Ð½Ð¾Ð²Ð¾."
 set "CMDN=%~n0"
 
-::  ¯ª  ¤«ï áª ç¨¢ ­¨ï:
+:: ÐŸÐ°Ð¿ÐºÐ° Ð´Ð»Ñ ÑÐºÐ°Ñ‡Ð¸Ð²Ð°Ð½Ð¸Ñ:
 set "OUTD=%USERPROFILE%\Downloads\Froz_%CMDN%"
 
 
-:: à®¢¥àï¥¬ ­ «¨ç¨¥ ãâ¨«¨â:
+:: ÐŸÑ€Ð¾Ð²ÐµÑ€ÑÐµÐ¼ Ð½Ð°Ð»Ð¸Ñ‡Ð¸Ðµ ÑƒÑ‚Ð¸Ð»Ð¸Ñ‚:
 
 set "VDL=%~dp0bin\yt-dlp.exe"
 set "VDLN=%~dp0bin\yt-dlp.exe.new"
-if not exist "%VDL%" echo(¥ ­ ©¤¥­ %VDL%, ¢ëå®¤¨¬.& echo(& pause & exit /b
+if not exist "%VDL%" echo(ÐÐµ Ð½Ð°Ð¹Ð´ÐµÐ½ %VDL%, Ð²Ñ‹Ñ…Ð¾Ð´Ð¸Ð¼.& echo(& pause & exit /b
 set "FFM=%~dp0bin\FFMpeg.exe"
-if not exist "%FFM%" echo(¥ ­ ©¤¥­ %FFM%, ¢ëå®¤¨¬.& echo(& pause & exit /b
+if not exist "%FFM%" echo(ÐÐµ Ð½Ð°Ð¹Ð´ÐµÐ½ %FFM%, Ð²Ñ‹Ñ…Ð¾Ð´Ð¸Ð¼.& echo(& pause & exit /b
 
 :: Intro:
 title %DO%
 echo(%VRS%
 echo(
-echo(‘ª ç¨¢ ­¨¥ ¢¨¤¥® ¨  ã¤¨®ä ©«®¢ ¨§
+echo(Ð¡ÐºÐ°Ñ‡Ð¸Ð²Ð°Ð½Ð¸Ðµ Ð²Ð¸Ð´ÐµÐ¾ Ð¸ Ð°ÑƒÐ´Ð¸Ð¾Ñ„Ð°Ð¹Ð»Ð¾Ð² Ð¸Ð·
 echo(%SERV%
-echo(¢ %OUTD%\
+echo(Ð² %OUTD%\
 echo(
 
 :inp
-:: ‚¢®¤ ááë«ª¨:
+:: Ð’Ð²Ð¾Ð´ ÑÑÑ‹Ð»ÐºÐ¸:
 echo(
-set /p "LNKF=‚áâ ¢ìâ¥ https-ááë«ªã, q - ¢ëå®¤: "
+set /p "LNKF=Ð’ÑÑ‚Ð°Ð²ÑŒÑ‚Ðµ https-ÑÑÑ‹Ð»ÐºÑƒ, q - Ð²Ñ‹Ñ…Ð¾Ð´: "
 for /f "tokens=1 delims=?" %%n in ("%LNKF%") do set "LNK=%%n"
 if "%LNK%"=="" (
     echo(%ERRL%
     goto inp
 )
-if "%LNK%"=="q" echo(‚ëå®¤¨¬.& exit /b
+if "%LNK%"=="q" echo(Ð’Ñ‹Ñ…Ð¾Ð´Ð¸Ð¼.& exit /b
 if not "%LNK%"=="%LNK:https://=%" goto get
 echo(%ERRL%
 goto inp
 
 :get
-:: à®¢¥àï¥¬ ®¡­®¢«¥­¨ï:
+:: ÐŸÑ€Ð¾Ð²ÐµÑ€ÑÐµÐ¼ Ð¾Ð±Ð½Ð¾Ð²Ð»ÐµÐ½Ð¸Ñ:
 "%VDL%" -U
 :waitclose
 if exist "%VDLN%" (
   ping 127.0.0.1 -n 1>nul
   goto waitclose
 )
-:: ˆ§¢«¥ª ¥¬ ­ §¢ ­¨¥ ¢¨¤¥®å®áâ¨­£ :
+:: Ð˜Ð·Ð²Ð»ÐµÐºÐ°ÐµÐ¼ Ð½Ð°Ð·Ð²Ð°Ð½Ð¸Ðµ Ð²Ð¸Ð´ÐµÐ¾Ñ…Ð¾ÑÑ‚Ð¸Ð½Ð³Ð°:
 "%VDL%" -F "%LNKF%"|more
 if not "%LNK%"=="%LNK:youtu=%" goto yu-in
 if not "%LNK%"=="%LNK:rutu=%" goto ru-in
@@ -60,17 +60,17 @@ if not "%LNK%"=="%LNK:vk.com=%" goto vk-in
 if not "%LNK%"=="%LNK:dzen=%" goto dz-in
 if not "%LNK%"=="%LNK:ok.ru=%" goto ok-in
 if not "%LNK%"=="%LNK:boosty=%" goto bo-in
-echo(‚¨¤¥®å®áâ¨­£ ­¥ ®¯à¥¤¥«ñ­, ¢ëå®¤¨¬.& pause & exit /b
+echo(Ð’Ð¸Ð´ÐµÐ¾Ñ…Ð¾ÑÑ‚Ð¸Ð½Ð³ Ð½Ðµ Ð¾Ð¿Ñ€ÐµÐ´ÐµÐ»Ñ‘Ð½, Ð²Ñ‹Ñ…Ð¾Ð´Ð¸Ð¼.& pause & exit /b
 
 
 
 :yu-in
-set /p "VID=YouTube: ¢¢¥¤¨â¥ ­®¬¥à ¢¨¤¥®, r - ¯®¢â®à á¯¨áª , q - ¢ëå®¤: "
+set /p "VID=YouTube: Ð²Ð²ÐµÐ´Ð¸Ñ‚Ðµ Ð½Ð¾Ð¼ÐµÑ€ Ð²Ð¸Ð´ÐµÐ¾, r - Ð¿Ð¾Ð²Ñ‚Ð¾Ñ€ ÑÐ¿Ð¸ÑÐºÐ°, q - Ð²Ñ‹Ñ…Ð¾Ð´: "
 if "%VID%"=="" (
     echo(%ERRC%
     goto yu-in
 )
-if "%VID%"=="q" echo(‚ëå®¤¨¬.& exit /b
+if "%VID%"=="q" echo(Ð’Ñ‹Ñ…Ð¾Ð´Ð¸Ð¼.& exit /b
 if "%VID%"=="r" "%VDL%" -F "%LNKF%"|more
 if /i %VID% LSS 100 set "FMT=%VID%" & goto dl
 if /i %VID% GTR 100 goto yu-aud
@@ -78,12 +78,12 @@ echo(%ERRC%
 goto yu-in
 
 :yu-aud
-set /p "AUD=‚¢¥¤¨â¥ ­®¬¥à  ã¤¨®¤®à®¦ª¨: 1 - AAC 128k, 2 - OPUS 128k, q - ¢ëå®¤: "
+set /p "AUD=Ð’Ð²ÐµÐ´Ð¸Ñ‚Ðµ Ð½Ð¾Ð¼ÐµÑ€ Ð°ÑƒÐ´Ð¸Ð¾Ð´Ð¾Ñ€Ð¾Ð¶ÐºÐ¸: 1 - AAC 128k, 2 - OPUS 128k, q - Ð²Ñ‹Ñ…Ð¾Ð´: "
 if "%AUD%"=="" (
     echo(%ERRC%
     goto yu-aud
 )
-if "%AUD%"=="q" echo(‚ëå®¤¨¬.& exit /b
+if "%AUD%"=="q" echo(Ð’Ñ‹Ñ…Ð¾Ð´Ð¸Ð¼.& exit /b
 if "%AUD%"=="1" set "FMT=%VID%+140"& goto dl
 if "%AUD%"=="2" set "FMT=%VID%+251"& goto dl
 echo(%ERRC%
@@ -92,13 +92,13 @@ goto yu-aud
 
 
 :ru-in
-echo(RuTube: ¢¢¥¤¨â¥ ­®¬¥à ¢¨¤¥® XXX ¨§ default-XXX-0, r - ¯®¢â®à á¯¨áª  ¤®à®¦¥ª, q - ¢ëå®¤.
-set /p "VID=‚¢®¤: "
+echo(RuTube: Ð²Ð²ÐµÐ´Ð¸Ñ‚Ðµ Ð½Ð¾Ð¼ÐµÑ€ Ð²Ð¸Ð´ÐµÐ¾ XXX Ð¸Ð· default-XXX-0, r - Ð¿Ð¾Ð²Ñ‚Ð¾Ñ€ ÑÐ¿Ð¸ÑÐºÐ° Ð´Ð¾Ñ€Ð¾Ð¶ÐµÐº, q - Ð²Ñ‹Ñ…Ð¾Ð´.
+set /p "VID=Ð’Ð²Ð¾Ð´: "
 if "%VID%"=="" (
     echo(%ERRC%
     goto ru-in
 )
-if "%VID%"=="q" echo(‚ëå®¤¨¬.& exit /b
+if "%VID%"=="q" echo(Ð’Ñ‹Ñ…Ð¾Ð´Ð¸Ð¼.& exit /b
 if "%VID%"=="r" "%VDL%" -F %LNKF%|more
 set "FMT=default-%VID%-0"
 goto dl
@@ -106,52 +106,52 @@ goto dl
 
 
 :vk-in
-echo(VK Video: ¢¢¥¤¨â¥ ­®¬¥à ¢¨¤¥® XXX ¨§ urlXXX, ¨«¨ 1-8 ¤«ï dash_sep-X (¥á«¨ ­ã¦­  ®â¤¥«ì­ ï  ã¤¨®¤®à®¦ª )
-echo(r - ¯®¢â®à á¯¨áª , q - ¢ëå®¤.
-set /p "VID=‚¢®¤: "
+echo(VK Video: Ð²Ð²ÐµÐ´Ð¸Ñ‚Ðµ Ð½Ð¾Ð¼ÐµÑ€ Ð²Ð¸Ð´ÐµÐ¾ XXX Ð¸Ð· urlXXX, Ð¸Ð»Ð¸ 1-8 Ð´Ð»Ñ dash_sep-X (ÐµÑÐ»Ð¸ Ð½ÑƒÐ¶Ð½Ð° Ð¾Ñ‚Ð´ÐµÐ»ÑŒÐ½Ð°Ñ Ð°ÑƒÐ´Ð¸Ð¾Ð´Ð¾Ñ€Ð¾Ð¶ÐºÐ°)
+echo(r - Ð¿Ð¾Ð²Ñ‚Ð¾Ñ€ ÑÐ¿Ð¸ÑÐºÐ°, q - Ð²Ñ‹Ñ…Ð¾Ð´.
+set /p "VID=Ð’Ð²Ð¾Ð´: "
 if "%VID%"=="" (
     echo(%ERRC%
     goto vk-in
 )
-if "%VID%"=="q" echo(‚ëå®¤¨¬.& exit /b
+if "%VID%"=="q" echo(Ð’Ñ‹Ñ…Ð¾Ð´Ð¸Ð¼.& exit /b
 if "%VID%"=="r" "%VDL%" -F %LNKF%|more
 if /i %VID% LSS 11 goto vk-aud
 set "FMT=url%VID%"
 goto dl
 
 :vk-aud
-set /p "AUD=‚¢¥¤¨â¥ ­®¬¥à  ã¤¨®¤®à®¦ª¨ XX ¨§ dash_sep-XX audio only, q - ¢ëå®¤: "
+set /p "AUD=Ð’Ð²ÐµÐ´Ð¸Ñ‚Ðµ Ð½Ð¾Ð¼ÐµÑ€ Ð°ÑƒÐ´Ð¸Ð¾Ð´Ð¾Ñ€Ð¾Ð¶ÐºÐ¸ XX Ð¸Ð· dash_sep-XX audio only, q - Ð²Ñ‹Ñ…Ð¾Ð´: "
 if "%AUD%"=="" (
     echo(%ERRC%
     goto vk-aud
 )
-if "%AUD%"=="q" echo(‚ëå®¤¨¬.& exit /b
+if "%AUD%"=="q" echo(Ð’Ñ‹Ñ…Ð¾Ð´Ð¸Ð¼.& exit /b
 set "FMT=dash_sep-%VID%+dash_sep-%AUD%"
 goto dl
 
 
 
 :dz-in
-echo(Dzen: ¢¢¥¤¨â¥ ­®¬¥à ¢¨¤¥® XXX ¨§ XXX-0. Dash-¢ à¨ ­âë ­¥ ¨¬¥îâ á¬ëá«  â.ª.  ã¤¨® â®«ìª® ®¤­®, 
-echo(r - ¯®¢â®à á¯¨áª  ¤®à®¦¥ª, q - ¢ëå®¤.
-set /p "VID=‚¢®¤: "
+echo(Dzen: Ð²Ð²ÐµÐ´Ð¸Ñ‚Ðµ Ð½Ð¾Ð¼ÐµÑ€ Ð²Ð¸Ð´ÐµÐ¾ XXX Ð¸Ð· XXX-0. Dash-Ð²Ð°Ñ€Ð¸Ð°Ð½Ñ‚Ñ‹ Ð½Ðµ Ð¸Ð¼ÐµÑŽÑ‚ ÑÐ¼Ñ‹ÑÐ»Ð° Ñ‚.Ðº. Ð°ÑƒÐ´Ð¸Ð¾ Ñ‚Ð¾Ð»ÑŒÐºÐ¾ Ð¾Ð´Ð½Ð¾, 
+echo(r - Ð¿Ð¾Ð²Ñ‚Ð¾Ñ€ ÑÐ¿Ð¸ÑÐºÐ° Ð´Ð¾Ñ€Ð¾Ð¶ÐµÐº, q - Ð²Ñ‹Ñ…Ð¾Ð´.
+set /p "VID=Ð’Ð²Ð¾Ð´: "
 if "%VID%"=="" (
     echo(%ERRC%
     goto dz-in
 )
-if "%VID%"=="q" echo(‚ëå®¤¨¬.& exit /b
+if "%VID%"=="q" echo(Ð’Ñ‹Ñ…Ð¾Ð´Ð¸Ð¼.& exit /b
 if "%VID%"=="r" "%VDL%" -F %LNKF%|more
 set "FMT=%VID%-0"
 goto dl
 
 
 :ok-in
-set /p "VID=OK.ru: ‚¢¥¤¨â¥ ª®¤ ¢¨¤¥®, r - ¯®¢â®à á¯¨áª , q - ¢ëå®¤: "
+set /p "VID=OK.ru: Ð’Ð²ÐµÐ´Ð¸Ñ‚Ðµ ÐºÐ¾Ð´ Ð²Ð¸Ð´ÐµÐ¾, r - Ð¿Ð¾Ð²Ñ‚Ð¾Ñ€ ÑÐ¿Ð¸ÑÐºÐ°, q - Ð²Ñ‹Ñ…Ð¾Ð´: "
 if "%VID%"=="" (
     echo(%ERRC%
     goto ok-in
 )
-if "%VID%"=="q" echo(‚ëå®¤¨¬.& exit /b
+if "%VID%"=="q" echo(Ð’Ñ‹Ñ…Ð¾Ð´Ð¸Ð¼.& exit /b
 if "%VID%"=="r" "%VDL%" -F %LNKF%|more
 set "FMT=%VID%"
 goto dl
@@ -159,13 +159,13 @@ goto dl
 
 
 :bo-in
-echo(Boosty: ¢¢¥¤¨â¥ ª®¤ ¢¨¤¥® ¨§ ­¨¦­¥£® á¯¨áª  "tiny-ultra_hd", r - ¯®¢â®à á¯¨áª  ¤®à®¦¥ª, q - ¢ëå®¤.
-set /p "VID=‚¢®¤: "
+echo(Boosty: Ð²Ð²ÐµÐ´Ð¸Ñ‚Ðµ ÐºÐ¾Ð´ Ð²Ð¸Ð´ÐµÐ¾ Ð¸Ð· Ð½Ð¸Ð¶Ð½ÐµÐ³Ð¾ ÑÐ¿Ð¸ÑÐºÐ° "tiny-ultra_hd", r - Ð¿Ð¾Ð²Ñ‚Ð¾Ñ€ ÑÐ¿Ð¸ÑÐºÐ° Ð´Ð¾Ñ€Ð¾Ð¶ÐµÐº, q - Ð²Ñ‹Ñ…Ð¾Ð´.
+set /p "VID=Ð’Ð²Ð¾Ð´: "
 if "%VID%"=="" (
     echo(%ERRC%
     goto bo-in
 )
-if "%VID%"=="q" echo(‚ëå®¤¨¬.& exit /b
+if "%VID%"=="q" echo(Ð’Ñ‹Ñ…Ð¾Ð´Ð¸Ð¼.& exit /b
 if "%VID%"=="r" "%VDL%" -F %LNKF%|more
 set "FMT=%VID%"
 goto dl
@@ -173,7 +173,7 @@ goto dl
 
 
 :dl
-echo(‘ª ç¨¢ ¥¬...
+echo(Ð¡ÐºÐ°Ñ‡Ð¸Ð²Ð°ÐµÐ¼...
 if not exist "%OUTD%" md "%OUTD%">nul
 "%VDL%" %LNKF% -f %FMT% -o "%OUTD%\%%(upload_date>%%Y-%%m-%%d)s_%%(title)s_%%(id)s.%%(ext)s" --console-title -w -x -k --write-subs --sub-langs ru --convert-subtitles srt
 start "" "%OUTD%"
@@ -183,7 +183,7 @@ start "" "%OUTD%"
 :done
 chcp 866 >nul
 set "EV=%temp%\%CMDN%-%random%%random%.vbs"
-set "EMSG=ƒ®â®¢®."
+set "EMSG=Ð“Ð¾Ñ‚Ð¾Ð²Ð¾."
 chcp 1251 >nul
 >"%EV%" echo(MsgBox "%EMSG%",,"%CMDN%"
 chcp 866 >nul

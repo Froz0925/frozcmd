@@ -9,7 +9,7 @@ title %DO%
 set "VRS=Froz %DO% v21.08.2025"
 echo(%VRS%
 echo(
-
+set "CMDN=%~n0"
 set "EX=%~dp0bin\ffmpeg.exe"
 if not exist "%EX%" echo("%EX%" не найден, выходим.& echo(& pause & exit /b
 if "%~1"=="" (
@@ -22,8 +22,8 @@ if "%~1"=="" (
 :: Проверка длины аргументов: лимит Windows 8191 символ - путь может быть обрезан, а остальные утеряны
 :: CMD ломается при передаче &)( в %* - используем VBS
 :: Нельзя удалять проверку "%~1"=="" - VBS не сможет посчитать длину
-set "TV=%temp%\%~nx0_len_%random%.vbs"
-set "TO=%temp%\%~nx0_out_%random%.txt"
+set "TV=%temp%\%CMDN%_len_%random%%random%.vbs"
+set "TO=%temp%\%CMDN%_out_%random%%random%.txt"
 >"%TV%" echo(Set a=WScript.Arguments.Unnamed:ReDim b(a.Count-1)
 >>"%TV%" echo(For i=0To a.Count-1:b(i)=a(i):Next
 >>"%TV%" echo(WScript.Echo Len(Join(b," "))
@@ -95,10 +95,10 @@ exit /b
 
 :e
 if not defined FOUND echo(Нет файлов поддерживаемых форматов.
-set "EV=%temp%\%~nx0-end-%random%.vbs"
+set "EV=%temp%\%CMDN%-end-%random%%random%.vbs"
 set "EMSG=Все файлы обработаны."
 chcp 1251 >nul
->"%EV%" echo(MsgBox "%EMSG%",,"%~nx0"
+>"%EV%" echo(MsgBox "%EMSG%",,"%CMDN%"
 chcp 866 >nul
 cscript //nologo "%EV%"
 del "%EV%"
