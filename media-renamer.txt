@@ -1,5 +1,5 @@
-﻿Froz media renamer v06.08.2025
-(froz_media_renamer.cmd)
+﻿Froz media renamer (media-renamer.cmd)
+--------------------------------------
 
 Пакетное переименование файлов по маске: YYYY-MM-DD_HHMMSS_имя_[PROGR].ext
 для упорядочивания фото-видеоархивов с файлами из разных источников и форматов имён.
