@@ -33,7 +33,7 @@ set "ROTATION="
 :: Intel GPU:  hevc_qsv и h264_qsv - Intel Skylake+ (2015+), драйвер Intel HD + Media Feature Pack
 :: CPU:        libx265 - очень медленно, libx264 - медленно
 :: Примечание: HEVC - меньше размер, выше качество, H.264 - совместимость.
-set "CODEC=libx264"
+set "CODEC=hevc_nvenc"
 
 :: Профиль кодирования для HEVC: main10 (10 bit) и main (8 bit). Для H.264 - всегда будет установлен high.
 :: Если не задано - устанавливается main10 если поддерживается кодеком.
