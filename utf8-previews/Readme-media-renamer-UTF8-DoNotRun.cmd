@@ -1,23 +1,21 @@
 @echo off
 set "DO=Media Renamer"
-title %DO%
-set "VRS=Froz %DO% v27.08.2025"
+title Froz %DO%
+set "VRS=Froz %DO% v29.09.2025"
 echo(%VRS%
 echo(
-set "CMDN=%~n0"
-if not "%~1"=="" goto chk
-echo(Пакетное переименование файлов по маске: ГГГГ-ММ-ДД_ЧЧММСС_имя_[PROGR].ext
+if not "%~1"=="" goto exchk
+echo(Пакетное переименование файлов по маске: ГГГГ-ММ-ДД_ЧЧММСС_имя.ext
 echo(
 echo(Перетащите папку или файлы на скрипт.
 echo(Если первый аргумент - папка, обработает все файлы в ней.
 echo(
 echo(Работает с:
-echo(  - EXIF в JPG ^(DTO^) - приоритет
-echo(  - Датой в имени файла ^(разные форматы, пробелы, разделители^)
-echo(  - Датой изменения файла ^(DLM^)
+echo(  - EXIF в JPG (DTO) - приоритет
+echo(  - Датой в имени файла (разные форматы, пробелы, разделители)
+echo(  - Датой изменения файла (DLM)
 echo(
 echo(Особенности:
-echo(  - Помечает Progressive JPEG как _PROGR
 echo(  - Удаляет префиксы: IMG_, VID_, DSC_, PIC_
 echo(  - Не переименовывает файлы, уже соответствующие маске
 echo(  - При конфликтах имён добавляет _1, _2 и т.д.
@@ -27,22 +25,60 @@ echo(
 pause
 exit /b
 
-:chk
+:: === КОММЕНТАРИИ К ЛОГИКЕ РАБОТЫ ===
+:: Приоритет дат: EXIF.DTO > имя (дата_время) > имя (дата) + DLM > DLM
+:: DTOALL: флаг после [a] - автоматически пишет EXIF в JPG без DTO
+:: Конфликты: добавляет _1, _2...
+
+:exchk
+set "CMDN=%~n0"
+set "EX=%~dp0bin\exiv2.exe"
+if exist "%EX%" goto exok
+echo(
+echo(Ошибка: Не найден "%EX%".
+echo(Положите exiv2.exe и exiv2.dll в папку bin рядом с cmd-файлом
+echo(
+pause
+exit /b
+:exok
+
+
+
+
+
+:: Создаём один раз VBS-код для запроса DLM в отдельные переменные, способом не зависящим от локали
+:: Формат выдачи VBS: ГГГГ ММ ДД ЧЧ ММ СС
+set "DLMV=%temp%\%CMDN%-dlm-%random%%random%.vbs"
+>"%DLMV%"  echo(With CreateObject("Scripting.FileSystemObject")
+>>"%DLMV%" echo(Set f=.GetFile(WScript.Arguments.Item(0)):dt=f.DateLastModified
+>>"%DLMV%" echo(Y=Year(dt):M=Right("0"^&Month(dt),2):D=Right("0"^&Day(dt),2)
+>>"%DLMV%" echo(H=Right("0"^&Hour(dt),2):N=Right("0"^&Minute(dt),2):S=Right("0"^&Second(dt),2)
+>>"%DLMV%" echo(WScript.Echo Y^&" "^&M^&" "^&D^&" "^&H^&" "^&N^&" "^&S:End With
+
+:: Глобальные счётчики: CNT=переименовано, CNTALL=всего, CNTT=EXIF записано
+:: DTOALL - флаг диалога с юзером "записать DTO во все последующие файлы без DTO"
+set "CNT=0"
+set "CNTALL=0"
+set "CNTT=0"
+set "DTOALL="
+
+:: Определение режима работы - 'папка' или 'файлы'
+set "ATTR=%~a1"
+if /i "%ATTR:~0,1%"=="d" goto mode_folder
+
+:: Режим работы: Список файлов
 :: Проверка длины аргументов CMD через VBS
 :: так как в CMD нет безопасного способа парсить строку с &)(
-set "TV=%temp%\%CMDN%_len_%random%%random%.vbs"
-set "TO=%temp%\%CMDN%_out_%random%%random%.txt"
-:: Подсчёт длины всех аргументов с пробелами - для проверки лимита CMD (8191)
-:: Массив + Join, т.к. WScript.Arguments не совместим с Join напрямую
-:: Проверка на "%~1"=="" выше гарантирует a.Count >= 1 , значит ReDim безопасен
->"%TV%" echo(Set a=WScript.Arguments.Unnamed:ReDim b(a.Count-1)
->>"%TV%" echo(For i=0To a.Count-1:b(i)=a(i):Next
->>"%TV%" echo(WScript.Echo Len(Join(b," "))
-cscript //nologo "%TV%" %* >"%TO%"
+:: Проверка на "%~1"=="" выше - гарантирует a.Count >= 1, значит ReDim безопасен
+set "CTV=%temp%\%CMDN%-len-%random%%random%.vbs"
+set "CTO=%temp%\%CMDN%-out-%random%%random%.txt"
+>"%CTV%" echo(Set a=WScript.Arguments.Unnamed:ReDim b(a.Count-1)
+>>"%CTV%" echo(For i=0To a.Count-1:b(i)=a(i):Next:WScript.Echo Len(Join(b," "))
+cscript //nologo "%CTV%" %* >"%CTO%"
 set "ALEN=0"
-set /p "ALEN=" <"%TO%"
-del "%TV%" & del "%TO%"
-if %ALEN% gtr 7500 (
+set /p "ALEN=" <"%CTO%"
+del "%CTV%" & del "%CTO%"
+if %ALEN% GTR 7500 (
     echo(ВНИМАНИЕ: слишком длинная команда.
     echo(Общая длина путей к файлам больше 7500 символов - возможна потеря данных.
     echo(Ограничение Windows - 8191 символ, остальное будет обрезано.
@@ -53,106 +89,38 @@ if %ALEN% gtr 7500 (
     exit /b
 )
 
-set "EX=%~dp0bin\exiv2.exe"
-if not exist "%EX%" (
-    echo(
-    echo(Ошибка: Не найден "%EX%".
-    echo(Положите exiv2.exe и exiv2.dll в папку bin рядом с cmd-файлом
-    echo(
-    pause
-    exit /b
-)
-
-set "TV=%temp%\dltm$.vbs"
->"%TV%" echo(Wscript.Echo CreateObject("Scripting.FileSystemObject").GetFile(WScript.Arguments.Item(0)).DateLastModified
-
-set "CNT=0"
-set "CNTALL=0"
-set "CNTP=0"
-set "CNTT=0"
-set "DTOALL="
-
-set "ATTR=%~a1"
-set "ATTR=%ATTR:~,1%"
-if /i "%ATTR%"=="d" goto mode_folder
-goto mode_files
-
-
-:: Режим работы: Список файлов
-:mode_files
 set "FLD=%~dp1"
 pushd "%FLD%"
 echo(Обработка списка файлов...
 echo(
-goto start_loop
 
-
-
-:: Цикл по файлам
-:start_loop
+:: Цикл работы по файлам
+:loop
 if "%~1"=="" goto done
+:: Если среди файлов встретится папка - пропускаем её
 set "ATTR=%~a1"
-set "ATTR=%ATTR:~,1%"
-if /i "%ATTR%"=="d" goto next_arg
+if /i "%ATTR:~0,1%"=="d" goto next
 set "FN=%~nx1"
-set /a CNTALL+=1
 call :process_file
-:next_arg
+:next
 shift
-goto start_loop
-
+goto loop
 
 :: Режим работы: Папка
 :mode_folder
 pushd "%~f1"
 echo(Обработка папки "%~f1"...
 echo(
-for /f "delims=" %%i in ('dir /b /a-d') do call :process_file_in_folder "%%i"
+:: Обработка файлов в папке (папок среди них быть не может - это исключает dir /a-d)
+for /f "delims=" %%i in ('dir /b /a-d') do (
+    set "FN=%%i"
+    call :process_file    
+)
 goto done
-
-:: Эту подпрограмму пришлось врезать в тело основного потока выше метки done иначе скрипт не видит эту метку
-:process_file_in_folder
-set "FN=%~1"
-set /a CNTALL+=1
-call :process_file
-exit /b
+:: Подпрограммы должны быть до done - иначе CMD не найдёт метки при вызове из for /f.
+:: === ЗАВЕРШЕНИЕ ОСНОВНОГО КОДА ===
 
 
-
-
-:: === ПРОДОЛЖЕНИЕ ОСНОВНОГО ПОТОКА ===
-:done
-popd
-if exist "%TV%" del "%TV%"
-
-set "TXT_ALL="
-set "TXT_PROGR="
-set "TXT_DTO="
-echo(
-echo(--- Готово ---
-if %CNT% gtr 0 set "TXT_ALL=Переименовано: %CNT% из %CNTALL% файлов."
-if %CNTP% gtr 0 set "TXT_PROGR=Помечено как PROGR: %CNTP% файлов."
-if %CNTT% gtr 0 set "TXT_DTO=Добавлено EXIF-дат: %CNTT% файлов."
-if %CNT% gtr 0 echo(%TXT_ALL%
-if %CNTP% gtr 0 echo(%TXT_PROGR%
-if %CNTT% gtr 0 echo(%TXT_DTO%
-
-set "HF=%temp%\%CMDN%-hlp-%random%%random%.txt"
-set "VB=%temp%\%CMDN%-hlp-%random%%random%.vbs"
->"%HF%" echo(%VRS%
->>"%HF%" echo(%CMDN% закончил работу.
->>"%HF%" echo(
->>"%HF%" echo(%TXT_ALL%
->>"%HF%" echo(
->>"%HF%" echo(%TXT_PROGR%
->>"%HF%" echo(%TXT_DTO%
->"%VB%" echo(With CreateObject("ADODB.Stream"):.Type=2:.Charset="cp866"
->>"%VB%" echo(.Open:.LoadFromFile"%HF%":MsgBox .ReadText,,"%CMDN%":.Close:End With
-cscript //nologo "%VB%"
-del "%VB%" & del "%HF%"
-pause
-exit /b
-:: === КОНЕЦ ОСНОВНОГО ПОТОКА ===
 
 
 
@@ -160,109 +128,52 @@ exit /b
 
 :: === ПОДПРОГРАММЫ ===
 :process_file
-:: Инициализация переменных
+:: Обнуление переменных:
 set "BASE="
 set "EXT="
 set "DTO="
-set "ISJPG="
 set "Y=" & set "M=" & set "D=" & set "HH=" & set "MM=" & set "SS="
+set "NAME_Y=" & set "NAME_M=" & set "NAME_D=" & set "NAME_HH=" & set "NAME_MM=" & set "NAME_SS="
+set "Y_DLM=" & set "M_DLM=" & set "D_DLM=" & set "HH_DLM=" & set "MM_DLM=" & set "SS_DLM="
+set "JPG_MATCH="
+set "DTO_COMP="
+set "DTO_DATE="
 
-:: Получаем базовое имя и расширение
-for %%f in ("%FN%") do set "BASE=%%~nf"
-for %%f in ("%FN%") do set "EXT=%%~xf"
+for %%f in ("%FN%") do (
+    set "BASE=%%~nf"
+    set "EXT=%%~xf"
+)
 
-:: Пропускаем файлы без расширения
 if "%EXT%"=="" exit /b
 
-:: Удаляем префиксы (регистронезависимо)
-if /i "%BASE:IMG_=%" neq "%BASE%" set "BASE=%BASE:IMG_=%"
-if /i "%BASE:VID_=%" neq "%BASE%" set "BASE=%BASE:VID_=%"
-if /i "%BASE:DSC_=%" neq "%BASE%" set "BASE=%BASE:DSC_=%"
-if /i "%BASE:PIC_=%" neq "%BASE%" set "BASE=%BASE:PIC_=%"
+set /a CNTALL+=1
 
-:: --- Попытка вставить _ между датой и временем ---
-:: Формат: YYYYMMDD[разделитель]HHMMSS
-set "TEST=%BASE:~0,8%"
-echo(%TEST%| findstr /r "^[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]$" >nul
-if errorlevel 1 goto check_yyyymmdd
-
-set "REST=%BASE:~8%"
-if not defined REST goto check_yyyymmdd
-
-:: Пропускаем пробелы, _, - в начале REST
-set "JUNK=%REST%"
-:skip_junk
-if not defined JUNK goto check_yyyymmdd
-if "%JUNK:~0,1%"==" " set "JUNK=%JUNK:~1%" & goto skip_junk
-if "%JUNK:~0,1%"=="_" set "JUNK=%JUNK:~1%" & goto skip_junk
-if "%JUNK:~0,1%"=="-" set "JUNK=%JUNK:~1%" & goto skip_junk
-
-:: Проверяем, начинается ли остаток с 6 цифр
-if "%JUNK:~5,1%"=="" goto check_yyyymmdd
-set "HMSCAND=%JUNK:~0,6%"
-echo(%HMSCAND%| findstr /r "^[0-9][0-9][0-9][0-9][0-9][0-9]$" >nul
-if errorlevel 1 goto check_yyyymmdd
-
-:: Всё ок - вставляем _ после YYYYMMDD, но очищаем REST от начальных пробелов/символов
-set "CLEAN_REST=%REST%"
-:clean_rest_junk
-if not defined CLEAN_REST goto after_clean_rest
-if "%CLEAN_REST:~0,1%"==" " set "CLEAN_REST=%CLEAN_REST:~1%" & goto clean_rest_junk
-if "%CLEAN_REST:~0,1%"=="_" set "CLEAN_REST=%CLEAN_REST:~1%" & goto clean_rest_junk
-if "%CLEAN_REST:~0,1%"=="-" set "CLEAN_REST=%CLEAN_REST:~1%" & goto clean_rest_junk
-:after_clean_rest
-set "BASE=%BASE:~0,8%_%CLEAN_REST%"
-goto after_date_fix
-
-:check_yyyymmdd
-:: Формат: YYYY-MM-DDHHMMSS
-set "TEST=%BASE:~0,10%"
-if not "%TEST:~4,1%"=="-" goto after_date_fix
-if not "%TEST:~7,1%"=="-" goto after_date_fix
-set "REST=%BASE:~10%"
-if not defined REST goto after_date_fix
-set "FIRST=%REST:~0,1%"
-echo(%FIRST%| findstr "^[0-9]$" >nul
-if errorlevel 1 goto after_date_fix
-set "BASE=%BASE:~0,10%_%REST%"
-
-:after_date_fix
-:: Удаляем начальные символы: пробел, _, -
-:trim_start
-if "%BASE:~0,1%"==" " set "BASE=%BASE:~1%" & goto trim_start
-if "%BASE:~0,1%"=="_" set "BASE=%BASE:~1%" & goto trim_start
-if "%BASE:~0,1%"=="-" set "BASE=%BASE:~1%" & goto trim_start
-
-:: Устанавливаем SUFFIX
-set "SUFFIX=%BASE%"
-
-:: Для JPEG пробуем извлечь EXIF данные
+:: Используем флаг, т.к. он будет нужен ещё несколько раз
+set "ISJPG="
 if /i "%EXT%"==".jpg" set "ISJPG=1"
 if /i "%EXT%"==".jpeg" set "ISJPG=1"
-if defined ISJPG goto ext_jpg
-
-:: Для остальных файлов используем дату изменения
+if defined ISJPG goto jpg_file
 goto choose_date
 
-
-
-
-:ext_jpg
-:: Как это работает:
+:jpg_file
+:: Для JPEG пробуем извлечь EXIF
 :: 1. Читаем EXIF.DateTimeOriginal
-:: 2. Если нет - goto choose_date
+:: 2. Если нет - идём в choose_date
 :: 3. Если есть - сравниваем с датой из имени
 :: 4. Если не совпадает - переименовываем
 :: 5. Если совпадает - оставляем
-set "TMP=%temp%\dto_%random%%random%.txt"
-"%EX%" -q -g Exif.Photo.DateTimeOriginal -Pv "%FN%" >"%TMP%"
-set /p "DTO="<"%TMP%"
-if exist "%TMP%" del "%TMP%"
+:: Пытаемся использовать EXIF.DateTimeOriginal как приоритетный источник
+:: Извлекаем EXIF DTO с помощью exiv2
 
-:: Если DTO нет - переходим к DLM
+set "TDTO=%temp%\%CMDN%-dto-%random%%random%.txt"
+"%EX%" -q -g Exif.Photo.DateTimeOriginal -Pv "%FN%" >"%TDTO%"
+set /p "DTO=" <"%TDTO%"
+if exist "%TDTO%" del "%TDTO%"
+
 if not defined DTO goto choose_date
 
-:: Извлекаем дату из EXIF
+:: Извлекаем дату из EXIF в отдельные переменные
+:: DTO имеет приоритет над именем - если совпадает, файл пропускается
 set "Y=%DTO:~0,4%"
 set "M=%DTO:~5,2%"
 set "D=%DTO:~8,2%"
@@ -270,75 +181,246 @@ set "HH=%DTO:~11,2%"
 set "MM=%DTO:~14,2%"
 set "SS=%DTO:~17,2%"
 
-:: Проверка корректности EXIF-даты
-:: Пример битых значений: 0000:00:00, 2023:00:45, 9999:99:99
-:: Если дата невалидна - используем DLM
+:: Проверка корректности EXIF-даты. Если дата невалидна - используем DLM
+:: Битые EXIF: 0000:00:00, 2023:00:45, 9999:99:99 - отбрасываем, используем имя или DLM
 if "%Y%"=="" goto choose_date
 if "%M%"=="" goto choose_date
 if "%D%"=="" goto choose_date
-if %M% lss 1 goto choose_date
-if %M% gtr 12 goto choose_date
-if %D% lss 1 goto choose_date
-if %D% gtr 31 goto choose_date
-if %HH% gtr 23 goto choose_date
-if %MM% gtr 59 goto choose_date
-if %SS% gtr 59 goto choose_date
+if %M% LSS 1 goto choose_date
+if %M% GTR 12 goto choose_date
+if %D% LSS 1 goto choose_date
+if %D% GTR 31 goto choose_date
+if %HH% GTR 23 goto choose_date
+if %MM% GTR 59 goto choose_date
+if %SS% GTR 59 goto choose_date
 
 set "DTO_COMP=%Y%-%M%-%D% %HH%:%MM%:%SS%"
 set "DTO_DATE=%Y%-%M%-%D%"
-
 call :try_name_date
 
-:: Если дата в имени извлечена - сравниваем
-if not defined NAME_Y goto build_name
-:: Если время в имени не извлечено - сравниваем только дату
-if not defined NAME_HH goto ext_jpg_compare_date_only
+:: Проверка: совпадает ли полная дата и время с EXIF и форматом маски?
+call :check_jpg_match full
+if defined JPG_MATCH goto file_skip
 
-:: --- Проверка: совпадает ли имя с главной маской? ---
-:: Формат: YYYY-MM-DD_HHMMSS_...
-set "MASK_PATTERN=____-__-__"
-set "PART=%FN:~0,10%"
-if not "%PART:~4,1%"=="-" goto build_name
-if not "%PART:~7,1%"=="-" goto build_name
-echo(%PART%| findstr /r "^[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]$" >nul
-if errorlevel 1 goto build_name
+:: Проверка: совпадает ли только дата (без времени) и формат?
+call :check_jpg_match date
+if defined JPG_MATCH goto file_skip
 
-:: Проверяем, что после даты - подчёркивание
-if "%FN:~10,1%" neq "_" goto build_name
+:: Ничего не совпадает - переходим к переименованию
+goto build_name
 
-:: Проверяем, что после даты - 6 цифр времени
-set "TIME_PART=%FN:~11,6%"
-echo(%TIME_PART%| findstr /r "^[0-9][0-9][0-9][0-9][0-9][0-9]$" >nul
-if errorlevel 1 goto build_name
 
-:: --- Теперь проверяем совпадение даты ---
-set "NAME_COMP=%NAME_Y%-%NAME_M%-%NAME_D% %NAME_HH%:%NAME_MM%:%NAME_SS%"
-if not "%NAME_COMP%"=="%DTO_COMP%" goto build_name
 
-:: --- Файл уже соответствует маске ---
-echo(%FN% - пропущен, переименование не требуется.
-echo(
+
+
+
+:try_name_date
+:: Вся нормализация BASE (префиксы, обрезка, YYYYMMDD_, YYYY-MM-DDHHMMSS) отложена сюда.
+:: Выполняется ТОЛЬКО если файл не пропущен.
+:: "Нормализация" = приведение BASE к единому формату.
+:: "Попытка" = извлечение даты/времени из уже нормализованного BASE.
+
+:: Обнуление переменных
+set "DATE_VALID="
+set "TIME_VALID="
+
+:: Удаляем префиксы (регистронезависимо) если имя начинается не с цифры
+if "%BASE:~0,1%" GTR "9" goto do_prefixes
+if "%BASE:~0,1%" LSS "0" goto do_prefixes
+goto skip_prefixes
+:do_prefixes
+if /i "%BASE:IMG_=%" NEQ "%BASE%" set "BASE=%BASE:IMG_=%" & goto skip_prefixes
+if /i "%BASE:VID_=%" NEQ "%BASE%" set "BASE=%BASE:VID_=%" & goto skip_prefixes
+if /i "%BASE:DSC_=%" NEQ "%BASE%" set "BASE=%BASE:DSC_=%" & goto skip_prefixes
+if /i "%BASE:PIC_=%" NEQ "%BASE%" set "BASE=%BASE:PIC_=%" & goto skip_prefixes
+:skip_prefixes
+
+:: Пытаемся извлечь дату и время из имени файла.
+
+:: --- Нормализация 1: YYYYMMDD[разделитель]HHMMSS -> YYYY-MM-DD_HHMMSS ---
+:: Приводим разделитель между датой и временем к '_', чтобы парсер мог надёжно выделить HHMMSS
+set "TEST=%BASE:~0,8%"
+
+:: Быстрая проверка: первый символ должен быть цифрой, и строка должна быть длиной 8
+if "%TEST:~7,1%"=="" goto check_yyyymmdd_try
+if "%TEST:~0,1%" GTR "9" goto check_yyyymmdd_try
+if "%TEST:~0,1%" LSS "0" goto check_yyyymmdd_try
+
+:: Проверяем остальные символы минимально (только первый символ каждой пары)
+if "%TEST:~1,1%" GTR "9" goto check_yyyymmdd_try
+if "%TEST:~1,1%" LSS "0" goto check_yyyymmdd_try
+if "%TEST:~2,1%" GTR "9" goto check_yyyymmdd_try
+if "%TEST:~2,1%" LSS "0" goto check_yyyymmdd_try
+if "%TEST:~3,1%" GTR "9" goto check_yyyymmdd_try
+if "%TEST:~3,1%" LSS "0" goto check_yyyymmdd_try
+if "%TEST:~4,1%" GTR "9" goto check_yyyymmdd_try
+if "%TEST:~4,1%" LSS "0" goto check_yyyymmdd_try
+if "%TEST:~5,1%" GTR "9" goto check_yyyymmdd_try
+if "%TEST:~5,1%" LSS "0" goto check_yyyymmdd_try
+if "%TEST:~6,1%" GTR "9" goto check_yyyymmdd_try
+if "%TEST:~6,1%" LSS "0" goto check_yyyymmdd_try
+if "%TEST:~7,1%" GTR "9" goto check_yyyymmdd_try
+if "%TEST:~7,1%" LSS "0" goto check_yyyymmdd_try
+
+:: Если после YYYYMMDD ничего нет - не пытаемся вставлять _
+set "REST=%BASE:~8%"
+if not defined REST goto check_yyyymmdd_try
+
+:: Пропускаем пробелы, _, - в начале REST
+set "JUNK=%REST%"
+:skip_junk_try
+if not defined JUNK goto check_yyyymmdd_try
+if "%JUNK:~0,1%"==" " set "JUNK=%JUNK:~1%" & goto skip_junk_try
+if "%JUNK:~0,1%"=="_" set "JUNK=%JUNK:~1%" & goto skip_junk_try
+if "%JUNK:~0,1%"=="-" set "JUNK=%JUNK:~1%" & goto skip_junk_try
+
+:: Проверяем, начинается ли остаток с 6 цифр
+set "HMSCAND=%JUNK:~0,6%"
+if "%HMSCAND:~5,1%"=="" goto check_yyyymmdd_try
+if "%HMSCAND:~0,1%" GTR "9" goto check_yyyymmdd_try
+if "%HMSCAND:~0,1%" LSS "0" goto check_yyyymmdd_try
+
+:: Всё ок - вставляем _ после YYYYMMDD, но очищаем REST от начальных пробелов/символов
+set "CLEAN_REST=%REST%"
+:clean_rest_junk_try
+if not defined CLEAN_REST goto after_date_fix_try
+if "%CLEAN_REST:~0,1%"==" " set "CLEAN_REST=%CLEAN_REST:~1%" & goto clean_rest_junk_try
+if "%CLEAN_REST:~0,1%"=="_" set "CLEAN_REST=%CLEAN_REST:~1%" & goto clean_rest_junk_try
+if "%CLEAN_REST:~0,1%"=="-" set "CLEAN_REST=%CLEAN_REST:~1%" & goto clean_rest_junk_try
+
+:: Преобразуем YYYYMMDD в YYYY-MM-DD и вставляем _ после даты
+set "BASE=%BASE:~0,4%-%BASE:~4,2%-%BASE:~6,2%_%CLEAN_REST%"
+goto after_date_fix_try
+
+:: --- Нормализация 2: YYYY-MM-DDHHMMSS (без разделителя) -> YYYY-MM-DD_HHMMSS ---
+:check_yyyymmdd_try
+set "TEST=%BASE:~0,10%"
+if not defined TEST goto after_date_fix_try
+if not "%TEST:~4,1%"=="-" goto after_date_fix_try
+if not "%TEST:~7,1%"=="-" goto after_date_fix_try
+
+:: Проверяем, что после даты есть как минимум 6 символов
+if "%BASE:~15,1%"=="" goto after_date_fix_try
+
+:: Проверяем, что первые 6 символов после даты - цифры
+set "TIME_CAND=%BASE:~10,6%"
+if "%TIME_CAND:~5,1%"=="" goto after_date_fix_try
+if "%TIME_CAND:~0,1%" GTR "9" goto after_date_fix_try
+if "%TIME_CAND:~0,1%" LSS "0" goto after_date_fix_try
+
+:: Проверяем, что это валидное время (HH:MM:SS)
+set "HH_TMP=%TIME_CAND:~0,2%"
+set "MM_TMP=%TIME_CAND:~2,2%"
+set "SS_TMP=%TIME_CAND:~4,2%"
+
+:: Обход восьмеричной ошибки: 08 -> 108 %% 100 = 8
+set /a HH_CHK=1%HH_TMP% %% 100
+set /a MM_CHK=1%MM_TMP% %% 100
+set /a SS_CHK=1%SS_TMP% %% 100
+
+if %HH_CHK% GTR 23 goto after_date_fix_try
+if %MM_CHK% GTR 59 goto after_date_fix_try
+if %SS_CHK% GTR 59 goto after_date_fix_try
+
+:: Всё ок - вставляем _ после даты
+set "BASE=%BASE:~0,10%_%BASE:~10%"
+:after_date_fix_try
+:: --- Вспомогательная метка для перехода из try_name_date ---
+:: Используется только если BASE был изменён в попытке 1 или 2
+:: После нормализации в YYYY-MM-DD_... - извлекаем дату и время
+set "NAME_Y=%BASE:~0,4%"
+set "NAME_M=%BASE:~5,2%"
+set "NAME_D=%BASE:~8,2%"
+call :check_date_format
+:: Обнуляем NAME_* при невалидной дате, иначе мусор вроде "0110"/"no"/"TO"
+:: обманет choose_date и подставит Y=0110 вместо DLM -> битое имя.
+if not defined DATE_VALID (
+    set "NAME_Y="
+    set "NAME_M="
+    set "NAME_D="
+    exit /b
+)
+
+:: Дата валидна - пробуем извлечь время из позиции 11 (после YYYY-MM-DD_) только если это цифра
+set "HMSCAND=%BASE:~11,6%"
+if "%HMSCAND:~5,1%"=="" exit /b
+if "%HMSCAND:~0,1%" GTR "9" exit /b
+if "%HMSCAND:~0,1%" LSS "0" exit /b
+call :check_time_format
+if not defined TIME_VALID exit /b
+
+:: Всё ОК - дата и время валидны
+set "NAME_HH=%HH%"
+set "NAME_MM=%MM%"
+set "NAME_SS=%SS%"
 exit /b
 
 
 
-:ext_jpg_compare_date_only
-:: Сравниваем только дату (время из имени не извлечено)
+
+
+
+
+
+:check_jpg_match
+:: Проверяем, соответствует ли имя файла EXIF-дате и маске ГГГГ-ММ-ДД_ЧЧММСС - если да, пропускаем
+:: %1 = full (требуется дата+время в имени) или date (достаточно даты)
+if not defined NAME_Y exit /b
+:: Если режим НЕ "full" (т.е. "date") - пропускаем проверку времени
+if /i not "%~1"=="full" goto check_time_skip
+:: В режиме "full" время в имени обязательно
+if not defined NAME_HH exit /b
+:check_time_skip
+
+:: Проверка формата даты в имени: YYYY-MM-DD
+set "PART=%FN:~0,10%"
+
+:: Проверяем длину и разделители
+if "%PART:~4,1%" NEQ "-" exit /b
+if "%PART:~7,1%" NEQ "-" exit /b
+
+:: Извлекаем части
+set "Y_PART=%PART:~0,4%"
+set "M_PART=%PART:~5,2%"
+set "D_PART=%PART:~8,2%"
+
+if "%Y_PART:~0,1%" GTR "9" exit /b
+if "%Y_PART:~0,1%" LSS "0" exit /b
+if "%M_PART:~0,1%" GTR "9" exit /b
+if "%M_PART:~0,1%" LSS "0" exit /b
+if "%D_PART:~0,1%" GTR "9" exit /b
+if "%D_PART:~0,1%" LSS "0" exit /b
+
+:: Проверка: после даты - подчёркивание
+set "UNDERSCORE=%FN:~10,1%"
+if not defined UNDERSCORE exit /b
+if not "%UNDERSCORE%"=="_" exit /b
+
+:: Проверка совпадения даты с EXIF
 set "NAME_DATE=%NAME_Y%-%NAME_M%-%NAME_D%"
-if not "%NAME_DATE%"=="%DTO_DATE%" goto build_name
+if not "%NAME_DATE%"=="%DTO_DATE%" exit /b
 
-:: --- Проверка формата маски для случая без времени ---
-set "PART=%FN:~0,10%"
-if not "%PART:~4,1%"=="-" goto build_name
-if not "%PART:~7,1%"=="-" goto build_name
-echo(%PART%| findstr /r "^[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]$" >nul
-if errorlevel 1 goto build_name
-if "%FN:~10,1%" neq "_" goto build_name
+:: Если режим "только дата" - совпадение найдено
+if /i "%~1"=="date" set "JPG_MATCH=1" & exit /b
 
-:: --- Файл уже соответствует маске ---
-echo(%FN% - пропущен, переименование не требуется.
-echo(
+:: Режим "full": проверяем время
+set "TIME_PART=%FN:~11,6%"
+:: Проверяем длину времени (должно быть 6 символов)
+if "%TIME_PART:~5,1%"=="" exit /b
+
+:: Проверяем, что первый символ времени - цифра
+if "%TIME_PART:~0,1%" GTR "9" exit /b
+if "%TIME_PART:~0,1%" LSS "0" exit /b
+
+:: Проверка совпадения полной даты+времени с EXIF
+set "NAME_COMP=%NAME_Y%-%NAME_M%-%NAME_D% %NAME_HH%:%NAME_MM%:%NAME_SS%"
+if not "%NAME_COMP%"=="%DTO_COMP%" exit /b
+
+:: Полное совпадение
+set "JPG_MATCH=1"
 exit /b
+
+
 
 
 
@@ -348,71 +430,41 @@ exit /b
 :: Источники по приоритету: имя, DLM
 :: При DTOALL=1: автоматически записываем EXIF в JPG без DTO и пропускаем диалог
 
-:: Извлекаем DLM
-for /f "delims=" %%t in ('cscript //nologo "%TV%" "%FN%"') do set "DT=%%t"
-
-:: Парсим DLM: DD.MM.YYYY H:MM:SS или HH:MM:SS
-set "D=%DT:~0,2%"
-set "M=%DT:~3,2%"
-set "Y=%DT:~6,4%"
-set "HH=%DT:~11,2%"
-set "MM=%DT:~14,2%"
-set "SS=%DT:~17,2%"
-:: Если однозначный час (например, "8:08:08")
-if not "%HH%"=="%HH::=%" (
-    set "HH=0%HH:~0,1%"
-    set "MM=%DT:~13,2%"
-    set "SS=%DT:~16,2%"
-)
-
-:: Сохраняем DLM
-set "Y_DLM=%Y%"
-set "M_DLM=%M%"
-set "D_DLM=%D%"
-set "HH_DLM=%HH%"
-set "MM_DLM=%MM%"
-set "SS_DLM=%SS%"
-
 :: Извлекаем дату и время из имени
 call :try_name_date
 
 :: --- DTOALL: флаг для автоматической обработки ---
 :: Устанавливается в [a], но EXIF записывается ТОЛЬКО в handle_a_choice
 :: Здесь - не вызываем :do_write, только проверяем, нужно ли показывать диалог
-if not defined DTOALL goto check_jpg_dialog
-if not defined ISJPG goto check_jpg_dialog
-if defined DTO goto check_jpg_dialog
-
+if not defined DTOALL goto check_jpg
+:: DTOALL=1: все последующие JPG без DTO будут обработаны автоматически (после [a])
+if not defined ISJPG goto check_jpg
+if defined DTO goto check_jpg
 :: Если DTOALL=1 и это JPG без DTO - записываем EXIF и используем DLM
 call :do_write
-set "Y=%Y_DLM%"
-set "M=%M_DLM%"
-set "D=%D_DLM%"
-set "HH=%HH_DLM%"
-set "MM=%MM_DLM%"
-set "SS=%SS_DLM%"
+call :load_dlm_vars
 goto build_name
 
-:check_jpg_dialog
-:: --- Определяем, нужно ли показывать диалог для JPG ---
+:: --- JPG: решаем, спрашивать ли пользователя ---
+:check_jpg
 if not defined ISJPG goto use_name_or_dlm
 
-:: Если это JPG и нет полной даты в имени - показываем диалог
+:: Если это JPG без EXIF и с полной датой в имени - используем её, не спрашивая
+if not defined DTO goto ask_user
 if not defined NAME_Y goto ask_user
 if not defined NAME_HH goto ask_user
-
-:: У JPG есть полная дата в имени - используем её, не показываем диалог
 goto use_name_full
 
-:: --- Основная логика выбора даты ---
+:: --- Основная логика выбора даты (для не-JPG и некоторых JPG) ---
 :use_name_or_dlm
-:: Если есть полная дата и время в имени - используем их
-if not defined NAME_Y goto use_name_date_dlm_time
+:: Если в имени есть полная дата и время - используем их
+if not defined NAME_Y goto use_dlm
 if not defined NAME_HH goto use_name_date_dlm_time
+goto use_name_full
 
-:use_name_full
 :: --- Полная дата и время найдены в имени файла - используем их ---
 :: Пример: 2021-07-04_174724.txt - Y=2021, M=07, D=04, HH=17, MM=47, SS=24
+:use_name_full
 set "Y=%NAME_Y%"
 set "M=%NAME_M%"
 set "D=%NAME_D%"
@@ -421,11 +473,10 @@ set "MM=%NAME_MM%"
 set "SS=%NAME_SS%"
 goto build_name
 
-:use_name_date_dlm_time
-:: --- Дата в имени есть, но времени нет - комбинируем: дата из имени, время из DLM ---
+:: --- Дата в имени есть, но времени нет - подставляем время из DLM ---
 :: Пример: 2021-07-04_Photo.txt - Y=2021, M=07, D=04, HH=12, MM=34, SS=56 (из DLM)
-:: А если нет и года - переходим к использованию полного DLM
-if not defined NAME_Y goto use_dlm
+:use_name_date_dlm_time
+call :get_dlm
 set "Y=%NAME_Y%"
 set "M=%NAME_M%"
 set "D=%NAME_D%"
@@ -434,37 +485,51 @@ set "MM=%MM_DLM%"
 set "SS=%SS_DLM%"
 goto build_name
 
+:: --- Ни даты, ни времени не найдено в имени - используем полный DLM ---
+:: Пример: Photo_001.jpg - всё из DateLastModified
+:use_dlm
+call :load_dlm_vars
+goto build_name
+
+
+
+
+
+
+:ask_user
+:: Извлекаем DLM текущего файла в отдельные переменнные через VBS-код созданный в начале работы
+:: Цель: гарантировать доступность Y_DLM, HH_DLM и т.д. в ask_user и других блоках
+call :get_dlm
+
 :: --- Формируем строку для отображения пользователю ---
 :: Варианты:
 :: 1. Полная дата и время в имени - берём всё из имени
 :: 2. Только дата в имени - дата из имени, время из DLM
 :: 3. Ничего не извлечено - только DLM
-:: Переменная YMDHMS_NAME используется ТОЛЬКО для echo, не влияет на переименование
-:ask_user
-echo(--- Нет EXIF.DateTimeOriginal ^(DTO^) в %FN% ---
+:: Переменная YMDHMS_NAME используется ТОЛЬКО для вывода, не влияет на переименование
+echo(--- Нет EXIF.DateTimeOriginal (DTO) в "%FN%" ---
 echo(
 set "YMDHMS_NAME="
 
-if not defined NAME_Y goto show_use_dlm
-if not defined NAME_HH goto show_use_name_date_dlm
+:: Ни даты, ни времени не извлечено из имени - показываем DLM
+if not defined NAME_Y (
+    set "YMDHMS_NAME=%Y_DLM%-%M_DLM%-%D_DLM% %HH_DLM%:%MM_DLM%:%SS_DLM%"
+    goto show_user
+)
 
+:: --- Дата в имени есть, но времени нет - показываем: дата из имени, время из DLM
+if not defined NAME_HH (
+    set "YMDHMS_NAME=%NAME_Y%-%NAME_M%-%NAME_D% %HH_DLM%:%MM_DLM%:%SS_DLM%"
+    goto show_user
+)
+
+:: Есть и дата, и время в имени - показываем их
 set "YMDHMS_NAME=%NAME_Y%-%NAME_M%-%NAME_D% %NAME_HH%:%NAME_MM%:%NAME_SS%"
-goto show_user_suggestion
 
-:show_use_name_date_dlm
-:: --- Дата в имени есть, но времени нет - используем для отображения: дата из имени, время из DLM ---
-:: Только для показа пользователю; реальное присвоение - в use_name_date_dlm_time
-set "YMDHMS_NAME=%NAME_Y%-%NAME_M%-%NAME_D% %HH_DLM%:%MM_DLM%:%SS_DLM%"
-goto show_suggestion
-
-:show_use_dlm
-:: --- Ни даты, ни времени не извлечено из имени - используем только DLM ---
-:: Пример: Photo123.txt - всё берётся из даты изменения файла
-set "YMDHMS_NAME=%Y_DLM%-%M_DLM%-%D_DLM% %HH_DLM%:%MM_DLM%:%SS_DLM%"
-
-:show_user_suggestion
+:: YMDHMS_NAME - только для отображения, не влияет на логику
+:show_user
 echo(Предлагаемая дата-время: %YMDHMS_NAME%
-echo(Дата изменения файла ^(DLM^): %Y_DLM%-%M_DLM%-%D_DLM% %HH_DLM%:%MM_DLM%:%SS_DLM%
+echo(Дата изменения файла (DLM): %Y_DLM%-%M_DLM%-%D_DLM% %HH_DLM%:%MM_DLM%:%SS_DLM%
 echo(
 echo([a] - записать предложенное в EXIF для всех JPG без DTO
 echo([w] - записать предложенное в EXIF
@@ -473,41 +538,37 @@ echo(Любая другая клавиша - пропустить
 set /p "USRCHOICE=Выбор: "
 
 if /i "%USRCHOICE%"=="a" goto handle_a_choice
-if /i "%USRCHOICE%"=="w" goto handle_w_choice
-if /i not "%USRCHOICE%"=="m" (
-    echo(
-    echo(Отменена запись в EXIF.
-    echo(%FN% пропущен.
-    echo(
-    exit /b
+if /i "%USRCHOICE%"=="w" (
+    call :do_write
+    goto build_name
 )
+if /i "%USRCHOICE%"=="m" goto manual_input_start
+echo(Отменена запись в EXIF.
+goto file_skip
 
 :manual_input_start
+:: Ручной ввод пользователя
 set "MANUAL="
 echo(
 echo(Введите дату ГГГГ-ММ-ДД ЧЧ:ММ:СС или [q] для отмены
 set /p "MANUAL=Дата: "
-set "MANUAL=%MANUAL:"=%"
-if /i "%MANUAL%"=="q" (
-    echo(
-    echo(Отменён ручной ввод.
-    echo(%FN% пропущен.
-    echo(
-    exit /b
-)
+if /i not "%MANUAL%"=="q" goto chk_man
+echo(Отменён ручной ввод.
+goto file_skip
 
+:chk_man
 :: Проверка формата через временный файл
-set "TMP=%temp%\man_%random%%random%.tmp"
-echo(%MANUAL%>"%TMP%"
-findstr /r "^[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9] [0-9][0-9]:[0-9][0-9]:[0-9][0-9]$" "%TMP%" >nul
-set "ERR=%errorlevel%"
-if exist "%TMP%" del "%TMP%"
-if %ERR% equ 1 (
+set "MAN=%temp%\%CMDN%-man-%random%%random%.tmp"
+echo(%MANUAL%>"%MAN%"
+:: Не отрывать строку findstr от errorlevel
+findstr /r "^[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9] [0-9][0-9]:[0-9][0-9]:[0-9][0-9]$" "%MAN%" >nul
+if %ERRORLEVEL% EQU 1 (
     echo(
     echo(Неверный формат. Пример: 2023-12-31 23:59:59
     echo(
     goto manual_input_start
 )
+if exist "%MAN%" del "%MAN%"
 
 :: --- Начало обработки ручного ввода ---
 :: Проверяем, что дата в формате ГГГГ-ММ-ДД ЧЧ:ММ:СС
@@ -519,15 +580,17 @@ set "D=%MANUAL:~8,2%"
 set "H_TMP=%MANUAL:~11,2%"
 set "MM=%MANUAL:~14,2%"
 set "S_TMP=%MANUAL:~17,2%"
-:: --- Удаляем пробелы в часах и секундах (на случай " 8" или " 5") ---
-:: Чтобы корректно обрабатывать ввод с однозначными часами/секундами
+
+:: Часы и секунды - удаляем пробелы: " 8" -> "8" - чтобы обработать ввод без ведущих нулей
 set "H_TMP=%H_TMP: =%"
 set "S_TMP=%S_TMP: =%"
-:: --- Добавляем ведущий ноль для однозначных часов (например, "8" - "08") ---
-:: Если второй символ отсутствует - значит, число однозначное
+
+:: Проверяем - если второй символ отсутствует - значит, число однозначное
+:: Восстанавливаем ведущий ноль для однозначных часов: "8" -> "08", "12" -> "12"
 if "%H_TMP:~1,1%"=="" set "HH=0%H_TMP%" & goto after_hh_manual
 set "HH=%H_TMP%"
 :after_hh_manual
+
 :: --- Добавляем ведущий ноль для однозначных секунд ---
 :: Аналогично часам
 if "%S_TMP:~1,1%"=="" set "SS=0%S_TMP%" & goto after_ss_manual
@@ -535,7 +598,8 @@ set "SS=%S_TMP%"
 :after_ss_manual
 :: --- Проверка корректности даты и времени ---
 :: Месяц: 1-12, день: 1-31, час: 0-23, минуты/секунды: 0-59
-:: Не проверяем високосные года или точное количество дней в месяце
+:: Не проверяем високосные года или дни в месяце - слишком сложно для CMD
+:: Достаточно проверки диапазонов: 1-31 день, 1-12 месяц
 if %M% LSS 1 set "DT_VALID=0"
 if %M% GTR 12 set "DT_VALID=0"
 if %D% LSS 1 set "DT_VALID=0"
@@ -543,18 +607,19 @@ if %D% GTR 31 set "DT_VALID=0"
 if %HH% GTR 23 set "DT_VALID=0"
 if %MM% GTR 59 set "DT_VALID=0"
 if %SS% GTR 59 set "DT_VALID=0"
+
 :: --- Если дата некорректна - возвращаемся к вводу ---
 :: Пользователь может исправить ошибку
-if %DT_VALID% equ 0 (
+if %DT_VALID% EQU 0 (
     echo(Недопустимые значения даты/времени.
     echo(
     goto manual_input_start
 )
-
+:: Ввод успешен и проверен - переходим к записи EXIF и переименованию файла
 call :do_write
 goto build_name
 
-:: --- Обработка [a] ---
+:: --- Обработка юзер-выбора [a] ---
 :handle_a_choice
 :: После [a] - DTOALL=1, и все последующие JPG без DTO будут обработаны автоматически
 set "DTOALL=1"
@@ -562,21 +627,10 @@ if not defined ISJPG goto skip_a_write
 if defined DTO goto skip_a_write
 call :do_write
 :skip_a_write
-goto use_dlm
-
-:: --- Обработка [w] ---
-:handle_w_choice
-call :do_write
+call :load_dlm_vars
 goto build_name
 
-:use_dlm
-set "Y=%Y_DLM%"
-set "M=%M_DLM%"
-set "D=%D_DLM%"
-set "HH=%HH_DLM%"
-set "MM=%MM_DLM%"
-set "SS=%SS_DLM%"
-goto build_name
+
 
 
 
@@ -593,104 +647,34 @@ exit /b
 
 
 
-:try_name_date
-:: Пытаемся извлечь дату и время из имени файла.
-:: HMSCAND - "HMS Candidate" - может быть битым, нецифровым, вне диапазона
-set "NAME_Y=" & set "NAME_M=" & set "NAME_D=" & set "NAME_HH=" & set "NAME_MM=" & set "NAME_SS="
-
-:: --- Попытка 1: формат YYYYMMDD_HHMMSS (с подчёркиванием)
-set "YMD=%BASE:~0,8%"
-set "HMSCAND=%BASE:~9,6%"
-echo(%YMD%| findstr /r "^[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]$" >nul
-if errorlevel 1 goto try_yyyymmdd_hhmmss
-if not "%BASE:~8,1%"=="_" goto try_yyyymmdd_hhmmss
-echo(%HMSCAND%| findstr /r "^[0-9][0-9][0-9][0-9][0-9][0-9]$" >nul
-if errorlevel 1 goto try_yyyymmdd_hhmmss
-set "NAME_Y=%YMD:~0,4%"
-set "NAME_M=%YMD:~4,2%"
-set "NAME_D=%YMD:~6,2%"
-call :check_date_format
-if errorlevel 1 goto try_yyyymmdd_hhmmss
-call :check_time_format
-if %TIME_VALID% equ 1 (
-    set "NAME_HH=%HH%"
-    set "NAME_MM=%MM%"
-    set "NAME_SS=%SS%"
-)
-exit /b
-
-:try_yyyymmdd_hhmmss
-:: --- Попытка 2: формат YYYY-MM-DD_HHMMSS
-echo(%BASE%| findstr "^[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]_[0-9][0-9][0-9][0-9][0-9][0-9]" >nul
-if errorlevel 1 goto try_yyyymmdd_only
-set "NAME_Y=%BASE:~0,4%"
-set "NAME_M=%BASE:~5,2%"
-set "NAME_D=%BASE:~8,2%"
-set "HMSCAND=%BASE:~11,6%"
-call :check_date_format
-if errorlevel 1 goto try_yyyymmdd_only
-call :check_time_format
-if %TIME_VALID% equ 1 (
-    set "NAME_HH=%HH%"
-    set "NAME_MM=%MM%"
-    set "NAME_SS=%SS%"
-)
-exit /b
-
-:try_yyyymmdd_only
-:: --- Попытка 3: формат YYYY-MM-DD_ (только дата)
-echo(%BASE%| findstr "^[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]_" >nul
-if errorlevel 1 exit /b
-set "NAME_Y=%BASE:~0,4%"
-set "NAME_M=%BASE:~5,2%"
-set "NAME_D=%BASE:~8,2%"
-call :check_date_format
-if errorlevel 1 exit /b
-exit /b
-
-:try_yyyymmdd_no_sep
-:: --- Попытка 4: формат YYYY-MM-DDhhmmss (без разделителя)
-echo(%BASE%| findstr "^[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]" >nul
-if errorlevel 1 exit /b
-set "NAME_Y=%BASE:~0,4%"
-set "NAME_M=%BASE:~5,2%"
-set "NAME_D=%BASE:~8,2%"
-set "HMSCAND=%BASE:~10,6%"
-call :check_date_format
-if errorlevel 1 exit /b
-call :check_time_format
-if %TIME_VALID% equ 1 (
-    set "NAME_HH=%HH%"
-    set "NAME_MM=%MM%"
-    set "NAME_SS=%SS%"
-)
-exit /b
-
-
-
 
 
 :check_date_format
-set "DATE_VALID=0"
-:: Проверяем, что Y - 4 цифры, M и D - 2 цифры
-echo(%NAME_Y%| findstr /r "^[0-9][0-9][0-9][0-9]$" >nul
-if errorlevel 1 exit /b
-echo(%NAME_M%| findstr /r "^[0-9][0-9]$" >nul
-if errorlevel 1 exit /b
-echo(%NAME_D%| findstr /r "^[0-9][0-9]$" >nul
-if errorlevel 1 exit /b
-:: Диапазоны
-set "Y_CHK=" & set "M_CHK=" & set "D_CHK="
+:: Проверяем, что первые символы - цифры (минимальная защита)
+if "%NAME_Y:~0,1%" GTR "9" exit /b
+if "%NAME_Y:~0,1%" LSS "0" exit /b
+if "%NAME_M:~0,1%" GTR "9" exit /b
+if "%NAME_M:~0,1%" LSS "0" exit /b
+if "%NAME_D:~0,1%" GTR "9" exit /b
+if "%NAME_D:~0,1%" LSS "0" exit /b
+
+set "Y_CHK="
+set "M_CHK="
+set "D_CHK="
+
+:: Обход ошибки восьмеричных чисел: 08 -> 10008 %% 10000 = 8
 set /a Y_CHK=1%NAME_Y% %% 10000
 set /a M_CHK=1%NAME_M% %% 100
 set /a D_CHK=1%NAME_D% %% 100
+
 :: Минимальный и максимальный год
-if %Y_CHK% lss 1900 exit /b
-if %Y_CHK% gtr 2100 exit /b
-if %M_CHK% lss 1 exit /b
-if %M_CHK% gtr 12 exit /b
-if %D_CHK% lss 1 exit /b
-if %D_CHK% gtr 31 exit /b
+if %Y_CHK% LSS 1900 exit /b
+if %Y_CHK% GTR 2100 exit /b
+if %M_CHK% LSS 1 exit /b
+if %M_CHK% GTR 12 exit /b
+if %D_CHK% LSS 1 exit /b
+if %D_CHK% GTR 31 exit /b
+
 set "DATE_VALID=1"
 exit /b
 
@@ -698,29 +682,46 @@ exit /b
 
 
 
+
 :check_time_format
 :: Извлечение часов/минут/секунд из 6-символьной строки (например, 081234)
-:: Проблема: set /a не принимает "08" как число (ведь 08 - ошибка в восьмеричной системе)
-:: Решение: приписываем 100 спереди - "10008", берём mod 100 (делим на 100) - 8
-:: Так обходим ведущие нули без if и без ошибок
-:: Пример: %HMSCAND:~0,2% = "08" - 10008 %% 100 = 8
-set "TIME_VALID=0"
-:: Проверяем, что HMSCAND - ровно 6 цифр
-echo(%HMSCAND%|findstr /r "^[0-9][0-9][0-9][0-9][0-9][0-9]$" >nul
-if errorlevel 1 exit /b
+:: Проверяем длину - должно быть минимум 6 символов
+if "%HMSCAND:~5,1%"=="" exit /b
+
+:: Минимальная проверка - первый символ каждой пары должен быть цифрой
+if "%HMSCAND:~0,1%" GTR "9" exit /b
+if "%HMSCAND:~0,1%" LSS "0" exit /b
+if "%HMSCAND:~2,1%" GTR "9" exit /b
+if "%HMSCAND:~2,1%" LSS "0" exit /b
+if "%HMSCAND:~4,1%" GTR "9" exit /b
+if "%HMSCAND:~4,1%" LSS "0" exit /b
+
 :: Извлекаем HH, MM, SS с обходом ведущих нулей
-set "HH_CHK=" & set "MM_CHK=" & set "SS_CHK="
-set /a HH_CHK=100%HMScand:~0,2% %% 100
-set /a MM_CHK=100%HMScand:~2,2% %% 100
-set /a SS_CHK=100%HMScand:~4,2% %% 100
+set "HH_CHK="
+set "MM_CHK="
+set "SS_CHK="
+
+:: Обход ошибки восьмеричных чисел - 08 -> 10008 %% 100 = 8
+:: Проблема - set /a не принимает "08" как число (ведь 08 - ошибка в восьмеричной системе)
+:: Решение - приписываем 100 спереди - "10008", берём mod 100 (делим на 100) - 8
+:: Так обходим ведущие нули без if и без ошибок. Пример - %HMSCAND:~0,2% = "08" - 10008 %% 100 = 8
+set /a HH_CHK=100%HMSCAND:~0,2% %% 100
+set /a MM_CHK=100%HMSCAND:~2,2% %% 100
+set /a SS_CHK=100%HMSCAND:~4,2% %% 100
+
 :: Проверяем диапазоны
-if %HH_CHK% gtr 23 exit /b
-if %MM_CHK% gtr 59 exit /b
-if %SS_CHK% gtr 59 exit /b
+if %HH_CHK% GTR 23 exit /b
+if %MM_CHK% GTR 59 exit /b
+if %SS_CHK% GTR 59 exit /b
+
 :: Форматируем с ведущими нулями
-set "HH=%HH_CHK%" & if %HH_CHK% lss 10 set "HH=0%HH_CHK%"
-set "MM=%MM_CHK%" & if %MM_CHK% lss 10 set "MM=0%MM_CHK%"
-set "SS=%SS_CHK%" & if %SS_CHK% lss 10 set "SS=0%SS_CHK%"
+set "HH=%HH_CHK%"
+if %HH_CHK% LSS 10 set "HH=0%HH_CHK%"
+set "MM=%MM_CHK%"
+if %MM_CHK% LSS 10 set "MM=0%MM_CHK%"
+set "SS=%SS_CHK%"
+if %SS_CHK% LSS 10 set "SS=0%SS_CHK%"
+
 set "TIME_VALID=1"
 exit /b
 
@@ -728,93 +729,125 @@ exit /b
 
 
 
+
 :build_name
+:: --- Формирование YMDHMS ---
+:: К этому моменту Y, M, D, HH, MM, SS гарантированно валидны:
+::  - из EXIF (с проверкой диапазонов)
+::  - из имени (через check_date_format и check_time_format )
+::  - из DLM (через VBS)
 set "YMDHMS=%Y%-%M%-%D%_%HH%%MM%%SS%"
 
-:: === Очистка SUFFIX: пробелы, __, дубли даты/времени ===
-:clean_suffix
-if not defined SUFFIX goto skip_suffix_processing
-:clean_loop
-:: Удаляем _ и пробелы только в начале
-if "%SUFFIX:~0,1%"=="_" set "SUFFIX=%SUFFIX:~1%" & goto clean_loop
-if "%SUFFIX:~0,1%"==" " set "SUFFIX=%SUFFIX:~1%" & goto clean_loop
-:: Удаляем _ и пробелы только в конце
-if "%SUFFIX:~-1%"=="_" set "SUFFIX=%SUFFIX:~0,-1%" & goto clean_loop
-if "%SUFFIX:~-1%"==" " set "SUFFIX=%SUFFIX:~0,-1%" & goto clean_loop
-:: Заменяем двойные подчёркивания на одинарные
-set "OLD=%SUFFIX%"
-set "SUFFIX=%SUFFIX:__=_%"
-if not "%SUFFIX%"=="%OLD%" goto clean_loop
+:: Удаление исходных "дублей" - дата + 1 символ (любой разделитель), затем время
+if "%BASE:~0,10%"=="%Y%-%M%-%D%" set "BASE=%BASE:~11%"
+if "%BASE:~0,6%"=="%HH%%MM%%SS%" set "BASE=%BASE:~6%"
 
-:: --- Удаление дублирования времени HHMMSS ---
-set "TIME_PART=%HH%%MM%%SS%"
-if "%SUFFIX:~0,6%"=="%TIME_PART%" (
-    set "SUFFIX=%SUFFIX:~6%"
-    goto clean_suffix
-)
+:: Обработка первого символа BASE: только одна ветка срабатывает
+if "%BASE:~0,1%"=="_" goto plain_base
+if "%BASE:~0,1%"==" " set "BASE=_%BASE:~1%" & goto plain_base
+if "%BASE:~0,1%"=="-" set "BASE=_%BASE:~1%" & goto plain_base
+:: По умолчанию - добавляем _ между датой и именем
+set "NAMEBASE=%YMDHMS%_%BASE%"
+goto after_base
+:plain_base
+set "NAMEBASE=%YMDHMS%%BASE%"
+:after_base
 
-:: --- Удаление дублирования даты YYYYMMDD ---
-set "DT_PART=%Y%%M%%D%"
-if "%SUFFIX:~0,8%"=="%DT_PART%" (
-    set "SUFFIX=%SUFFIX:~8%"
-    goto clean_suffix
-)
+:: Если имя не изменилось - пропускаем
+set "FINALNAME=%NAMEBASE%%EXT%"
+if /i "%FINALNAME%"=="%FN%" goto file_skip
+if not exist "%FINALNAME%" goto do_rename
 
-:: --- Удаление дублирования даты YYYY-MM-DD ---
-set "DATE_PART=%YMDHMS:~0,10%"
-if "%SUFFIX:~0,10%"=="%DATE_PART%" (
-    set "SUFFIX=%SUFFIX:~11%"
-    goto clean_suffix
-)
-
-:skip_suffix_processing
-
-:: --- Проверка Progressive JPEG ---
-if not defined ISJPG goto after_check_prog
-:: Проверяем, есть ли _PROGR в SUFFIX - чтобы не добавлять дважды
-set "SUFFIX_PROGR="
-echo(%SUFFIX%| findstr /i "_PROGR$" >nul
-if not errorlevel 1 set "SUFFIX_PROGR=1"
-if defined SUFFIX_PROGR goto after_check_prog
-set "PJPG=0"
-"%EX%" -pS "%FN%" | find "SOF2" >nul
-if not errorlevel 1 set "PJPG=1"
-if %PJPG% equ 1 (
-    set "SUFFIX_PROGR=1"
-    set "SUFFIX=%SUFFIX%_PROGR"
-    set /a CNTP+=1
-)
-:after_check_prog
-
-:: --- Формируем новое имя ---
-set "NEWNAME=%YMDHMS%"
-if defined SUFFIX set "NEWNAME=%NEWNAME%_%SUFFIX%"
-set "NEWNAME=%NEWNAME%%EXT%"
-
-:: --- Если имя уже правильное - отмечаем и выходим через общую метку ---
-if /i "%NEWNAME%"=="%FN%" (
-    echo(%FN% - пропущен, переименование не требуется.
-    echo(
-    exit /b
-)
-
-:: --- Проверка на конфликт имён ---
-if not exist "%NEWNAME%" goto do_rename
-
+:: Если имя занято - ищем _1, _2 и т.д. до свободного
 set "I=1"
 :conflict_loop
-set "TESTNAME=%YMDHMS%"
-if defined SUFFIX set "TESTNAME=%TESTNAME%_%SUFFIX%"
-set "TESTNAME=%TESTNAME%_%I%%EXT%"
-if exist "%TESTNAME%" (
+set "FINALNAME=%NAMEBASE%_%I%%EXT%"
+if exist "%FINALNAME%" (
     set /a I+=1
     goto conflict_loop
 )
-set "NEWNAME=%TESTNAME%"
 
 :do_rename
-ren "%FN%" "%NEWNAME%"
-echo(%FN% -^> %NEWNAME%
-echo(
+ren "%FN%" "%FINALNAME%"
+echo(%FN% -^> %FINALNAME%
 set /a CNT+=1
+exit /b
+
+
+
+
+
+
+:load_dlm_vars
+call :get_dlm
+set "Y=%Y_DLM%"
+set "M=%M_DLM%"
+set "D=%D_DLM%"
+set "HH=%HH_DLM%"
+set "MM=%MM_DLM%"
+set "SS=%SS_DLM%"
+exit /b
+
+
+
+
+
+
+:get_dlm
+:: Извлечение DateLastModified через VBS, независимо от локали ОС
+:: Проверяем задан ли уже год - это защита от повторного вызова VBS
+if defined Y_DLM exit /b
+for /f "tokens=1-6" %%a in ('cscript //nologo "%DLMV%" "%FN%"') do (
+    set "Y_DLM=%%a"
+    set "M_DLM=%%b"
+    set "D_DLM=%%c"
+    set "HH_DLM=%%d"
+    set "MM_DLM=%%e"
+    set "SS_DLM=%%f"
+)
+exit /b
+
+
+
+
+
+
+:file_skip
+:: Единая точка выхода для всех случаев пропуска файла
+echo(%FN% - пропущен, переименование не требуется.
+exit /b
+:: === ЗАВЕРШЕНИЕ БЛОКА ПОДПРОГРАММ ===
+
+
+
+
+
+
+:: === ПРОДОЛЖЕНИЕ ОСНОВНОГО КОДА ===
+:done
+:: Метка done основного кода перемещена в конец, чтобы CMD "увидел" все метки подпрограмм до их вызова
+:: Это ограничение интерпретатора CMD - метки для вызова должны быть объявлены до их вызова.
+popd
+if exist "%DLMV%" del "%DLMV%"
+set "TXT_ALL="
+set "TXT_DTO="
+echo(
+echo(--- Готово ---
+if %CNT% gtr 0 set "TXT_ALL=Переименовано файлов: %CNT% из %CNTALL%"
+if %CNTT% gtr 0 set "TXT_DTO=Добавлено EXIF-дат в файлы: %CNTT%"
+if %CNT% gtr 0 echo(%TXT_ALL%
+if %CNTT% gtr 0 echo(%TXT_DTO%
+set "HF=%temp%\%CMDN%-hlp-%random%%random%.txt"
+set "VB=%temp%\%CMDN%-hlp-%random%%random%.vbs"
+>"%HF%" echo(%VRS%
+>>"%HF%" echo(%CMDN% закончил работу.
+>>"%HF%" echo(
+>>"%HF%" echo(%TXT_ALL%
+>>"%HF%" echo(
+>>"%HF%" echo(%TXT_DTO%
+>"%VB%" echo(With CreateObject("ADODB.Stream"):.Type=2:.Charset="cp866"
+>>"%VB%" echo(.Open:.LoadFromFile"%HF%":MsgBox .ReadText,,"%CMDN%":.Close:End With
+cscript //nologo "%VB%"
+del "%VB%" & del "%HF%"
+pause
 exit /b

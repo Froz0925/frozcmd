@@ -1,13 +1,13 @@
 @echo off
 set "DO=Video recode script"
-set "VRS=Froz %DO% v08.09.2025"
+set "VRS=Froz %DO% v29.09.2025"
 :: Перекодирование видеофайлов в уменьшенный размер с высокими настройками - для видеоархива
 
 
 :: === Блок: ЮЗЕР ===
 :: Высота кадра: 1 = уменьшить до 720, в том числе если после поворота высота > 720
 :: Пусто - уменьшить до 1080 (стандартный FullHD монитор), в том числе если после поворота высота > 1080.
-set "SCALE=1"
+set "SCALE="
 
 :: Уровень качества (меньше = лучше). Пусто - кодек выбирает сам (обычно выбирают среднее качество).
 :: Если пусто - для nvenc включается multipass и целевой битрейт 2.5М для 720 и 4.5М для 1080.
@@ -53,11 +53,15 @@ set "NAME_APPEND=_sm"
 
 :: Параметр скорости кодирования от вашего GPU/CPU - помогает скрипту вычислить примерное время кодирования.
 :: Расчёт опытным путём: (секунд кодирования / секунд видео) х 100. Пример: 0.3 -> ставим 30
-set "SPEED_NVENC=60"
+:: Статистика железок:
+:: GeForce RTX 5060 multipass: 720/30=20, 1080/30=40, 1080/50=70
+:: CPU i5-6400 libx265: 210 (autoCRF=35 720/50 3.7M), libx264: 180 (autoCRF=30 720/50 7.3M)
+set "SPEED_NVENC=70"
 set "SPEED_AMF=50"
 set "SPEED_QSV=50"
-set "SPEED_LIBX264=10"
-set "SPEED_LIBX265=500"
+set "SPEED_LIBX265=210"
+set "SPEED_LIBX264=150"
+
 
 
 
@@ -79,6 +83,10 @@ if "%~1" == "" (
     pause
     exit /b
 )
+
+set "ATTR=%~a1"
+if /i "%ATTR:~0,1%"=="d" echo(Папки не обрабатываются, выходим.& echo(& pause & exit /b
+
 :: Проверка наличия утилит
 set "FFM=%~dp0bin\ffmpeg.exe"
 set "FFP=%~dp0bin\ffprobe.exe"
@@ -89,24 +97,44 @@ if not exist "%FFP%" echo("%FFP%" не найден, выходим.& echo(& pau
 if not exist "%MI%" echo("%MI%" не найден, выходим.& echo(& pause & exit /b
 if not exist "%MKVP%" echo("%MKVP%" не найден, выходим.& echo(& pause & exit /b
 
+:: Проверка длины аргументов CMD через VBS
+:: так как в CMD нет безопасного способа парсить строку с &)(
+set "CTV=%temp%\%CMDN%-len-%random%%random%.vbs"
+set "CTO=%temp%\%CMDN%-out-%random%%random%.txt"
+:: Подсчёт длины всех аргументов с пробелами - для проверки лимита CMD (8191)
+:: Массив + Join, т.к. WScript.Arguments не совместим с Join напрямую
+:: Проверка на "%~1"=="" выше гарантирует a.Count >= 1 , значит ReDim безопасен
+>"%CTV%" echo(Set a=WScript.Arguments.Unnamed:ReDim b(a.Count-1)
+>>"%CTV%" echo(For i=0To a.Count-1:b(i)=a(i):Next:WScript.Echo Len(Join(b," "))
+cscript //nologo "%CTV%" %* >"%CTO%"
+set "ALEN=0"
+set /p "ALEN=" <"%CTO%"
+del "%CTV%" & del "%CTO%"
+if %ALEN% GTR 7500 (
+    echo(ВНИМАНИЕ: слишком длинная команда.
+    echo(Общая длина путей к файлам больше 7500 символов - возможна потеря данных.
+    echo(Ограничение Windows - 8191 символ, остальное будет обрезано. Выходим.
+    echo(
+    pause
+    exit /b
+)
+
 :: Проверка: поддерживает ли GPU выбранный GPU-кодек
 if /i "%CODEC:~0,5%" == "libx2" goto SKIP_GCHK
+set "GLOGU=%temp%\%CMDN%-gpuchk-%random%%random%"
+:: Создаём виртуальный пустой видеофайл длиной в 1 секунду и пытаемся сжать кодеком
+"%FFM%" -hide_banner -v error -f lavfi -i nullsrc -c:v %CODEC% -t 1 -f null - 2>"%GLOGU%"
 :: Конвертируем UTF-8 лог ffmpeg в OEM (cp866) для корректной работы findstr
 :: ffmpeg пишет stderr в UTF-8, а findstr в cmd работает только с OEM
-set "GLOG=%temp%\%CMDN%-gpuchk-%random%%random%"
-set "GLOGOEM=%GLOG%-oem"
+set "GLOGE=%GLOG%-oem"
 set "VT=%GLOG%.vbs"
->"%VT%" echo(With CreateObject("ADODB.Stream"^)
->>"%VT%" echo(.Type=2:.Charset="UTF-8":.Open:.LoadFromFile "%GLOG%"
->>"%VT%" echo(s=.ReadText:.Close
->>"%VT%" echo(.Type=2:.Charset="cp866":.Open:.WriteText s
->>"%VT%" echo(.SaveToFile "%GLOGOEM%",2:.Close
->>"%VT%" echo(End With
-:: Создаём виртуальный пустой видеофайл длиной в 1 секунду и пытаемся сжать кодеком
-"%FFM%" -hide_banner -v error -f lavfi -i nullsrc -c:v %CODEC% -t 1 -f null - 2>"%GLOG%"
+>"%VT%"  echo(With CreateObject("ADODB.Stream")
+>>"%VT%" echo(.Type=2:.Charset="UTF-8":.Open:.LoadFromFile "%GLOGU%":s=.ReadText:.Close
+>>"%VT%" echo(.Type=2:.Charset="cp866":.Open:.WriteText s:.SaveToFile "%GLOGE%",2:.Close:End With
+)
 cscript //nologo "%VT%"
 :: Не отрывать строку findstr от if errorlevel
-findstr /i "Error while opening encoder" "%GLOGOEM%" >nul
+findstr /i "Error while opening encoder" "%GLOGE%" >nul
 if %ERRORLEVEL% EQU 0 (
     echo(Ошибка: Видеокарта или её драйвер не поддерживает выбранный GPU-кодек.
     echo(Обновите видеокарту и/или драйвер, или смените кодек в настройках скрипта. Выходим.
@@ -114,9 +142,7 @@ if %ERRORLEVEL% EQU 0 (
     pause
     exit /b
 )
-del "%GLOG%"
-del "%GLOGOEM%"
-del "%VT%"
+del "%VT%" & del "%GLOGE%" & del "%GLOGU%"
 :SKIP_GCHK
 
 :: Глобальные set перед LOOP
@@ -148,11 +174,16 @@ set "OUTPUT=%OUTPUT_DIR%%OUTPUT_NAME%.%OUTPUT_EXT%"
 :: Если больше нет файлов - выходим
 if "%FNF%" == "" goto END
 
+set "ATTR=%~a1"
+if /i not "%ATTR:~0,1%"=="d" goto FILEOK
+echo(%FNN% - папка, пропускаем.
+goto NEXT
+:FILEOK
 :: Временное имя OEM-лога для текущего видеофайла - используем дату, а не %random%.
 :: Чтобы не зависеть от локали Windows берём текущую дату-время через VBS, 
 :: а не через %date% %time%. Формат: ГГГГ-ММ-ДД_ЧЧММСС
-set "TV=%temp%\%~n0-dtmp-%random%%random%.vbs"
->"%TV%" echo(s=Year(Now)^&"-"^&Right("0"^&Month(Now),2)^&"-"
+set "TV=%temp%\%CMDN%-dtmp-%random%%random%.vbs"
+>"%TV%"  echo(s=Year(Now)^&"-"^&Right("0"^&Month(Now),2)^&"-"
 >>"%TV%" echo(s=s^&Right("0"^&Day(Now),2)
 >>"%TV%" echo(s=s^&"_"^&Right("0"^&Hour(Now),2)^&Right("0"^&Minute(Now),2)
 >>"%TV%" echo(s=s^&Right("0"^&Second(Now),2):WScript.Echo s
@@ -174,10 +205,10 @@ if not exist "%OUTPUT_DIR%logs" md "%OUTPUT_DIR%logs"
 :: Проверяем что конечный файл уже существует и ненулевого размера
 if not exist "%OUTPUT%" goto DONE_SIZE_CHK
 for %%F in ("%OUTPUT%") do set SIZE=%%~zF
-if %SIZE% EQU 0 (
-    del "%OUTPUT%"
-    goto DONE_SIZE_CHK
-)
+if %SIZE% GTR 0 goto EXIST
+del "%OUTPUT%"
+goto DONE_SIZE_CHK
+:EXIST
 echo("%OUTPUT_NAME%" уже существует, пропускаем.
 echo(
 goto NEXT
@@ -348,7 +379,8 @@ if not defined ROTATION goto ROTATE_DONE
 
 :: Кодеки *qsv не поддерживают фильтр transpose. User-ROTATION будет проигнорирован.
 if /i "%CODEC:~-3%" == "qsv" (
-    >>"%LOG%" echo([WARNING] %DATE% %TIME:~0,8% Кодек %CODEC% не поддерживает ключ transpose. Игнорируем User-Rotation.
+    >>"%LOG%" echo([WARNING] %DATE% %TIME:~0,8% Кодек %CODEC% не поддерживает ключ transpose.
+    >>"%LOG%" echo([WARNING] %DATE% %TIME:~0,8% Не применяем User-Rotation.
     >>"%LOG%" echo([WARNING] %DATE% %TIME:~0,8% Поверните видео до кодирования или смените кодек.
     goto ROTATE_DONE
 )
@@ -372,7 +404,6 @@ if "%ROTATION%" == "180" (
 )
 
 :ROTATE_DONE
->>"%LOG%" echo([INFO] %DATE% %TIME:~0,8% Итоговая высота кадра после всех поворотов: %SRC_H%
 
 
 
@@ -388,23 +419,25 @@ if not defined SCALE goto CHECK_SCALE_EMPTY
 :: Используется для принятия решения о масштабировании.
 
 :: Режим SCALE=1: уменьшаем до 720, если высота > 720
->>"%LOG%" echo([INFO] %DATE% %TIME:~0,8% Режим SCALE=1: высота после поворота %SRC_H% -
 if %SRC_H% LEQ 720 (
-    >>"%LOG%" echo([INFO] 720 или менее - не масштабируем.
+    >>"%LOG%" echo([INFO] %DATE% %TIME:~0,8% Задан SCALE=1, высота после поворота ^(если он был^):
+    >>"%LOG%" echo([INFO] %DATE% %TIME:~0,8% %SRC_H% - 720 или менее - не масштабируем.
     goto SCALE_DONE
 )
->>"%LOG%" echo([INFO] %DATE% %TIME:~0,8% более 720 - масштабируем до 720
+>>"%LOG%" echo([INFO] %DATE% %TIME:~0,8% Задан SCALE=1: высота после поворота ^(если он был^):
+>>"%LOG%" echo([INFO] %DATE% %TIME:~0,8% %SRC_H% - масштабируем до 720.
 set "SCALE_EXPR=scale=-2:720"
 goto SCALE_DONE
 
 :: Режим SCALE не задан: уменьшаем до 1080, если высота > 1080
 :CHECK_SCALE_EMPTY
->>"%LOG%" echo([INFO] %DATE% %TIME:~0,8% Режим SCALE не задан: высота после поворота %SRC_H% -
 if %SRC_H% LEQ 1080 (
-    >>"%LOG%" echo([INFO] %DATE% %TIME:~0,8% 1080 или менее - не масштабируем.
+    >>"%LOG%" echo([INFO] %DATE% %TIME:~0,8% SCALE не задан, высота после поворота ^(если он был^):
+    >>"%LOG%" echo([INFO] %DATE% %TIME:~0,8% %SRC_H% - 1080 или менее - не масштабируем.
     goto SCALE_DONE
 )
->>"%LOG%" echo([INFO] больше 1080 - масштабируем до 1080.
+>>"%LOG%" echo([INFO] %DATE% %TIME:~0,8% SCALE не задан: высота после поворота ^(если он был^):
+>>"%LOG%" echo([INFO] %DATE% %TIME:~0,8% %SRC_H% - масштабируем до 1080.
 set "SCALE_EXPR=scale=-2:1080"
 :SCALE_DONE
 
@@ -424,12 +457,12 @@ set "SCALE_EXPR=scale=-2:1080"
 
 :: Пропускаем анализ FPS, если видео чересстрочное, так как в нём не бывает VFR
 if /i not "%FIELD_ORDER%" == "progressive" (
-    >>"%LOG%" echo([INFO] %DATE% %TIME:~0,8% Обнаружено чересстрочное видео. Пропускаем анализ FPS VFR.
+    >>"%LOG%" echo([INFO] %DATE% %TIME:~0,8% Обнаружено чересстрочное видео. Пропускаем анализ FPS.
     goto FPS_DONE
 )
 
 if defined FPS (
-    >>"%LOG%" echo([INFO] %DATE% %TIME:~0,8% FPS задан принудительно: %FPS%, пропускаем его обработку
+    >>"%LOG%" echo([INFO] %DATE% %TIME:~0,8% FPS задан принудительно: %FPS%. Пропускаем его обработку.
     goto FPS_DONE
 )
 
@@ -437,17 +470,11 @@ if not defined R_FPS (
     >>"%LOG%" echo([INFO] %DATE% %TIME:~0,8% Не удалось извлечь r_frame_rate - анализ VFR пропущен
     goto FPS_DONE
 )
-:: Эту проверку оставляем только для лога, так как если нет R_FPS, то и не с чем сравнивать
-if not defined A_FPS (
-    >>"%LOG%" echo([INFO] %DATE% %TIME:~0,8% Не удалось извлечь avg_frame_rate - анализ VFR пропущен
-    goto FPS_DONE
-)
 
 :: Если r_frame_rate == avg_frame_rate - это CFR, ничего не делаем
 if "%R_FPS%" == "%A_FPS%" goto FPS_DONE
 
 :: Если дошли сюда - значит: progressive, R/A_FPS есть, но не равны -> VFR
->>"%LOG%" echo([INFO] %DATE% %TIME:~0,8% Обнаружен FPS VFR. Извлекаем max frame rate из mediainfo
 set "MAX_FPS="
 set "TMPMI=%temp%\%CMDN%-mi-fps-%random%%random%.txt"
 "%MI%" --Inform="Video;%%FrameRate_Maximum%%" "%FNF%" >"%TMPMI%"
@@ -458,8 +485,6 @@ if not defined MAX_FPS (
     goto FPS_DONE
 )
 
->>"%LOG%" echo([INFO] %DATE% %TIME:~0,8% Извлечен max frame rate: %MAX_FPS%
-
 :: Оставляем только целые значения FPS
 for /f "tokens=1 delims=." %%m in ("%MAX_FPS%") do set "MAX_FPS=%%m"
 
@@ -469,7 +494,7 @@ if %MAX_FPS% GTR 25 set "FPS=30"
 :: 35 - порог для VFR-файлов с например ~31.4 fps, чтобы выбрать 50 fps вместо 30.
 if %MAX_FPS% GTR 35 set "FPS=50"
 if %MAX_FPS% GTR 50 set "FPS=60"
->>"%LOG%" echo([INFO] %DATE% %TIME:~0,8% По диапазонам установлен FPS CFR: %FPS%
+>>"%LOG%" echo([INFO] %DATE% %TIME:~0,8% Найден переменный FPS. Max Frame Rate: %MAX_FPS%. Установлен FPS: %FPS%
 :FPS_DONE
 
 
@@ -496,7 +521,6 @@ if /i "%PROFILE%" == "main" (
 )
 :PROFILE_DONE
 >>"%LOG%" echo([INFO] %DATE% %TIME:~0,8% Установлен профиль кодирования: %USE_PROFILE%
->>"%LOG%" echo([INFO] %DATE% %TIME:~0,8% Установлен формат пикселей: %PIX_FMT_ARGS%
 
 
 
@@ -554,7 +578,6 @@ if not defined FILTER_LIST (
     goto VF_DONE
 )
 set "VF=-vf "%FILTER_LIST%""
->>"%LOG%" echo([INFO] %DATE% %TIME:~0,8% Видеофильтр: %VF%
 :VF_DONE
 
 
@@ -716,20 +739,17 @@ echo(---
 :: %LOGE% - входной OEM-лог, %LOGU% - выходной UTF-8-лог.
 :: Пути должны быть без кириллицы из-за разных кодировок CMD и VBS
 :: Переходим в папку Logs
-set "VT=%temp%\%CMDN%-oem2utf-%random%%random%.vbs"
 pushd "%OUTPUT_DIR%logs"
->"%VT%" echo(With CreateObject("ADODB.Stream"^)
->>"%VT%" echo(.Type=2:.Charset="cp866":.Open:.LoadFromFile "%LOGE%"
->>"%VT%" echo(s=.ReadText:.Close
->>"%VT%" echo(.Type=2:.Charset="UTF-8":.Open:.WriteText s
->>"%VT%" echo(.SaveToFile "%LOGU%",2:.Close
->>"%VT%" echo(End With
+set "VT=%temp%\%CMDN%-oem2utf-%random%%random%.vbs"
+>"%VT%"  echo(With CreateObject("ADODB.Stream")
+>>"%VT%" echo(.Type=2:.Charset="cp866":.Open:.LoadFromFile "%LOGE%":s=.ReadText:.Close
+>>"%VT%" echo(.Type=2:.Charset="UTF-8":.Open:.WriteText s:.SaveToFile "%LOGU%",2:.Close:End With
 cscript //nologo "%VT%"
 del "%LOGE%"
 if exist "%LOGN%" del "%LOGN%"
 ren "%LOGU%" "%LOGN%"
-popd
 del "%VT%"
+popd
 
 :: Переход к следующему файлу
 :NEXT

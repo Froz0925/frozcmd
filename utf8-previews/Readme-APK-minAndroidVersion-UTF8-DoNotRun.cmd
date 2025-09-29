@@ -2,7 +2,7 @@
 set "IN=.apk"
 set "DO=APK min version extract"
 title %DO%
-set "VRS=Froz %DO% v27.08.2025"
+set "VRS=Froz %DO% v10.09.2025"
 echo(%VRS%
 echo(
 set "CMDN=%~n0"
@@ -109,7 +109,7 @@ if exist "%TMPF%" del "%TMPF%"
 if not defined HAS_DST (
     echo(
     echo(Ни одного APK-файла не обработано.
-    echo(Лог не создан, старый файл лога (если он был) не изменён.
+    echo(Лог не создан, старый файл лога, если он был ранее - не изменён.
     echo(
     pause
     exit /b
