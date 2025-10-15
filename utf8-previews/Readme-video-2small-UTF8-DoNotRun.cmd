@@ -1,101 +1,133 @@
 @echo off
+:: Перекодирование видеофайлов в уменьшенный размер с высоким качеством
 set "DO=Video recode script"
-set "VRS=Froz %DO% v29.09.2025"
-:: Перекодирование видеофайлов в уменьшенный размер с высокими настройками - для видеоархива
-
-
-:: === Блок: ЮЗЕР ===
-:: Высота кадра: 1 = уменьшить до 720, в том числе если после поворота высота > 720
-:: Пусто - уменьшить до 1080 (стандартный FullHD монитор), в том числе если после поворота высота > 1080.
-set "SCALE="
-
-:: Уровень качества (меньше = лучше). Пусто - кодек выбирает сам (обычно выбирают среднее качество).
-:: Если пусто - для nvenc включается multipass и целевой битрейт 2.5М для 720 и 4.5М для 1080.
-:: Лучше устанавливать CRF принудительно: nvenc: 18-30, amf/qsv: 1-51 (режим cqp), libx264/5: 18-28.
-:: Для hevc_nvenc при 30fps H720 CRF26 = 4,5 мбит, H1080 CRF32 = 4,5 мбит.
-:: По умолчанию hevc_nvenc ставит: H720 ~CRF32 = 2,5 мбит, H1080 ~CRF38 = 2 мбит.
-set "CRF="
-
-:: Аудио: уменьшить размер: set "AUDIO_ARGS=-c:a libopus -b:a 128k"
-:: Пусто или закомментировать (::) - аудио копируется без изменений
-set "AUDIO_ARGS=-c:a libopus -b:a 128k"
-
-:: Принудительный поворот (transpose): -90 = по часовой, 90 = против часовой, 180.
-:: Если не задано - берётся из тега поворота (только MP4/MOV), если он там есть.
-:: Заданный здесь поворот добавляется к тегу из файла. Кодек *qsv не поддерживает ключ transpose.
-set "ROTATION="
-
-:: Видеокодек:
-:: NVIDIA GPU: hevc_nvenc (рекомендуемый) и h264_nvenc.
-::             Требуется GeForce GTX 950+ (Maxwell 2nd Gen GM20x) (2014+) и драйвер Nvidia v.570+.
-:: AMD GPU:    hevc_amf и h264_amf - Radeon RX 400 / R9 300 серии и новее (2015+)
-::             Требуется драйвер AMD Adrenalin Edition (не Microsoft)
-:: Intel GPU:  hevc_qsv и h264_qsv - Intel Skylake+ (2015+), драйвер Intel HD + Media Feature Pack
-:: CPU:        libx265 - очень медленно, libx264 - медленно
-:: Примечание: HEVC - меньше размер, выше качество, H.264 - совместимость.
-set "CODEC=hevc_nvenc"
-
-:: Профиль кодирования для HEVC: main10 (10 bit) и main (8 bit). Для H.264 - всегда будет установлен high.
-:: Если не задано - устанавливается main10 если поддерживается кодеком.
-set "PROFILE=main10"
-
-:: Частота кадров. Если пусто - берётся из исходника.
-:: Плавающий FPS (VFR) преобразуется в стандартный ближайший по значению (CFR), округление вверх
-:: Примеры: 24, 25, 30, 50, 60, 24000/1001 (~23.976), 30000/1001 (~29.97)
-:: Для чересстрочного видео (MPEG2 50/60i) - игнорируется, деинтерлейсер преобразует в 50/60p.
-set "FPS="
-
-:: Контейнер: mkv - больше функций, mp4 - лучше для qsv/amf и проигрывателей.
-set "OUTPUT_EXT=mkv"
-
-:: Суффикс к имени: например _sm -> имя_sm.mkv
-set "NAME_APPEND=_sm"
-
-:: Параметр скорости кодирования от вашего GPU/CPU - помогает скрипту вычислить примерное время кодирования.
-:: Расчёт опытным путём: (секунд кодирования / секунд видео) х 100. Пример: 0.3 -> ставим 30
-:: Статистика железок:
-:: GeForce RTX 5060 multipass: 720/30=20, 1080/30=40, 1080/50=70
-:: CPU i5-6400 libx265: 210 (autoCRF=35 720/50 3.7M), libx264: 180 (autoCRF=30 720/50 7.3M)
-set "SPEED_NVENC=70"
-set "SPEED_AMF=50"
-set "SPEED_QSV=50"
-set "SPEED_LIBX265=210"
-set "SPEED_LIBX264=150"
-
-
-
-
-
+set "VRS=Froz %DO% v14.10.2025"
 
 :: === Блок: ПРОВЕРКИ ===
 title %DO%
 echo(%VRS%
 echo(
 set "CMDN=%~n0"
-:: Проверка наличия входных файлов
-if "%~1" == "" (
-    echo(Использование: Проверьте настройки в начале скрипта и при необходимости
-    echo(отредактируйте в редакторе с поддержкой кодировки OEM,
-    echo(например Блокнот с шрифтом Terminal, Notepad++, редакторы файловых менеджеров.
-    echo(
-    echo(Затем перетяните или вставьте видеофайлы на этот файл.
-    echo(
-    pause
-    exit /b
-)
-
-set "ATTR=%~a1"
-if /i "%ATTR:~0,1%"=="d" echo(Папки не обрабатываются, выходим.& echo(& pause & exit /b
 
 :: Проверка наличия утилит
 set "FFM=%~dp0bin\ffmpeg.exe"
 set "FFP=%~dp0bin\ffprobe.exe"
 set "MI=%~dp0bin\mediainfo.exe"
 set "MKVP=%~dp0bin\mkvpropedit.exe"
-if not exist "%FFM%" echo("%FFM%" не найден, выходим.& echo(& pause & exit /b
-if not exist "%FFP%" echo("%FFP%" не найден, выходим.& echo(& pause & exit /b
-if not exist "%MI%" echo("%MI%" не найден, выходим.& echo(& pause & exit /b
-if not exist "%MKVP%" echo("%MKVP%" не найден, выходим.& echo(& pause & exit /b
+if not exist "%FFM%" echo([!] "%FFM%"& goto NOU
+if not exist "%FFP%" echo([!] "%FFP%"& goto NOU
+if not exist "%MI%" echo([!] "%MI%"& goto NOU
+if not exist "%MKVP%" echo([!] "%MKVP%"& goto NOU
+goto CHECK_INI
+:NOU
+echo(не найден, выходим.
+echo(
+pause
+exit /b
+
+:CHECK_INI
+:: Проверка наличия ini-файла
+set "USER_INI=%CMDN%.ini"
+set "USER_INI_FULL=%~dp0%USER_INI%"
+if exist "%USER_INI_FULL%" goto SRC_CHK
+
+:: Если ini нет - создаём шаблон. Нельзя полный путь в VBS, поэтому pushd
+pushd "%~dp0"
+set "INIOEMW=%random%-inioemw"
+>"%INIOEMW%"  echo(Настройки Froz Video recode script (%CMDN%)
+>>"%INIOEMW%" echo(------------------------------------------------------------
+>>"%INIOEMW%" echo(
+>>"%INIOEMW%" echo(; Высота кадра: 1 = уменьшить до 720, пусто - уменьшить до 1080
+>>"%INIOEMW%" echo(; (в том числе если после поворота высота ^> 720/1080.
+>>"%INIOEMW%" echo(SCALE=
+>>"%INIOEMW%" echo(
+>>"%INIOEMW%" echo(; Уровень качества (меньше = лучше). Пусто - кодек выбирает сам (обычно среднее качество).
+>>"%INIOEMW%" echo(; Если пусто - для nvenc включается multipass и целевой битрейт 2.5M для 720 и 4.5M для 1080.
+>>"%INIOEMW%" echo(; Если устанавливать принудительно, то: nvenc: 18-30, libx264/5: 18-28.
+>>"%INIOEMW%" echo(; amf/qsv: 1-51 (18-28 дают качество, сравнимое с x264 CRF 23-26)
+>>"%INIOEMW%" echo(; Для hevc_nvenc при 30fps H720 CRF26 = 4,5 мбит, H1080 CRF32 = 4,5 мбит.
+>>"%INIOEMW%" echo(; По умолчанию hevc_nvenc поставит: H720 ~2 мбит, H1080 ~4 мбит.
+>>"%INIOEMW%" echo(CRF=
+>>"%INIOEMW%" echo(
+>>"%INIOEMW%" echo(; Аудио: уменьшить размер: set "AUDIO_ARGS=-c:a libopus -b:a 128k"
+>>"%INIOEMW%" echo(; Пусто или закомментировать - аудио копируется без изменений
+>>"%INIOEMW%" echo(AUDIO_ARGS=-c:a libopus -b:a 128k
+>>"%INIOEMW%" echo(
+>>"%INIOEMW%" echo(; Принудительный поворот (transpose): -90 = по часовой, 90 = против часовой, 180.
+>>"%INIOEMW%" echo(; Если не задано - берется из тега поворота (только MP4/MOV), если он там есть.
+>>"%INIOEMW%" echo(; Заданный здесь поворот добавляется к тегу из файла. Кодек *qsv не поддерживает ключ transpose.
+>>"%INIOEMW%" echo(ROTATION=
+>>"%INIOEMW%" echo(
+>>"%INIOEMW%" echo(; Видеокодек:
+>>"%INIOEMW%" echo(; NVIDIA: hevc_nvenc (рекомендуемый) и h264_nvenc.
+>>"%INIOEMW%" echo(;         Требуется GeForce GTX 950+ (Maxwell 2nd Gen GM20x) (2014+) и драйвер Nvidia v.570+.
+>>"%INIOEMW%" echo(; AMD:    hevc_amf и h264_amf - Radeon RX 400 / R9 300 серии и новее (2015+)
+>>"%INIOEMW%" echo(;         Требуется драйвер AMD Adrenalin Edition (не Microsoft)
+>>"%INIOEMW%" echo(; INTEL:  hevc_qsv и h264_qsv - Intel Skylake+ (2015+), драйвер Intel HD + Media Feature Pack
+>>"%INIOEMW%" echo(; CPU:    libx265 - очень медленно, libx264 - медленно
+>>"%INIOEMW%" echo(; Примечание: HEVC - меньше размер, выше качество, H.264 - совместимость.
+>>"%INIOEMW%" echo(CODEC=hevc_nvenc
+>>"%INIOEMW%" echo(
+>>"%INIOEMW%" echo(; Профиль кодирования для HEVC: main10 (10 bit) и main (8 bit).
+>>"%INIOEMW%" echo(; Для H.264 всегда будет установлен high.
+>>"%INIOEMW%" echo(; Если не задано - устанавливается main10 если поддерживается кодеком.
+>>"%INIOEMW%" echo(PROFILE=
+>>"%INIOEMW%" echo(
+>>"%INIOEMW%" echo(; Частота кадров. Если не задано - обрабатывается автоматически:
+>>"%INIOEMW%" echo(; обычное видео остается как есть, плавающий FPS приводится к 25/30/50/60 к/с,
+>>"%INIOEMW%" echo(; чересстрочное (50i/60i) преобразуется в 50p/60p (60p для 480i).
+>>"%INIOEMW%" echo(; Если плавность не нужна - установите 25/30.
+>>"%INIOEMW%" echo(; Примеры: 24, 25, 30, 50, 60, 24000/1001 (~23.976), 3000/1001 (~29.97)
+>>"%INIOEMW%" echo(FPS=
+>>"%INIOEMW%" echo(
+>>"%INIOEMW%" echo(; Контейнер: mkv - больше функций, mp4 - лучше для qsv/amf и проигрывателей.
+>>"%INIOEMW%" echo(OUTPUT_EXT=mkv
+>>"%INIOEMW%" echo(
+>>"%INIOEMW%" echo(; Суффикс к имени: например _sm -^> имя_sm.mkv
+>>"%INIOEMW%" echo(NAME_APPEND=_sm
+>>"%INIOEMW%" echo(
+>>"%INIOEMW%" echo(; Параметр скорости кодирования от вашего GPU/CPU.
+>>"%INIOEMW%" echo(; Помогает скрипту вычислить примерное время кодирования.
+>>"%INIOEMW%" echo(; Расчет опытным путем: (секунд кодирования / секунд видео) x 100. Пример: 0.3 -^> ставим 30
+>>"%INIOEMW%" echo(; Статистика железок:
+>>"%INIOEMW%" echo(; GeForce RTX 5060 multipass: 720/30=20, 1080/30=40, 1080/50=70
+>>"%INIOEMW%" echo(; CPU i5-6400 libx265: 210 (autoCRF=35 720/50 3.7M), libx264: 180 (autoCRF=30 720/50 7.3M)
+>>"%INIOEMW%" echo(SPEED_NVENC=70
+>>"%INIOEMW%" echo(SPEED_AMF=50
+>>"%INIOEMW%" echo(SPEED_QSV=50
+>>"%INIOEMW%" echo(SPEED_LIBX265=210
+>>"%INIOEMW%" echo(SPEED_LIBX264=150
+:: Конвертация OEM в UTF-8
+set "VTO=%temp%\%CMDN%-oem2utf-%random%.vbs"
+>"%VTO%"  echo(With CreateObject("ADODB.Stream")
+>>"%VTO%" echo(.Type=2:.Charset="cp866":.Open:.LoadFromFile "%INIOEMW%":s=.ReadText:.Close
+>>"%VTO%" echo(.Type=2:.Charset="UTF-8":.Open:.WriteText s:.SaveToFile "%USER_INI%",2:.Close:End With
+cscript //nologo "%VTO%"
+:: Удаление временных файлов и возврат в исходную папку
+del "%INIOEMW%" & del "%VTO%"
+popd
+echo([!] Файл настроек не найден - создан новый шаблон.
+echo(
+goto HELP
+
+:: Проверка наличия входных файлов
+:SRC_CHK
+if "%~1" == "" goto HELP
+goto FLD_CHK
+
+:HELP
+echo(Использование: При необходимости измените настройки в файле
+echo(%USER_INI_FULL%
+echo(редактором для Unicode TXT-файлов, например Блокнотом.
+echo(
+echo(Затем перетяните или вставьте видеофайлы на этот файл.
+echo(
+pause
+exit /b
+
+:FLD_CHK
+set "ATTR=%~a1"
+if /i "%ATTR:~0,1%"=="d" echo(Папки не обрабатываются, выходим.& echo(& pause & exit /b
 
 :: Проверка длины аргументов CMD через VBS
 :: так как в CMD нет безопасного способа парсить строку с &)(
@@ -119,6 +151,73 @@ if %ALEN% GTR 7500 (
     exit /b
 )
 
+:: Читаем ini-файл в переменные.
+:: Сброс переменных
+set "SCALE="
+set "CRF="
+set "AUDIO_ARGS="
+set "ROTATION="
+set "CODEC="
+set "PROFILE="
+set "FPS="
+set "OUTPUT_EXT="
+set "NAME_APPEND="
+set "SPEED_NVENC="
+set "SPEED_AMF="
+set "SPEED_QSV="
+set "SPEED_LIBX265="
+set "SPEED_LIBX264="
+:: Конвертация UTF-8 в OEM - нельзя полный путь в VBS, поэтому pushd
+pushd "%~dp0"
+set "INIOEMR=%random%-inioemr"
+set "VTU=%temp%\%CMDN%-utf2oem-%random%.vbs"
+>"%VTU%"  echo(With CreateObject("ADODB.Stream")
+>>"%VTU%" echo(.Type=2:.Charset="UTF-8":.Open:.LoadFromFile "%USER_INI%":s=.ReadText:.Close
+>>"%VTU%" echo(.Type=2:.Charset="cp866":.Open:.WriteText s:.SaveToFile "%INIOEMR%",2:.Close:End With
+cscript //nologo "%VTU%"
+del "%VTU%"
+:: Чтение ini-файла
+for /f "usebackq tokens=1* delims==" %%a in ("%INIOEMR%") do (
+    if "%%a"=="SCALE"               set "SCALE=%%b"
+    if "%%a"=="CRF"                 set "CRF=%%b"
+    if "%%a"=="AUDIO_ARGS"          set "AUDIO_ARGS=%%b"
+    if "%%a"=="ROTATION"            set "ROTATION=%%b"
+    if "%%a"=="CODEC"               set "CODEC=%%b"
+    if "%%a"=="PROFILE"             set "PROFILE=%%b"
+    if "%%a"=="FPS"                 set "FPS=%%b"
+    if "%%a"=="OUTPUT_EXT"          set "OUTPUT_EXT=%%b"
+    if "%%a"=="NAME_APPEND"         set "NAME_APPEND=%%b"
+    if "%%a"=="SPEED_NVENC"         set "SPEED_NVENC=%%b"
+    if "%%a"=="SPEED_AMF"           set "SPEED_AMF=%%b"
+    if "%%a"=="SPEED_QSV"           set "SPEED_QSV=%%b"
+    if "%%a"=="SPEED_LIBX265"       set "SPEED_LIBX265=%%b"
+    if "%%a"=="SPEED_LIBX264"       set "SPEED_LIBX264=%%b"
+)
+:: Удаление OEM-ini и возврат в исходную папку
+del "%INIOEMR%"
+popd
+
+:: Проверка ключевых user sets:
+if defined CODEC goto CHK_EXT
+echo([!] В %USER_INI_FULL%
+echo(не задан параметр CODEC - задайте. Выходим.
+echo(
+pause
+exit /b
+:CHK_EXT
+if not defined OUTPUT_EXT (
+    set "OUTPUT_EXT=mkv"
+    echo([!] В %USER_INI_FULL%
+    echo(не задано расширение выходных файлов - принимаем: %OUTPUT_EXT%
+    echo(
+)
+if not defined NAME_APPEND (
+    set "NAME_APPEND=_sm"
+    echo([!] В %USER_INI_FULL%
+    echo(не задан суффикс выходных файлов - принимаем: %NAME_APPEND%
+    echo(
+)
+
 :: Проверка: поддерживает ли GPU выбранный GPU-кодек
 if /i "%CODEC:~0,5%" == "libx2" goto SKIP_GCHK
 set "GLOGU=%temp%\%CMDN%-gpuchk-%random%%random%"
@@ -136,7 +235,7 @@ cscript //nologo "%VT%"
 :: Не отрывать строку findstr от if errorlevel
 findstr /i "Error while opening encoder" "%GLOGE%" >nul
 if %ERRORLEVEL% EQU 0 (
-    echo(Ошибка: Видеокарта или её драйвер не поддерживает выбранный GPU-кодек.
+    echo([!] Видеокарта или её драйвер не поддерживает выбранный GPU-кодек.
     echo(Обновите видеокарту и/или драйвер, или смените кодек в настройках скрипта. Выходим.
     echo(
     pause
@@ -234,7 +333,7 @@ set "FIELD_ORDER="
 set "R_FPS="
 set "A_FPS="
 set "ROTATION_TAG="
-set "HAS_VIDEO_TAGS="
+set "TAGBPS="
 set "LENGTH_SECONDS="
 set "FFP_VTMP=%temp%\%CMDN%-ffprobe-video-%random%%random%.txt"
 "%FFP%" -v error ^
@@ -246,7 +345,7 @@ set "FFP_VTMP=%temp%\%CMDN%-ffprobe-video-%random%%random%.txt"
     -of default=nw=1 ^
     "%FNF%" >"%FFP_VTMP%"
 :: Если найден видео-тег BPS - ставим флаг
-for /f "tokens=1,2 delims==" %%a in ('type "%FFP_VTMP%"') do (
+for /f "tokens=1* delims==" %%a in ('type "%FFP_VTMP%"') do (
     if "%%a"=="width"          set "SRC_W=%%b"
     if "%%a"=="height"         set "SRC_H=%%b"
     if "%%a"=="pix_fmt"        set "PIX_FMT=%%b"
@@ -254,7 +353,7 @@ for /f "tokens=1,2 delims==" %%a in ('type "%FFP_VTMP%"') do (
     if "%%a"=="r_frame_rate"   set "R_FPS=%%b"
     if "%%a"=="avg_frame_rate" set "A_FPS=%%b"
     if "%%a"=="rotation"       set "ROTATION_TAG=%%b"
-    if "%%a"=="TAG:BPS"        set "HAS_VIDEO_TAGS=1"
+    if "%%a"=="TAG:BPS"        set "TAGBPS=%%b"
     if "%%a"=="duration"       set "LENGTH_SECONDS=%%b"
 )
 del "%FFP_VTMP%"
@@ -454,27 +553,23 @@ set "SCALE_EXPR=scale=-2:1080"
 :: avg_frame_rate = средняя за видео
 :: Их несовпадение означает VFR FPS.
 :: FIELD_ORDER, R_FPS и A_FPS извлечены ранее
+:: Для interlaced - всегда устанавливать FPS.
 
-:: Пропускаем анализ FPS, если видео чересстрочное, так как в нём не бывает VFR
-if /i not "%FIELD_ORDER%" == "progressive" (
-    >>"%LOG%" echo([INFO] %DATE% %TIME:~0,8% Обнаружено чересстрочное видео. Пропускаем анализ FPS.
-    goto FPS_DONE
-)
-
+:: 1. Если FPS задан вручную - выходим сразу
 if defined FPS (
-    >>"%LOG%" echo([INFO] %DATE% %TIME:~0,8% FPS задан принудительно: %FPS%. Пропускаем его обработку.
+    >>"%LOG%" echo([INFO] %DATE% %TIME:~0,8% FPS задан принудительно: %FPS%.
     goto FPS_DONE
 )
 
-if not defined R_FPS (
-    >>"%LOG%" echo([INFO] %DATE% %TIME:~0,8% Не удалось извлечь r_frame_rate - анализ VFR пропущен
-    goto FPS_DONE
-)
+:: 2. Если видео чересстрочное - ставим FPS по умолчанию и выходим
+if /i not "%FIELD_ORDER%" == "progressive" goto HANDLE_INTERLACED
 
+:: 3. Дальше - только progressive видео
 :: Если r_frame_rate == avg_frame_rate - это CFR, ничего не делаем
+if not defined R_FPS goto FPS_DONE
 if "%R_FPS%" == "%A_FPS%" goto FPS_DONE
 
-:: Если дошли сюда - значит: progressive, R/A_FPS есть, но не равны -> VFR
+:: 4. Progressive + VFR - определяем MAX_FPS и ставим стандартный CFR
 set "MAX_FPS="
 set "TMPMI=%temp%\%CMDN%-mi-fps-%random%%random%.txt"
 "%MI%" --Inform="Video;%%FrameRate_Maximum%%" "%FNF%" >"%TMPMI%"
@@ -495,6 +590,14 @@ if %MAX_FPS% GTR 25 set "FPS=30"
 if %MAX_FPS% GTR 35 set "FPS=50"
 if %MAX_FPS% GTR 50 set "FPS=60"
 >>"%LOG%" echo([INFO] %DATE% %TIME:~0,8% Найден переменный FPS. Max Frame Rate: %MAX_FPS%. Установлен FPS: %FPS%
+goto FPS_DONE
+
+:HANDLE_INTERLACED
+:: Обработка interlaced (юзер-FPS не задан, FIELD_ORDER не progressive)
+set "FPS=50"
+if %SRC_H% == 480 set "FPS=60"
+>>"%LOG%" echo([INFO] %DATE% %TIME:~0,8% Обнаружено чересстрочное видео. Установлен FPS по умолчанию: %FPS%
+
 :FPS_DONE
 
 
@@ -587,33 +690,36 @@ set "VF=-vf "%FILTER_LIST%""
 
 
 :: === Блок: КЛЮЧИ ===
-:: Порядок ключей КРИТИЧЕН (особенно для qsv): кодек -> профиль -> vf -> crf
-:: Общий порядок ключей ffmpeg должен быть такой:
-:: -hide_banner -c:v codec [-profile:v] [-preset] [-vf] [-pix_fmt] [-crf] [-tune] [-level]
-:: -c:a -c:s [-metadata lng]
+:: Порядок ключей ffmpeg КРИТИЧЕН для правильной работы GPU-кодеков. Должно быть так:
+:: -hide_banner -c:v codec [кодек-специфичные init-параметры] -profile:v [-preset]
+:: [-vf] [-pix_fmt] [-crf] [-tune] [-level] -c:a -c:s [-metadata lng]
 set "FINAL_KEYS=-hide_banner -c:v %CODEC%"
-if /i not "%CODEC:~-5%" == "nvenc" set "FINAL_KEYS=%FINAL_KEYS% -profile:v %USE_PROFILE%"
-if /i "%CODEC%" == "libx264" set "FINAL_KEYS=%FINAL_KEYS% -preset slow -tune film"
+if /i "%CODEC:~-5%" == "nvenc" goto NV_OPTS
+if /i "%CODEC:~-3%" == "amf" goto AMF_OPTS
+if /i "%CODEC:~-3%" == "qsv" goto QSV_OPTS
+:: Ну и остались libx* :
+set "FINAL_KEYS=%FINAL_KEYS% -preset slow -tune film"
+goto PROFILE_V
 
 :: Обработка CRF/VBR для *nvenc:
-if /i not "%CODEC:~-5%" == "nvenc" goto SKIP_NVENC_OPTS
-set "FINAL_KEYS=%FINAL_KEYS% -preset p7 -tune uhq"
+:NV_OPTS
+if /i "%CODEC:~0,4%" == "hevc" set "FINAL_KEYS=%FINAL_KEYS% -preset p7 -tune uhq"
+if /i "%CODEC:~0,4%" == "h264" set "FINAL_KEYS=%FINAL_KEYS% -preset p7 -tune hq"
 :: -multipass fullres несовместим с CRF, но даст качество выше
-:: При multipass нужно задавать битрейт: -b:v - целевой битрейт (average)
-:: -maxrate - пиковый битрейт, -bufsize - размер буфера декодера (VBV)
-:: bufsize должен быть не меньше maxrate, иначе могут быть проблемы с проигрывателями
-:: Оптимальные: 720: -b:v 2.5M -maxrate 3.5M -bufsize 4M. 1080: -b:v 4.5M -maxrate 6M -bufsize 7M
 if defined CRF (
     >>"%LOG%" echo([INFO] %DATE% %TIME:~0,8% NVENC: Используется CRF-режим -cq %CRF%
-    goto SKIP_BITRATE
+    goto SKIP_NV_BITRATE
 )
 >>"%LOG%" echo([INFO] %DATE% %TIME:~0,8% NVENC: Используется VBR-HQ с multipass, битрейт по высоте %SRC_H%p
-:: Устанавливаем битрейт по флагу SCALE
-:: Рекомендуемые сопутствующие значения: maxrate = BITRATE_V * 1.5, bufsize = maxrate * 1.1..1.2
-:: Для H.264 битрейт нужен на 30-50% выше чем для HEVC
-if defined SCALE goto LOWER_BITRATE
+:: При multipass задаём битрейт в формате "цифраM" например 4M, 4.5M :
+:: -b:v - целевой битрейт (average, AVG), -maxrate - пиковый битрейт (MAX),
+:: -bufsize - размер буфера декодера (VBV) (BUF). BUF должен быть больше MAX.
+:: Для бытового видео (не спорт/анимация) с multipass fullres достаточно:
+::   maxrate = b:v x 1.25,  bufsize = maxrate + 1M
+:: Для этих настроек кодера оптимальны битрейты: HEVC: 1080p - 4M, 720p - 2M. H.264 - на ~50% выше.
+if %SRC_H% LEQ 720 goto LOWER_NV_BITRATE
 set "BITRATE_V=4M"
-set "BITRATE_MAX=5.5M"
+set "BITRATE_MAX=5M"
 set "BITRATE_BUF=6M"
 if /i "%CODEC%" == "h264_nvenc" (
     set "BITRATE_V=6M"
@@ -621,23 +727,43 @@ if /i "%CODEC%" == "h264_nvenc" (
     set "BITRATE_BUF=9M"
 )
 goto NV_EXTRA_KEYS
-:LOWER_BITRATE
+:LOWER_NV_BITRATE
 set "BITRATE_V=2M"
 set "BITRATE_MAX=3M"
-set "BITRATE_BUF=3.5M"
+set "BITRATE_BUF=4M"
 if /i "%CODEC%" == "h264_nvenc" (
-    set "BITRATE_V=3M"
-    set "BITRATE_MAX=4.5M"
-    set "BITRATE_BUF=5M"
+    set "BITRATE_V=4M"
+    set "BITRATE_MAX=5M"
+    set "BITRATE_BUF=6M"
 )
 :NV_EXTRA_KEYS
 set "FINAL_KEYS=%FINAL_KEYS% -multipass fullres"
 set "FINAL_KEYS=%FINAL_KEYS% -b:v %BITRATE_V% -maxrate %BITRATE_MAX% -bufsize %BITRATE_BUF%"
-:SKIP_BITRATE
-set "FINAL_KEYS=%FINAL_KEYS% -rc-lookahead 32 -spatial_aq 1"
-set "FINAL_KEYS=%FINAL_KEYS% -aq-strength 12 -temporal_aq 1 -b_ref_mode each"
-:: если будет ошибка b_ref_mode 'each' is not supported - вернуть -b_ref_mode middle
-:SKIP_NVENC_OPTS
+:SKIP_NV_BITRATE
+set "FINAL_KEYS=%FINAL_KEYS% -rc-lookahead 64 -spatial_aq 1 -aq-strength 12"
+set "FINAL_KEYS=%FINAL_KEYS% -temporal_aq 1 -weighted_pred 1 -b_ref_mode 2"
+goto PROFILE_V
+
+:AMF_OPTS
+set "FINAL_KEYS=%FINAL_KEYS% -usage high_quality -vbaq 1 -preanalysis 1"
+if /i "%CODEC%" == "h264_amf" set "FINAL_KEYS=%FINAL_KEYS% -coder cabac -bf 2"
+if /i "%CODEC%" == "hevc_amf" goto CHECK_AMF_10BIT
+goto PROFILE_V
+:CHECK_AMF_10BIT
+if /i "%USE_PROFILE%" == "main10" set "FINAL_KEYS=%FINAL_KEYS% -bitdepth 10"
+goto PROFILE_V
+
+:QSV_OPTS
+set "FINAL_KEYS=%FINAL_KEYS% -scenario archive -async_depth 1"
+set "FINAL_KEYS=%FINAL_KEYS% -extbrc 1 -rdo 1 -adaptive_i 1 -adaptive_b 1"
+if not defined CRF (
+    >>"%LOG%" echo([INFO] %DATE% %TIME:~0,8% QSV: включён look-ahead для VBR
+    set "FINAL_KEYS=%FINAL_KEYS% -look_ahead 1 -look_ahead_depth 60"
+)
+goto PROFILE_V
+
+:PROFILE_V
+if /i not "%CODEC:~-5%" == "nvenc" set "FINAL_KEYS=%FINAL_KEYS% -profile:v %USE_PROFILE%"
 
 :: Level для h264_* кодеков (совместимость с проигрывателями)
 if /i "%CODEC:~0,5%" == "h264_" set "FINAL_KEYS=%FINAL_KEYS% -level 4.0"
@@ -652,11 +778,12 @@ if defined PIX_FMT_ARGS set "FINAL_KEYS=%FINAL_KEYS% %PIX_FMT_ARGS%"
 :: Параметры управления качеством (не битрейтом)
 set "FINAL_CRF="
 if not defined CRF goto SKIP_CRF
-if /i "%CODEC:~-5%" == "nvenc"  set "FINAL_CRF=-cq %CRF%"
-if /i "%CODEC:~-3%" == "amf"    set "FINAL_CRF=-rc cqp -qp_i %CRF% -qp_p %CRF% -quality quality"
-if /i "%CODEC:~-3%" == "qsv"    set "FINAL_CRF=-global_quality %CRF%"
+>>"%LOG%" echo([INFO] %DATE% %TIME:~0,8% CRF для %CODEC% установлен: %CRF%
+if /i "%CODEC:~-5%" == "nvenc" set "FINAL_CRF=-cq %CRF%"
+if /i "%CODEC:~-3%" == "amf" set "FINAL_CRF=-rc cqp -qp_i %CRF% -qp_p %CRF%"
+if /i "%CODEC%" == "h264_amf" set "FINAL_CRF=%FINAL_CRF% -qp_b %CRF%"
+if /i "%CODEC:~-3%" == "qsv" set "FINAL_CRF=-global_quality %CRF%"
 if /i "%CODEC:~0,5%" == "libx2" set "FINAL_CRF=-crf %CRF%"
->>"%LOG%" echo([INFO] %DATE% %TIME:~0,8% CRF установлен: %CRF%
 :SKIP_CRF
 if defined FINAL_CRF set "FINAL_KEYS=%FINAL_KEYS% %FINAL_CRF%"
 
@@ -674,7 +801,8 @@ set "FINAL_KEYS=%FINAL_KEYS% -metadata:s:s:0 language=rus"
 
 :: Удаляем старые видео-теги "битрейт" и "размер потока", если они есть.
 :: FFmpeg копирует их из исходника, но при перекодировании значения неактуальны.
-if not defined HAS_VIDEO_TAGS goto KEYS_DONE
+if not defined TAGBPS goto KEYS_DONE
+>>"%LOG%" echo([CMD] %DATE% %TIME:~0,8% Удаляем "мусорный" metadata-тег BPS %TAGBPS% и сопутствующие ему.
 set "FINAL_KEYS=%FINAL_KEYS% -metadata:s:v BPS="
 set "FINAL_KEYS=%FINAL_KEYS% -metadata:s:v BPS-eng="
 set "FINAL_KEYS=%FINAL_KEYS% -metadata:s:v NUMBER_OF_BYTES="
