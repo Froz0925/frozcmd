@@ -1,7 +1,7 @@
 @echo off
 :: Перекодирование видеофайлов в уменьшенный размер с высоким качеством
 set "DO=Video recode script"
-set "VRS=Froz %DO% v14.10.2025"
+set "VRS=Froz %DO% v16.10.2025"
 
 :: === Блок: ПРОВЕРКИ ===
 title %DO%
@@ -33,7 +33,7 @@ if exist "%USER_INI_FULL%" goto SRC_CHK
 
 :: Если ini нет - создаём шаблон. Нельзя полный путь в VBS, поэтому pushd
 pushd "%~dp0"
-set "INIOEMW=%random%-inioemw"
+set "INIOEMW=%CMDN%-inioemw-%random%"
 >"%INIOEMW%"  echo(Настройки Froz Video recode script (%CMDN%)
 >>"%INIOEMW%" echo(------------------------------------------------------------
 >>"%INIOEMW%" echo(
@@ -50,8 +50,8 @@ set "INIOEMW=%random%-inioemw"
 >>"%INIOEMW%" echo(CRF=
 >>"%INIOEMW%" echo(
 >>"%INIOEMW%" echo(; Аудио: уменьшить размер: set "AUDIO_ARGS=-c:a libopus -b:a 128k"
->>"%INIOEMW%" echo(; Пусто или закомментировать - аудио копируется без изменений
->>"%INIOEMW%" echo(AUDIO_ARGS=-c:a libopus -b:a 128k
+>>"%INIOEMW%" echo(; Пусто или закомментировать через ;  - аудио копируется без изменений
+>>"%INIOEMW%" echo(;AUDIO_ARGS=-c:a libopus -b:a 128k
 >>"%INIOEMW%" echo(
 >>"%INIOEMW%" echo(; Принудительный поворот (transpose): -90 = по часовой, 90 = против часовой, 180.
 >>"%INIOEMW%" echo(; Если не задано - берется из тега поворота (только MP4/MOV), если он там есть.
@@ -76,7 +76,7 @@ set "INIOEMW=%random%-inioemw"
 >>"%INIOEMW%" echo(; Частота кадров. Если не задано - обрабатывается автоматически:
 >>"%INIOEMW%" echo(; обычное видео остается как есть, плавающий FPS приводится к 25/30/50/60 к/с,
 >>"%INIOEMW%" echo(; чересстрочное (50i/60i) преобразуется в 50p/60p (60p для 480i).
->>"%INIOEMW%" echo(; Если плавность не нужна - установите 25/30.
+>>"%INIOEMW%" echo(; Если плавность в 50i/60i не нужна - установите 25/30.
 >>"%INIOEMW%" echo(; Примеры: 24, 25, 30, 50, 60, 24000/1001 (~23.976), 3000/1001 (~29.97)
 >>"%INIOEMW%" echo(FPS=
 >>"%INIOEMW%" echo(
@@ -86,11 +86,11 @@ set "INIOEMW=%random%-inioemw"
 >>"%INIOEMW%" echo(; Суффикс к имени: например _sm -^> имя_sm.mkv
 >>"%INIOEMW%" echo(NAME_APPEND=_sm
 >>"%INIOEMW%" echo(
->>"%INIOEMW%" echo(; Параметр скорости кодирования от вашего GPU/CPU.
->>"%INIOEMW%" echo(; Помогает скрипту вычислить примерное время кодирования.
->>"%INIOEMW%" echo(; Расчет опытным путем: (секунд кодирования / секунд видео) x 100. Пример: 0.3 -^> ставим 30
->>"%INIOEMW%" echo(; Статистика железок:
->>"%INIOEMW%" echo(; GeForce RTX 5060 multipass: 720/30=20, 1080/30=40, 1080/50=70
+>>"%INIOEMW%" echo(; Параметр скорости кодирования от вашего GPU/CPU - помогает скрипту вычислить примерное время кодирования.
+>>"%INIOEMW%" echo(; Расчет опытным путем: (секунд кодирования / секунд видео) x 100. Пример: 0.3 -^> ставим 30.
+>>"%INIOEMW%" echo(; Указывайте самое МЕДЛЕННОЕ значение для вашей видеокарты (1080/60p)
+>>"%INIOEMW%" echo(; Скрипт по пропорции примерно рассчитает другие сочетания кадра/fps. Если не указано - принимается GPU-100 CPU-200.
+>>"%INIOEMW%" echo(; Статистика некоторых комплектующих: GeForce RTX 5060 multipass: 720/30=20, 1080/30=40, 1080/50=70
 >>"%INIOEMW%" echo(; CPU i5-6400 libx265: 210 (autoCRF=35 720/50 3.7M), libx264: 180 (autoCRF=30 720/50 7.3M)
 >>"%INIOEMW%" echo(SPEED_NVENC=70
 >>"%INIOEMW%" echo(SPEED_AMF=50
@@ -131,8 +131,8 @@ if /i "%ATTR:~0,1%"=="d" echo(Папки не обрабатываются, выходим.& echo(& pause & 
 
 :: Проверка длины аргументов CMD через VBS
 :: так как в CMD нет безопасного способа парсить строку с &)(
-set "CTV=%temp%\%CMDN%-len-%random%%random%.vbs"
-set "CTO=%temp%\%CMDN%-out-%random%%random%.txt"
+set "CTV=%temp%\%CMDN%-len-%random%.vbs"
+set "CTO=%temp%\%CMDN%-out-%random%.txt"
 :: Подсчёт длины всех аргументов с пробелами - для проверки лимита CMD (8191)
 :: Массив + Join, т.к. WScript.Arguments не совместим с Join напрямую
 :: Проверка на "%~1"=="" выше гарантирует a.Count >= 1 , значит ReDim безопасен
@@ -169,7 +169,7 @@ set "SPEED_LIBX265="
 set "SPEED_LIBX264="
 :: Конвертация UTF-8 в OEM - нельзя полный путь в VBS, поэтому pushd
 pushd "%~dp0"
-set "INIOEMR=%random%-inioemr"
+set "INIOEMR=%CMDN%-inioemr-%random%"
 set "VTU=%temp%\%CMDN%-utf2oem-%random%.vbs"
 >"%VTU%"  echo(With CreateObject("ADODB.Stream")
 >>"%VTU%" echo(.Type=2:.Charset="UTF-8":.Open:.LoadFromFile "%USER_INI%":s=.ReadText:.Close
@@ -220,7 +220,7 @@ if not defined NAME_APPEND (
 
 :: Проверка: поддерживает ли GPU выбранный GPU-кодек
 if /i "%CODEC:~0,5%" == "libx2" goto SKIP_GCHK
-set "GLOGU=%temp%\%CMDN%-gpuchk-%random%%random%"
+set "GLOGU=%temp%\%CMDN%-gpuchk-%random%"
 :: Создаём виртуальный пустой видеофайл длиной в 1 секунду и пытаемся сжать кодеком
 "%FFM%" -hide_banner -v error -f lavfi -i nullsrc -c:v %CODEC% -t 1 -f null - 2>"%GLOGU%"
 :: Конвертируем UTF-8 лог ffmpeg в OEM (cp866) для корректной работы findstr
@@ -281,7 +281,7 @@ goto NEXT
 :: Временное имя OEM-лога для текущего видеофайла - используем дату, а не %random%.
 :: Чтобы не зависеть от локали Windows берём текущую дату-время через VBS, 
 :: а не через %date% %time%. Формат: ГГГГ-ММ-ДД_ЧЧММСС
-set "TV=%temp%\%CMDN%-dtmp-%random%%random%.vbs"
+set "TV=%temp%\%CMDN%-dtmp-%random%.vbs"
 >"%TV%"  echo(s=Year(Now)^&"-"^&Right("0"^&Month(Now),2)^&"-"
 >>"%TV%" echo(s=s^&Right("0"^&Day(Now),2)
 >>"%TV%" echo(s=s^&"_"^&Right("0"^&Hour(Now),2)^&Right("0"^&Minute(Now),2)
@@ -335,7 +335,7 @@ set "A_FPS="
 set "ROTATION_TAG="
 set "TAGBPS="
 set "LENGTH_SECONDS="
-set "FFP_VTMP=%temp%\%CMDN%-ffprobe-video-%random%%random%.txt"
+set "FFP_VTMP=%temp%\%CMDN%-ffprobe-video-%random%.txt"
 "%FFP%" -v error ^
     -select_streams v:0 ^
     -show_entries stream=width,height,pix_fmt,field_order,r_frame_rate,avg_frame_rate ^
@@ -371,7 +371,7 @@ goto NEXT
 :GET_AUDIO_CODEC
 if not defined AUDIO_ARGS goto PROBE_DONE
 set "AUDIO_CODEC="
-set "FFP_ATMP=%temp%\%CMDN%-ffprobe-audio-%random%%random%.txt"
+set "FFP_ATMP=%temp%\%CMDN%-ffprobe-audio-%random%.txt"
 :: Проверяем что аудио уже OPUS. Ключ :nk=1 отбросит текст "codec_name="
 "%FFP%" -v error -select_streams a:0 -show_entries stream=codec_name -of default=nw=1:nk=1 "%FNF%" >"%FFP_ATMP%"
 set /p "AUDIO_CODEC=" <"%FFP_ATMP%"
@@ -382,47 +382,6 @@ if /i "%AUDIO_CODEC%"=="opus" (
     >>"%LOG%" echo([INFO] %DATE% %TIME:~0,8% Аудиокодек уже OPUS - пропускаем перекодирование.
 )
 :PROBE_DONE
-
-
-
-
-
-
-:: === Блок: ВРЕМЯ ===
-:: LENGTH_SECONDS извлечён ранее
-if not defined LENGTH_SECONDS (
-    >>"%LOG%" echo([ERROR] %DATE% %TIME:~0,8% Не удалось извлечь длительность видео
-    goto LENGTH_DONE
-)
-:: Оставляем только целые секунды
-for /f "tokens=1 delims=." %%a in ("%LENGTH_SECONDS%") do set "LENGTH_SECONDS=%%a"
-:: Добавляем +1, чтобы округлить вверх
-set /a LENGTH_SECONDS+=1
-:: Определяем коэффициент x100 по кодеку
-set "SPEED_CENTI="
-if /i "%CODEC:~-5%" == "nvenc" set "SPEED_CENTI=%SPEED_NVENC%"
-if /i "%CODEC:~-3%" == "amf"   set "SPEED_CENTI=%SPEED_AMF%"
-if /i "%CODEC:~-3%" == "qsv"   set "SPEED_CENTI=%SPEED_QSV%"
-if /i "%CODEC%" == "libx264"   set "SPEED_CENTI=%SPEED_LIBX264%"
-if /i "%CODEC%" == "libx265"   set "SPEED_CENTI=%SPEED_LIBX265%"
-:: Fallback на усредненный показатель скорости, если кодек не распознан
-if not defined SPEED_CENTI (
-    >>"%LOG%" echo([WARNING] %DATE% %TIME:~0,8% Неизвестный кодек: %CODEC%.
-    >>"%LOG%" echo([INFO] %DATE% %TIME:~0,8% Для расчёта времени кодирования берем скорость 50
-    set "SPEED_CENTI=50"
-)
-:: Рассчитываем примерное время кодирования в секундах
-set /a ENCODE_SECONDS = (LENGTH_SECONDS * SPEED_CENTI) / 100
-:: Должна быть минимум 1 секунда
-if %ENCODE_SECONDS% LSS 1 set "ENCODE_SECONDS=1"
-:: Переводим секунды в минуты:секунды
-set /a "MINUTES=ENCODE_SECONDS / 60"
-set /a "SECONDS=ENCODE_SECONDS %% 60"
-if %SECONDS% LSS 10 set "SECONDS=0%SECONDS%"
-echo(Примерное время кодирования: %MINUTES% минут %SECONDS% секунд.
-echo(
-:LENGTH_DONE
-
 
 
 
@@ -571,7 +530,7 @@ if "%R_FPS%" == "%A_FPS%" goto FPS_DONE
 
 :: 4. Progressive + VFR - определяем MAX_FPS и ставим стандартный CFR
 set "MAX_FPS="
-set "TMPMI=%temp%\%CMDN%-mi-fps-%random%%random%.txt"
+set "TMPMI=%temp%\%CMDN%-mi-fps-%random%.txt"
 "%MI%" --Inform="Video;%%FrameRate_Maximum%%" "%FNF%" >"%TMPMI%"
 set /p MAX_FPS= <"%TMPMI%"
 del "%TMPMI%"
@@ -599,6 +558,44 @@ if %SRC_H% == 480 set "FPS=60"
 >>"%LOG%" echo([INFO] %DATE% %TIME:~0,8% Обнаружено чересстрочное видео. Установлен FPS по умолчанию: %FPS%
 
 :FPS_DONE
+
+
+
+
+
+
+
+:: === Блок: ВРЕМЯ ===
+:: Блок должен быть после блока ЧАСТОТА
+:: Определяем базовую скорость кодирования (SPEED_CENTI = секунд кодирования на 100 сек видео)
+set "SPEED_CENTI="
+if /i "%CODEC%" == "libx264" set "SPEED_CENTI=%SPEED_LIBX264%"
+if /i "%CODEC%" == "libx265" set "SPEED_CENTI=%SPEED_LIBX265%"
+if /i "%CODEC:~-5%" == "nvenc" set "SPEED_CENTI=%SPEED_NVENC%"
+if /i "%CODEC:~-3%" == "amf"   set "SPEED_CENTI=%SPEED_AMF%"
+if /i "%CODEC:~-3%" == "qsv"   set "SPEED_CENTI=%SPEED_QSV%"
+:: Fallback: сначала предполагаем GPU (100), CPU позже получит 200 и пропустит коэффициенты
+if not defined SPEED_CENTI set "SPEED_CENTI=100"
+if /i "%CODEC:~0,5%" == "libx2" set "SPEED_CENTI=200" & goto TIME_CALC
+:: Коэффициенты (1080p30 -> x65, 720p -> x55) - типичные соотношения для GPU-кодеков с запасом:
+:: лучше завысить оценку времени, чем занижать. Для 720p30 итог ~36% от базы.
+:: +50 в (x*k+50)/100 обеспечивает округление до ближайшего целого при целочисленном делении.
+if %FPS% LEQ 30 set /a "SPEED_CENTI=(SPEED_CENTI*65+50)/100"
+if %SRC_H% LEQ 720 set /a "SPEED_CENTI=(SPEED_CENTI*55+50)/100"
+:TIME_CALC
+:: LENGTH_SECONDS извлечён ранее. Берём целую часть и округляем длину вверх (2.1 -> 3)
+for /f "tokens=1 delims=." %%a in ("%LENGTH_SECONDS%") do set /a "LENGTH_SECONDS=%%a+1"
+:: Рассчитываем примерное время кодирования в секундах
+set /a "ENCODE_SECONDS=(LENGTH_SECONDS*SPEED_CENTI)/100"
+:: Гарантируем минимум 1 секунду (защита от коротких видео и быстрых кодеков)
+if %ENCODE_SECONDS% EQU 0 set "ENCODE_SECONDS=1"
+:: Переводим секунды в минуты:секунды
+set /a "MINUTES=ENCODE_SECONDS/60"
+set /a "SECONDS=ENCODE_SECONDS%%60"
+if %SECONDS% LSS 10 set "SECONDS=0%SECONDS%"
+echo(Примерное время кодирования: %MINUTES% минут %SECONDS% секунд.
+echo(
+
 
 
 
@@ -740,8 +737,8 @@ if /i "%CODEC%" == "h264_nvenc" (
 set "FINAL_KEYS=%FINAL_KEYS% -multipass fullres"
 set "FINAL_KEYS=%FINAL_KEYS% -b:v %BITRATE_V% -maxrate %BITRATE_MAX% -bufsize %BITRATE_BUF%"
 :SKIP_NV_BITRATE
-set "FINAL_KEYS=%FINAL_KEYS% -rc-lookahead 64 -spatial_aq 1 -aq-strength 12"
-set "FINAL_KEYS=%FINAL_KEYS% -temporal_aq 1 -weighted_pred 1 -b_ref_mode 2"
+set "FINAL_KEYS=%FINAL_KEYS% -rc-lookahead 53 -spatial_aq 1 -aq-strength 12"
+set "FINAL_KEYS=%FINAL_KEYS% -temporal_aq 1 -b_ref_mode 2"
 goto PROFILE_V
 
 :AMF_OPTS
@@ -868,7 +865,7 @@ echo(---
 :: Пути должны быть без кириллицы из-за разных кодировок CMD и VBS
 :: Переходим в папку Logs
 pushd "%OUTPUT_DIR%logs"
-set "VT=%temp%\%CMDN%-oem2utf-%random%%random%.vbs"
+set "VT=%temp%\%CMDN%-oem2utf-%random%.vbs"
 >"%VT%"  echo(With CreateObject("ADODB.Stream")
 >>"%VT%" echo(.Type=2:.Charset="cp866":.Open:.LoadFromFile "%LOGE%":s=.ReadText:.Close
 >>"%VT%" echo(.Type=2:.Charset="UTF-8":.Open:.WriteText s:.SaveToFile "%LOGU%",2:.Close:End With
@@ -888,7 +885,7 @@ goto LOOP
 :END
 echo(Все файлы обработаны.
 echo(
-set "EV=%temp%\%CMDN%-end-%random%%random%.vbs"
+set "EV=%temp%\%CMDN%-end-%random%.vbs"
 set "EMSG=Пакетный файл %CMDN% закончил работу."
 chcp 1251 >nul
 >"%EV%" echo(MsgBox "%EMSG%",,"%CMDN%"
