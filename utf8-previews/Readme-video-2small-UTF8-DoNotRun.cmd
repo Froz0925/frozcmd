@@ -50,8 +50,8 @@ set "INIOEMW=%CMDN%-inioemw-%random%"
 >>"%INIOEMW%" echo(CRF=
 >>"%INIOEMW%" echo(
 >>"%INIOEMW%" echo(; Аудио: уменьшить размер: set "AUDIO_ARGS=-c:a libopus -b:a 128k"
->>"%INIOEMW%" echo(; Пусто или закомментировать - аудио копируется без изменений
->>"%INIOEMW%" echo(AUDIO_ARGS=-c:a libopus -b:a 128k
+>>"%INIOEMW%" echo(; Пусто или закомментировать через ;  - аудио копируется без изменений
+>>"%INIOEMW%" echo(;AUDIO_ARGS=-c:a libopus -b:a 128k
 >>"%INIOEMW%" echo(
 >>"%INIOEMW%" echo(; Принудительный поворот (transpose): -90 = по часовой, 90 = против часовой, 180.
 >>"%INIOEMW%" echo(; Если не задано - берется из тега поворота (только MP4/MOV), если он там есть.
@@ -76,7 +76,7 @@ set "INIOEMW=%CMDN%-inioemw-%random%"
 >>"%INIOEMW%" echo(; Частота кадров. Если не задано - обрабатывается автоматически:
 >>"%INIOEMW%" echo(; обычное видео остается как есть, плавающий FPS приводится к 25/30/50/60 к/с,
 >>"%INIOEMW%" echo(; чересстрочное (50i/60i) преобразуется в 50p/60p (60p для 480i).
->>"%INIOEMW%" echo(; Если плавность не нужна - установите 25/30.
+>>"%INIOEMW%" echo(; Если плавность в 50i/60i не нужна - установите 25/30.
 >>"%INIOEMW%" echo(; Примеры: 24, 25, 30, 50, 60, 24000/1001 (~23.976), 3000/1001 (~29.97)
 >>"%INIOEMW%" echo(FPS=
 >>"%INIOEMW%" echo(
@@ -86,14 +86,11 @@ set "INIOEMW=%CMDN%-inioemw-%random%"
 >>"%INIOEMW%" echo(; Суффикс к имени: например _sm -^> имя_sm.mkv
 >>"%INIOEMW%" echo(NAME_APPEND=_sm
 >>"%INIOEMW%" echo(
->>"%INIOEMW%" echo(; Параметр скорости кодирования от вашего GPU/CPU.
->>"%INIOEMW%" echo(; Помогает скрипту вычислить примерное время кодирования.
->>"%INIOEMW%" echo(; Расчет опытным путем: (секунд кодирования / секунд видео) x 100. Пример: 0.3 -^> ставим 30
->>"%INIOEMW%" echo(; Указывайте самое МЕДЛЕННОЕ значение для вашей видеокарты
->>"%INIOEMW%" echo(; (обычно это 1080p с 50/60 fps). Скрипт рассчитает остальные режимы:
->>"%INIOEMW%" echo(; Если не указано - принимается 50.
->>"%INIOEMW%" echo(; Статистика некоторых комплектующих:
->>"%INIOEMW%" echo(; GeForce RTX 5060 multipass: 720/30=20, 1080/30=40, 1080/50=70
+>>"%INIOEMW%" echo(; Параметр скорости кодирования от вашего GPU/CPU - помогает скрипту вычислить примерное время кодирования.
+>>"%INIOEMW%" echo(; Расчет опытным путем: (секунд кодирования / секунд видео) x 100. Пример: 0.3 -^> ставим 30.
+>>"%INIOEMW%" echo(; Указывайте самое МЕДЛЕННОЕ значение для вашей видеокарты (1080/60p)
+>>"%INIOEMW%" echo(; Скрипт по пропорции примерно рассчитает другие сочетания кадра/fps. Если не указано - принимается GPU-100 CPU-200.
+>>"%INIOEMW%" echo(; Статистика некоторых комплектующих: GeForce RTX 5060 multipass: 720/30=20, 1080/30=40, 1080/50=70
 >>"%INIOEMW%" echo(; CPU i5-6400 libx265: 210 (autoCRF=35 720/50 3.7M), libx264: 180 (autoCRF=30 720/50 7.3M)
 >>"%INIOEMW%" echo(SPEED_NVENC=70
 >>"%INIOEMW%" echo(SPEED_AMF=50
@@ -577,10 +574,9 @@ if /i "%CODEC%" == "libx265" set "SPEED_CENTI=%SPEED_LIBX265%"
 if /i "%CODEC:~-5%" == "nvenc" set "SPEED_CENTI=%SPEED_NVENC%"
 if /i "%CODEC:~-3%" == "amf"   set "SPEED_CENTI=%SPEED_AMF%"
 if /i "%CODEC:~-3%" == "qsv"   set "SPEED_CENTI=%SPEED_QSV%"
-:: Fallback: если SPEED_* не задан (или пуст) - используем 50 как усреднённое значение
-if not defined SPEED_CENTI set "SPEED_CENTI=50"
-:: Применяем поправочные коэффициенты только для GPU-кодеков
-if /i "%CODEC:~0,5%" == "libx2" goto TIME_CALC
+:: Fallback: сначала предполагаем GPU (100), CPU позже получит 200 и пропустит коэффициенты
+if not defined SPEED_CENTI set "SPEED_CENTI=100"
+if /i "%CODEC:~0,5%" == "libx2" set "SPEED_CENTI=200" & goto TIME_CALC
 :: Коэффициенты (1080p30 -> x65, 720p -> x55) - типичные соотношения для GPU-кодеков с запасом:
 :: лучше завысить оценку времени, чем занижать. Для 720p30 итог ~36% от базы.
 :: +50 в (x*k+50)/100 обеспечивает округление до ближайшего целого при целочисленном делении.
