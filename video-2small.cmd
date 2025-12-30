@@ -1,11 +1,12 @@
 @echo off
 :: Перекодирование видеофайлов в уменьшенный размер с высоким качеством
 set "DO=Video recode script"
-set "VRS=Froz %DO% v16.10.2025"
+set "VRS=Froz %DO% v30.12.2025"
 
 :: === Блок: ПРОВЕРКИ ===
 title %DO%
 echo(%VRS%
+echo(Прервать кодирование - Ctrl-C.
 echo(
 set "CMDN=%~n0"
 
@@ -220,11 +221,13 @@ if not defined NAME_APPEND (
 
 :: Проверка: поддерживает ли GPU выбранный GPU-кодек
 if /i "%CODEC:~0,5%" == "libx2" goto SKIP_GCHK
-set "GLOGU=%temp%\%CMDN%-gpuchk-%random%"
+:: Базовое имя для временных файлов (логи и скрипт перекодировки)
+set "GLOG=%temp%\%CMDN%-gpuchk-%random%"
+:: ffmpeg пишет stderr в UTF-8 -> сохраняем как UTF-8-лог
+set "GLOGU=%GLOG%-utf8"
 :: Создаём виртуальный пустой видеофайл длиной в 1 секунду и пытаемся сжать кодеком
 "%FFM%" -hide_banner -v error -f lavfi -i nullsrc -c:v %CODEC% -t 1 -f null - 2>"%GLOGU%"
-:: Конвертируем UTF-8 лог ffmpeg в OEM (cp866) для корректной работы findstr
-:: ffmpeg пишет stderr в UTF-8, а findstr в cmd работает только с OEM
+:: findstr в CMD работает только с OEM (cp866) - конвертируем лог из UTF-8 в OEM
 set "GLOGE=%GLOG%-oem"
 set "VT=%GLOG%.vbs"
 >"%VT%"  echo(With CreateObject("ADODB.Stream")
@@ -521,13 +524,17 @@ if defined FPS (
 )
 
 :: 2. Если видео чересстрочное - ставим FPS по умолчанию и выходим
+set "IS_INTERLACED="
+if /i "%FIELD_ORDER%" == "unknown" (
+    >>"%LOG%" echo([INFO] %DATE% %TIME:~0,8% FIELD_ORDER не определён - "unknown". Считаем видео progressive.
+    goto HANDLE_PROGRESSIVE
+)
 if /i not "%FIELD_ORDER%" == "progressive" goto HANDLE_INTERLACED
 
+:HANDLE_PROGRESSIVE
 :: 3. Дальше - только progressive видео
 :: Если r_frame_rate == avg_frame_rate - это CFR, ничего не делаем
-if not defined R_FPS goto FPS_DONE
 if "%R_FPS%" == "%A_FPS%" goto FPS_DONE
-
 :: 4. Progressive + VFR - определяем MAX_FPS и ставим стандартный CFR
 set "MAX_FPS="
 set "TMPMI=%temp%\%CMDN%-mi-fps-%random%.txt"
@@ -538,21 +545,26 @@ if not defined MAX_FPS (
     >>"%LOG%" echo([WARNING] %DATE% %TIME:~0,8% Не удалось извлечь max frame rate из mediainfo
     goto FPS_DONE
 )
-
 :: Оставляем только целые значения FPS
 for /f "tokens=1 delims=." %%m in ("%MAX_FPS%") do set "MAX_FPS=%%m"
 
-:: Принудительно устанавливаем ближайший FPS CFR
-set "FPS=25"
-if %MAX_FPS% GTR 25 set "FPS=30"
-:: 35 - порог для VFR-файлов с например ~31.4 fps, чтобы выбрать 50 fps вместо 30.
-if %MAX_FPS% GTR 35 set "FPS=50"
-if %MAX_FPS% GTR 50 set "FPS=60"
+:: Определяем целевой FPS
+if %MAX_FPS% GTR 50 set "FPS=60" & goto REPORT_FPS
+:: Если VFR-видео содержит фрагменты с высоким FPS (например, slow-mo >35 к/с),
+:: выбираем 50 fps вместо 30, чтобы сохранить плавность.
+if %MAX_FPS% GTR 40 set "FPS=50" & goto REPORT_FPS
+if %MAX_FPS% GTR 28 set "FPS=30" & goto REPORT_FPS
+if %MAX_FPS% GTR 24 set "FPS=25" & goto REPORT_FPS
+:: Fallback-FPS
+set "FPS=24"
+:REPORT_FPS
 >>"%LOG%" echo([INFO] %DATE% %TIME:~0,8% Найден переменный FPS. Max Frame Rate: %MAX_FPS%. Установлен FPS: %FPS%
 goto FPS_DONE
 
 :HANDLE_INTERLACED
-:: Обработка interlaced (юзер-FPS не задан, FIELD_ORDER не progressive)
+:: Чересстрочное видео - по умолчанию 50p (PAL) или 60p (NTSC 480i)
+:: FPS здесь нужен для расчёта времени и выбора режима деинтерлейса (bwdif=0/1)
+set "IS_INTERLACED=1"
 set "FPS=50"
 if %SRC_H% == 480 set "FPS=60"
 >>"%LOG%" echo([INFO] %DATE% %TIME:~0,8% Обнаружено чересстрочное видео. Установлен FPS по умолчанию: %FPS%
@@ -651,10 +663,15 @@ if defined FILTER_LIST (
 set "FILTER_LIST=%ROTATION_FILTER%"
 :SKIP_TRANSPOSE
 
-:: Добавляем деинтерлейс, если ffprobe нашёл интерлейс. 50i -> 50p, 60i -> 60p
-:: Режим bwdif=1 - по одному кадру на каждое поле, сохраняет плавность.
-if /i "%FIELD_ORDER%" == "progressive" goto SKIP_DEINT
+:: Добавляем деинтерлейс для interlaced видео
+if not defined IS_INTERLACED goto SKIP_DEINT
+:: По умолчанию: bwdif=1 - 50i->50p, 60i->60p - сохранит плавность
 set "INTCMD=bwdif=1"
+if not defined FPS goto FL_INT
+:: При юзер-FPS 25/30 ("кино") -> bwdif=0 + skip FPS, чтобы избежать артефактов
+:: от bwdif=1,fps=25 (50 кадров и отбросить каждый второй)
+if %FPS% LEQ 30 set "INTCMD=bwdif=0" & goto SKIP_FPS
+:FL_INT
 if defined FILTER_LIST (
     set "FILTER_LIST=%FILTER_LIST%,%INTCMD%"
     >>"%LOG%" echo([INFO] %DATE% %TIME:~0,8% Применён деинтерлейсинг: %INTCMD%
