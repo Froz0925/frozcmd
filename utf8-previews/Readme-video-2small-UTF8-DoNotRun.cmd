@@ -1,7 +1,7 @@
 @echo off
 :: Перекодирование видеофайлов в уменьшенный размер с высоким качеством
 set "DO=Video recode script"
-set "VRS=Froz %DO% v30.12.2025"
+set "VRS=Froz %DO% v06.01.2026"
 
 :: === Блок: ПРОВЕРКИ ===
 title %DO%
@@ -404,8 +404,9 @@ if /i "%AUDIO_CODEC%"=="opus" (
 ::   MP4Box.exe -add temp.mp4 -new output.mp4 -color=1
 
 :: PIX_FMT извлечён ранее - определяем JPEG FULL RANGE по PIX_FMT
+set "COLOR_RANGE="
 if /i "%PIX_FMT%" == "yuvj420p" set "COLOR_RANGE=1"
-
+if not defined COLOR_RANGE goto COLOR_DONE
 :: Здесь нельзя if (...) так как %OUTPUT_EXT% во второй строке не применит значение из первого set
 if "%OUTPUT_EXT%" == "mkv" goto COLOR_DONE
 >>"%LOG%" echo([INFO] %DATE% %TIME:~0,8% Для записи metadata full color с помощью mkvpropedit - меняем расширение на mkv
@@ -736,9 +737,9 @@ set "BITRATE_V=4M"
 set "BITRATE_MAX=5M"
 set "BITRATE_BUF=6M"
 if /i "%CODEC%" == "h264_nvenc" (
-    set "BITRATE_V=6M"
-    set "BITRATE_MAX=8M"
-    set "BITRATE_BUF=9M"
+    set "BITRATE_V=4M"
+    set "BITRATE_MAX=5M"
+    set "BITRATE_BUF=6M"
 )
 goto NV_EXTRA_KEYS
 :LOWER_NV_BITRATE
@@ -746,9 +747,9 @@ set "BITRATE_V=2M"
 set "BITRATE_MAX=3M"
 set "BITRATE_BUF=4M"
 if /i "%CODEC%" == "h264_nvenc" (
-    set "BITRATE_V=4M"
-    set "BITRATE_MAX=5M"
-    set "BITRATE_BUF=6M"
+    set "BITRATE_V=2M"
+    set "BITRATE_MAX=3M"
+    set "BITRATE_BUF=4M"
 )
 :NV_EXTRA_KEYS
 set "FINAL_KEYS=%FINAL_KEYS% -multipass fullres"

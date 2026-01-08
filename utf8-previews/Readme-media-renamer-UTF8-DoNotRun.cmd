@@ -1,7 +1,7 @@
 @echo off
 set "DO=Media Renamer"
 title Froz %DO%
-set "VRS=Froz %DO% v29.09.2025"
+set "VRS=Froz %DO% v06.01.2026"
 echo(%VRS%
 echo(
 if not "%~1"=="" goto exchk
@@ -198,11 +198,11 @@ set "DTO_COMP=%Y%-%M%-%D% %HH%:%MM%:%SS%"
 set "DTO_DATE=%Y%-%M%-%D%"
 call :try_name_date
 
-:: Проверка: совпадает ли полная дата и время с EXIF и форматом маски?
+:: Проверка - совпадает ли полная дата и время с EXIF и форматом маски
 call :check_jpg_match full
 if defined JPG_MATCH goto file_skip
 
-:: Проверка: совпадает ли только дата (без времени) и формат?
+:: Проверка - совпадает ли только дата без времени и формат
 call :check_jpg_match date
 if defined JPG_MATCH goto file_skip
 
@@ -210,6 +210,76 @@ if defined JPG_MATCH goto file_skip
 goto build_name
 
 
+
+
+
+:check_jpg_match
+:: Проверяем, соответствует ли ИСХОДНОЕ имя файла (с префиксами) маске ГГГГ-ММ-ДД_ЧЧММСС
+:: И совпадает ли дата/время с EXIF. Если ДА - пропускаем.
+:: Если в начале есть IMG_, VID_ и т.д. - имя НЕ соответствует маске - не пропускаем.
+
+:: Проверяем, соответствует ли имя файла EXIF-дате и маске ГГГГ-ММ-ДД_ЧЧММСС - если да, пропускаем
+:: %1 = full (требуется дата+время в имени) или date (достаточно даты)
+if not defined NAME_Y exit /b
+:: Если режим НЕ "full" (т.е. "date") - пропускаем проверку времени
+if /i not "%~1"=="full" goto check_time_skip
+:: В режиме "full" время в имени обязательно
+if not defined NAME_HH exit /b
+:check_time_skip
+
+:: ВАЖНО: эти проверки дублируют часть логики из try_name_date,
+:: но здесь они нужны ТОЛЬКО для подтверждения, что файл уже в целевом формате.
+:: Если не соответствует - не пропускаем, даже если дата совпадает с EXIF.
+:: Используем FN (а не BASE), чтобы префиксы вроде IMG_
+:: ломали проверку формата и заставляли переименовывать файл, даже если дата совпадает с EXIF.
+
+:: Проверка формата даты в имени: YYYY-MM-DD
+set "PART=%FN:~0,10%"
+
+:: Проверяем длину и разделители
+if "%PART:~4,1%" NEQ "-" exit /b
+if "%PART:~7,1%" NEQ "-" exit /b
+
+:: Минимальная проверка: первый символ каждой части - цифра
+:: (остальные символы отсеятся позже в check_date_format, если потребуется)
+if "%PART:~0,1%" GTR "9" exit /b
+if "%PART:~0,1%" LSS "0" exit /b
+if "%PART:~5,1%" GTR "9" exit /b
+if "%PART:~5,1%" LSS "0" exit /b
+if "%PART:~8,1%" GTR "9" exit /b
+if "%PART:~8,1%" LSS "0" exit /b
+
+:: Проверка: после даты - подчёркивание
+set "UNDERSCORE=%FN:~10,1%"
+if not defined UNDERSCORE exit /b
+if not "%UNDERSCORE%"=="_" exit /b
+
+:: Проверка совпадения даты с EXIF
+set "NAME_DATE=%NAME_Y%-%NAME_M%-%NAME_D%"
+if not "%NAME_DATE%"=="%DTO_DATE%" exit /b
+
+:: Если режим "только дата" - совпадение найдено
+if /i "%~1"=="date" (
+    set "JPG_MATCH=1"
+    exit /b
+)
+
+:: Режим "full": проверяем время
+set "TIME_PART=%FN:~11,6%"
+:: Проверяем длину времени (должно быть 6 символов)
+if "%TIME_PART:~5,1%"=="" exit /b
+
+:: Проверяем, что первый символ времени - цифра
+if "%TIME_PART:~0,1%" GTR "9" exit /b
+if "%TIME_PART:~0,1%" LSS "0" exit /b
+
+:: Проверка совпадения полной даты+времени с EXIF
+set "NAME_COMP=%NAME_Y%-%NAME_M%-%NAME_D% %NAME_HH%:%NAME_MM%:%NAME_SS%"
+if not "%NAME_COMP%"=="%DTO_COMP%" exit /b
+
+:: Полное совпадение
+set "JPG_MATCH=1"
+exit /b
 
 
 
@@ -237,7 +307,10 @@ if /i "%BASE:PIC_=%" NEQ "%BASE%" set "BASE=%BASE:PIC_=%" & goto skip_prefixes
 
 :: Пытаемся извлечь дату и время из имени файла.
 
-:: --- Нормализация 1: YYYYMMDD[разделитель]HHMMSS -> YYYY-MM-DD_HHMMSS ---
+:: --- Нормализация 1: если имя начинается с YYYYMMDD и за ним следует валидное HHMMSS,
+:: то приводим к YYYY-MM-DD_HHMMSS (удаляя мусорные разделители между датой и временем)
+:: Эта нормализация нужна ТОЛЬКО для парсинга - она НЕ означает,
+:: что файл уже в правильной маске. Проверка формата будет позже в check_jpg_match.
 :: Приводим разделитель между датой и временем к '_', чтобы парсер мог надёжно выделить HHMMSS
 set "TEST=%BASE:~0,8%"
 
@@ -313,10 +386,14 @@ set "HH_TMP=%TIME_CAND:~0,2%"
 set "MM_TMP=%TIME_CAND:~2,2%"
 set "SS_TMP=%TIME_CAND:~4,2%"
 
-:: Обход восьмеричной ошибки: 08 -> 108 %% 100 = 8
-set /a HH_CHK=1%HH_TMP% %% 100
-set /a MM_CHK=1%MM_TMP% %% 100
-set /a SS_CHK=1%SS_TMP% %% 100
+:: CMD не понимает "08" как число - ошибка из-за ведущего нуля.
+:: Приписываем "100" спереди, затем %% 100.
+:: В CMD %% - это "остаток от ЦЕЛОЧИСЛЕННОГО деления" (только целые, без дробей!).
+:: Пример: 10008 / 100 = 100 раз по 100 = 10000, остаток = 8 -> получаем число 8.
+:: Работает для "8", "08", "23" - всегда даёт правильный результат.
+set /a HH_CHK=100%HH_TMP% %% 100
+set /a MM_CHK=100%MM_TMP% %% 100
+set /a SS_CHK=100%SS_TMP% %% 100
 
 if %HH_CHK% GTR 23 goto after_date_fix_try
 if %MM_CHK% GTR 59 goto after_date_fix_try
@@ -359,68 +436,86 @@ exit /b
 
 
 
+:check_date_format
+:: Проверяем, что первые символы - цифры (минимальная защита)
+if "%NAME_Y:~0,1%" GTR "9" exit /b
+if "%NAME_Y:~0,1%" LSS "0" exit /b
+if "%NAME_M:~0,1%" GTR "9" exit /b
+if "%NAME_M:~0,1%" LSS "0" exit /b
+if "%NAME_D:~0,1%" GTR "9" exit /b
+if "%NAME_D:~0,1%" LSS "0" exit /b
 
+set "Y_CHK="
+set "M_CHK="
+set "D_CHK="
 
+:: CMD не понимает "08" как число - выдаёт ошибку из-за ведущего нуля.
+:: Чтобы обойти: приписываем 10000 к году или 100 к месяцу/дню, затем %% N.
+:: В CMD %% - это "остаток от ЦЕЛОЧИСЛЕННОГО деления" (дробей нет!).
+:: Пример: 10008 / 100 = 100 раз по 100 (итого 10000), остаток = 8.
+:: Так "08" -> 8, "2023" -> 2023, "7" -> 7 - всегда правильное число.
+set /a Y_CHK=10000%NAME_Y% %% 10000
+set /a M_CHK=100%NAME_M% %% 100
+set /a D_CHK=100%NAME_D% %% 100
 
-:check_jpg_match
-:: Проверяем, соответствует ли имя файла EXIF-дате и маске ГГГГ-ММ-ДД_ЧЧММСС - если да, пропускаем
-:: %1 = full (требуется дата+время в имени) или date (достаточно даты)
-if not defined NAME_Y exit /b
-:: Если режим НЕ "full" (т.е. "date") - пропускаем проверку времени
-if /i not "%~1"=="full" goto check_time_skip
-:: В режиме "full" время в имени обязательно
-if not defined NAME_HH exit /b
-:check_time_skip
+:: Минимальный и максимальный год
+if %Y_CHK% LSS 1900 exit /b
+if %Y_CHK% GTR 2100 exit /b
+if %M_CHK% LSS 1 exit /b
+if %M_CHK% GTR 12 exit /b
+if %D_CHK% LSS 1 exit /b
+if %D_CHK% GTR 31 exit /b
 
-:: Проверка формата даты в имени: YYYY-MM-DD
-set "PART=%FN:~0,10%"
-
-:: Проверяем длину и разделители
-if "%PART:~4,1%" NEQ "-" exit /b
-if "%PART:~7,1%" NEQ "-" exit /b
-
-:: Извлекаем части
-set "Y_PART=%PART:~0,4%"
-set "M_PART=%PART:~5,2%"
-set "D_PART=%PART:~8,2%"
-
-if "%Y_PART:~0,1%" GTR "9" exit /b
-if "%Y_PART:~0,1%" LSS "0" exit /b
-if "%M_PART:~0,1%" GTR "9" exit /b
-if "%M_PART:~0,1%" LSS "0" exit /b
-if "%D_PART:~0,1%" GTR "9" exit /b
-if "%D_PART:~0,1%" LSS "0" exit /b
-
-:: Проверка: после даты - подчёркивание
-set "UNDERSCORE=%FN:~10,1%"
-if not defined UNDERSCORE exit /b
-if not "%UNDERSCORE%"=="_" exit /b
-
-:: Проверка совпадения даты с EXIF
-set "NAME_DATE=%NAME_Y%-%NAME_M%-%NAME_D%"
-if not "%NAME_DATE%"=="%DTO_DATE%" exit /b
-
-:: Если режим "только дата" - совпадение найдено
-if /i "%~1"=="date" set "JPG_MATCH=1" & exit /b
-
-:: Режим "full": проверяем время
-set "TIME_PART=%FN:~11,6%"
-:: Проверяем длину времени (должно быть 6 символов)
-if "%TIME_PART:~5,1%"=="" exit /b
-
-:: Проверяем, что первый символ времени - цифра
-if "%TIME_PART:~0,1%" GTR "9" exit /b
-if "%TIME_PART:~0,1%" LSS "0" exit /b
-
-:: Проверка совпадения полной даты+времени с EXIF
-set "NAME_COMP=%NAME_Y%-%NAME_M%-%NAME_D% %NAME_HH%:%NAME_MM%:%NAME_SS%"
-if not "%NAME_COMP%"=="%DTO_COMP%" exit /b
-
-:: Полное совпадение
-set "JPG_MATCH=1"
+set "DATE_VALID=1"
 exit /b
 
 
+
+
+
+
+:check_time_format
+:: Извлечение часов/минут/секунд из 6-символьной строки (например, 081234)
+:: Проверяем длину - должно быть минимум 6 символов
+if "%HMSCAND:~5,1%"=="" exit /b
+
+:: Минимальная проверка - первый символ каждой пары должен быть цифрой
+if "%HMSCAND:~0,1%" GTR "9" exit /b
+if "%HMSCAND:~0,1%" LSS "0" exit /b
+if "%HMSCAND:~2,1%" GTR "9" exit /b
+if "%HMSCAND:~2,1%" LSS "0" exit /b
+if "%HMSCAND:~4,1%" GTR "9" exit /b
+if "%HMSCAND:~4,1%" LSS "0" exit /b
+
+:: Извлекаем HH, MM, SS с обходом ведущих нулей
+set "HH_CHK="
+set "MM_CHK="
+set "SS_CHK="
+
+:: CMD не понимает "08" как число - ошибка из-за ведущего нуля.
+:: Приписываем "100" к 2-символьному фрагменту, затем %% 100.
+:: В CMD %% - это "остаток от ЦЕЛОЧИСЛЕННОГО деления" (дробей нет, только целые!).
+:: Пример: 10008 / 100 = 100 раз по 100 = 10000, остаток = 8 -> число 8.
+:: Безопасно: HMSCAND содержит только цифры, длина = 2.
+set /a HH_CHK=100%HMSCAND:~0,2% %% 100
+set /a MM_CHK=100%HMSCAND:~2,2% %% 100
+set /a SS_CHK=100%HMSCAND:~4,2% %% 100
+
+:: Проверяем диапазоны
+if %HH_CHK% GTR 23 exit /b
+if %MM_CHK% GTR 59 exit /b
+if %SS_CHK% GTR 59 exit /b
+
+:: Форматируем с ведущими нулями
+set "HH=%HH_CHK%"
+if %HH_CHK% LSS 10 set "HH=0%HH_CHK%"
+set "MM=%MM_CHK%"
+if %MM_CHK% LSS 10 set "MM=0%MM_CHK%"
+set "SS=%SS_CHK%"
+if %SS_CHK% LSS 10 set "SS=0%SS_CHK%"
+
+set "TIME_VALID=1"
+exit /b
 
 
 
@@ -649,87 +744,6 @@ exit /b
 
 
 
-:check_date_format
-:: Проверяем, что первые символы - цифры (минимальная защита)
-if "%NAME_Y:~0,1%" GTR "9" exit /b
-if "%NAME_Y:~0,1%" LSS "0" exit /b
-if "%NAME_M:~0,1%" GTR "9" exit /b
-if "%NAME_M:~0,1%" LSS "0" exit /b
-if "%NAME_D:~0,1%" GTR "9" exit /b
-if "%NAME_D:~0,1%" LSS "0" exit /b
-
-set "Y_CHK="
-set "M_CHK="
-set "D_CHK="
-
-:: Обход ошибки восьмеричных чисел: 08 -> 10008 %% 10000 = 8
-set /a Y_CHK=1%NAME_Y% %% 10000
-set /a M_CHK=1%NAME_M% %% 100
-set /a D_CHK=1%NAME_D% %% 100
-
-:: Минимальный и максимальный год
-if %Y_CHK% LSS 1900 exit /b
-if %Y_CHK% GTR 2100 exit /b
-if %M_CHK% LSS 1 exit /b
-if %M_CHK% GTR 12 exit /b
-if %D_CHK% LSS 1 exit /b
-if %D_CHK% GTR 31 exit /b
-
-set "DATE_VALID=1"
-exit /b
-
-
-
-
-
-
-:check_time_format
-:: Извлечение часов/минут/секунд из 6-символьной строки (например, 081234)
-:: Проверяем длину - должно быть минимум 6 символов
-if "%HMSCAND:~5,1%"=="" exit /b
-
-:: Минимальная проверка - первый символ каждой пары должен быть цифрой
-if "%HMSCAND:~0,1%" GTR "9" exit /b
-if "%HMSCAND:~0,1%" LSS "0" exit /b
-if "%HMSCAND:~2,1%" GTR "9" exit /b
-if "%HMSCAND:~2,1%" LSS "0" exit /b
-if "%HMSCAND:~4,1%" GTR "9" exit /b
-if "%HMSCAND:~4,1%" LSS "0" exit /b
-
-:: Извлекаем HH, MM, SS с обходом ведущих нулей
-set "HH_CHK="
-set "MM_CHK="
-set "SS_CHK="
-
-:: Обход ошибки восьмеричных чисел - 08 -> 10008 %% 100 = 8
-:: Проблема - set /a не принимает "08" как число (ведь 08 - ошибка в восьмеричной системе)
-:: Решение - приписываем 100 спереди - "10008", берём mod 100 (делим на 100) - 8
-:: Так обходим ведущие нули без if и без ошибок. Пример - %HMSCAND:~0,2% = "08" - 10008 %% 100 = 8
-set /a HH_CHK=100%HMSCAND:~0,2% %% 100
-set /a MM_CHK=100%HMSCAND:~2,2% %% 100
-set /a SS_CHK=100%HMSCAND:~4,2% %% 100
-
-:: Проверяем диапазоны
-if %HH_CHK% GTR 23 exit /b
-if %MM_CHK% GTR 59 exit /b
-if %SS_CHK% GTR 59 exit /b
-
-:: Форматируем с ведущими нулями
-set "HH=%HH_CHK%"
-if %HH_CHK% LSS 10 set "HH=0%HH_CHK%"
-set "MM=%MM_CHK%"
-if %MM_CHK% LSS 10 set "MM=0%MM_CHK%"
-set "SS=%SS_CHK%"
-if %SS_CHK% LSS 10 set "SS=0%SS_CHK%"
-
-set "TIME_VALID=1"
-exit /b
-
-
-
-
-
-
 :build_name
 :: --- Формирование YMDHMS ---
 :: К этому моменту Y, M, D, HH, MM, SS гарантированно валидны:
@@ -739,13 +753,27 @@ exit /b
 set "YMDHMS=%Y%-%M%-%D%_%HH%%MM%%SS%"
 
 :: Удаление исходных "дублей" - дата + 1 символ (любой разделитель), затем время
+:: Эти условия работают ТОЛЬКО ПОСЛЕ того, как дата/время уже утверждены
+:: как валидные и использованы в YMDHMS. Не путать с парсингом в try_name_date!
 if "%BASE:~0,10%"=="%Y%-%M%-%D%" set "BASE=%BASE:~11%"
 if "%BASE:~0,6%"=="%HH%%MM%%SS%" set "BASE=%BASE:~6%"
 
+:: Если BASE пуст - не добавляем _
+if not defined BASE (
+    set "NAMEBASE=%YMDHMS%"
+    goto after_base
+)
+
 :: Обработка первого символа BASE: только одна ветка срабатывает
 if "%BASE:~0,1%"=="_" goto plain_base
-if "%BASE:~0,1%"==" " set "BASE=_%BASE:~1%" & goto plain_base
-if "%BASE:~0,1%"=="-" set "BASE=_%BASE:~1%" & goto plain_base
+if "%BASE:~0,1%"==" " (
+    set "BASE=_%BASE:~1%"
+    goto plain_base
+)
+if "%BASE:~0,1%"=="-" (
+    set "BASE=_%BASE:~1%"
+    goto plain_base
+)
 :: По умолчанию - добавляем _ между датой и именем
 set "NAMEBASE=%YMDHMS%_%BASE%"
 goto after_base
