@@ -716,8 +716,8 @@ set "FINAL_KEYS=-hide_banner -c:v %CODEC%"
 if /i "%CODEC:~-5%" == "nvenc" goto NV_OPTS
 if /i "%CODEC:~-3%" == "amf" goto AMF_OPTS
 if /i "%CODEC:~-3%" == "qsv" goto QSV_OPTS
-:: Ну и остались libx* :
-set "FINAL_KEYS=%FINAL_KEYS% -preset slow -tune film"
+:: Ну и остались libx* : tune film/grain не задаём, т.к. libx265 не умеет tune film:
+set "FINAL_KEYS=%FINAL_KEYS% -preset slow"
 goto PROFILE_V
 
 :: Обработка CRF/VBR для *nvenc:
