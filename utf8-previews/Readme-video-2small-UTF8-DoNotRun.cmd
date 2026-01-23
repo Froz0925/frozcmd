@@ -1,7 +1,7 @@
 @echo off
 :: Перекодирование видеофайлов в уменьшенный размер с высоким качеством
 set "DO=Video recode script"
-set "VRS=Froz %DO% v06.01.2026"
+set "VRS=Froz %DO% v23.01.2026"
 
 :: === Блок: ПРОВЕРКИ ===
 title %DO%
@@ -67,7 +67,7 @@ set "INIOEMW=%CMDN%-inioemw-%random%"
 >>"%INIOEMW%" echo(; INTEL:  hevc_qsv и h264_qsv - Intel Skylake+ (2015+), драйвер Intel HD + Media Feature Pack
 >>"%INIOEMW%" echo(; CPU:    libx265 - очень медленно, libx264 - медленно
 >>"%INIOEMW%" echo(; Примечание: HEVC - меньше размер, выше качество, H.264 - совместимость.
->>"%INIOEMW%" echo(CODEC=hevc_nvenc
+>>"%INIOEMW%" echo(CODEC=h264_nvenc
 >>"%INIOEMW%" echo(
 >>"%INIOEMW%" echo(; Профиль кодирования для HEVC: main10 (10 bit) и main (8 bit).
 >>"%INIOEMW%" echo(; Для H.264 всегда будет установлен high.
@@ -82,7 +82,7 @@ set "INIOEMW=%CMDN%-inioemw-%random%"
 >>"%INIOEMW%" echo(FPS=
 >>"%INIOEMW%" echo(
 >>"%INIOEMW%" echo(; Контейнер: mkv - больше функций, mp4 - лучше для qsv/amf и проигрывателей.
->>"%INIOEMW%" echo(OUTPUT_EXT=mkv
+>>"%INIOEMW%" echo(OUTPUT_EXT=mp4
 >>"%INIOEMW%" echo(
 >>"%INIOEMW%" echo(; Суффикс к имени: например _sm -^> имя_sm.mkv
 >>"%INIOEMW%" echo(NAME_APPEND=_sm
@@ -590,10 +590,14 @@ if /i "%CODEC:~-3%" == "qsv"   set "SPEED_CENTI=%SPEED_QSV%"
 :: Fallback: сначала предполагаем GPU (100), CPU позже получит 200 и пропустит коэффициенты
 if not defined SPEED_CENTI set "SPEED_CENTI=100"
 if /i "%CODEC:~0,5%" == "libx2" set "SPEED_CENTI=200" & goto TIME_CALC
+:: Используем временную переменную для расчётов, чтобы не сломать логику фильтрации
+if defined FPS set "FPS_FOR_TIME=%FPS%" & goto GPU_TIME
+set "FPS_FOR_TIME=30"
+:GPU_TIME
 :: Коэффициенты (1080p30 -> x65, 720p -> x55) - типичные соотношения для GPU-кодеков с запасом:
 :: лучше завысить оценку времени, чем занижать. Для 720p30 итог ~36% от базы.
 :: +50 в (x*k+50)/100 обеспечивает округление до ближайшего целого при целочисленном делении.
-if %FPS% LEQ 30 set /a "SPEED_CENTI=(SPEED_CENTI*65+50)/100"
+if %FPS_FOR_TIME% LEQ 30 set /a "SPEED_CENTI=(SPEED_CENTI*65+50)/100"
 if %SRC_H% LEQ 720 set /a "SPEED_CENTI=(SPEED_CENTI*55+50)/100"
 :TIME_CALC
 :: LENGTH_SECONDS извлечён ранее. Берём целую часть и округляем длину вверх (2.1 -> 3)
@@ -733,9 +737,9 @@ if defined CRF (
 ::   maxrate = b:v x 1.25,  bufsize = maxrate + 1M
 :: Для этих настроек кодера оптимальны битрейты: HEVC: 1080p - 4M, 720p - 2M. H.264 - на ~50% выше.
 if %SRC_H% LEQ 720 goto LOWER_NV_BITRATE
-set "BITRATE_V=4M"
-set "BITRATE_MAX=5M"
-set "BITRATE_BUF=6M"
+set "BITRATE_V=3M"
+set "BITRATE_MAX=4M"
+set "BITRATE_BUF=5M"
 if /i "%CODEC%" == "h264_nvenc" (
     set "BITRATE_V=4M"
     set "BITRATE_MAX=5M"
@@ -747,9 +751,9 @@ set "BITRATE_V=2M"
 set "BITRATE_MAX=3M"
 set "BITRATE_BUF=4M"
 if /i "%CODEC%" == "h264_nvenc" (
-    set "BITRATE_V=2M"
-    set "BITRATE_MAX=3M"
-    set "BITRATE_BUF=4M"
+    set "BITRATE_V=3M"
+    set "BITRATE_MAX=4M"
+    set "BITRATE_BUF=5M"
 )
 :NV_EXTRA_KEYS
 set "FINAL_KEYS=%FINAL_KEYS% -multipass fullres"
