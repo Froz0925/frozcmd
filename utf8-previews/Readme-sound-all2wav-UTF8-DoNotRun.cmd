@@ -6,7 +6,7 @@ set "EOUT=wav"
 
 set "DO=All audio to .%EOUT%"
 title %DO%
-set "VRS=Froz %DO% v21.08.2025"
+set "VRS=Froz %DO% v25.03.2026"
 echo(%VRS%
 echo(
 set "CMDN=%~n0"
@@ -25,8 +25,7 @@ if "%~1"=="" (
 set "TV=%temp%\%CMDN%_len_%random%%random%.vbs"
 set "TO=%temp%\%CMDN%_out_%random%%random%.txt"
 >"%TV%" echo(Set a=WScript.Arguments.Unnamed:ReDim b(a.Count-1)
->>"%TV%" echo(For i=0To a.Count-1:b(i)=a(i):Next
->>"%TV%" echo(WScript.Echo Len(Join(b," "))
+>>"%TV%" echo(For i=0To a.Count-1:b(i)=a(i):Next:WScript.Echo Len(Join(b," "))
 cscript //nologo "%TV%" %* >"%TO%"
 set "ALEN=0"
 set /p "ALEN=" <"%TO%"
@@ -83,7 +82,7 @@ if errorlevel 1 goto skip
 if /i "%EXT%"==".%EOUT%" goto skip
 if exist "%OUTF%" goto skip
 echo(Конвертируем: "%FN%%EXT%" -^> "%FN%.%EOUT%"
-"%EX%" -hide_banner -i "%FNF%" -f %EOUT% -c:a pcm_s16le "%OUTF%"
+"%EX%" -hide_banner -i "%FNF%" -map_metadata -1 -fflags +bitexact -f %EOUT% -c:a pcm_s16le "%OUTF%"
 echo(
 set "FOUND=1"
 exit /b
