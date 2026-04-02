@@ -254,7 +254,6 @@ set "OUTPUT_DIR=%~dp1"
 set "USER_ROTATION=%ROTATION%"
 set "USER_OUTPUT_EXT=%OUTPUT_EXT%"
 set "USER_FPS=%FPS%"
-if /i "%OUTPUT_EXT%" == "mkv" goto SKIP_ACHK
 
 
 
