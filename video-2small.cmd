@@ -1,7 +1,7 @@
 @echo off
 :: Перекодирование видеофайлов в уменьшенный размер с высоким качеством
 set "DO=Video recode script"
-set "VRS=Froz %DO% v01.04.2026"
+set "VRS=Froz %DO% v02.04.2026"
 
 :: === Блок: ПРОВЕРКИ ===
 title %DO%
@@ -647,10 +647,11 @@ if not defined AUDIO_ARGS goto AAC_SET
 if /i not "%AUDIO_ARGS%"=="%AUDIO_ARGS:aac=%" goto AUDIO_DONE
 :AAC_SET
 set "AUDIO_ARGS=-c:a aac -b:a 192k -ac 2"
+>>"%LOG%" echo([WARNING] %DATE% %TIME:~0,8% В ini аудиокодек указан не AAC. Для MP4 принудительно меняем на AAC-192k.
 goto AUDIO_DONE
 :AUDIO_COPY
 set "AUDIO_ARGS=-c:a copy"
->>"%LOG%" echo([INFO] %DATE% %TIME:~0,8% Аудио подходит для %OUTPUT_EXT% - копируем без перекодирования
+>>"%LOG%" echo([INFO] %DATE% %TIME:~0,8% Аудио %AUDIO_CODEC% уже в оптимальном формате - копируем поток.
 :AUDIO_DONE
 
 
@@ -667,13 +668,15 @@ set "FFP_STMP=%temp%\%CMDN%-ffprobe-subs-%random%.txt"
 set /p "SUBS_TYPE=" <"%FFP_STMP%"
 del "%FFP_STMP%"
 if not defined SUBS_TYPE goto SKIP_SUBS_EXTRACT
-if /i not "%OUTPUT_EXT%" == "mp4" goto SKIP_SUBS_EXTRACT
+>>"%LOG%" echo([INFO] %DATE% %TIME:~0,8% Найдены субтитры %SUBS_TYPE%. Обрабатывается только первая дорожка.
+if /i "%OUTPUT_EXT%" == "mkv" goto SKIP_SUBS_EXTRACT
 if /i "%SUBS_TYPE%"=="srt" set "SUBS_FILE=tempsubs%random%.srt" & goto SUBS_EXTRACT
 if /i "%SUBS_TYPE%"=="ass" set "SUBS_FILE=tempsubs%random%.ass" & goto SUBS_EXTRACT
+>>"%LOG%" echo([WARNING] %DATE% %TIME:~0,8% Тип субтитров %SUBS_TYPE% не поддерживается для вшивания в MP4. Пропускаем.
 goto SKIP_SUBS_EXTRACT
 :SUBS_EXTRACT
 "%FFM%" -hide_banner -v error -i "%FNF%" -c:s copy "%OUTPUT_DIR%%SUBS_FILE%" 2>nul
->>"%LOG%" echo([INFO] %DATE% %TIME:~0,8% Извлечён временный файл субтитров %SUBS_FILE%
+>>"%LOG%" echo([INFO] %DATE% %TIME:~0,8% Извлечён временный файл субтитров %SUBS_FILE%.
 :SKIP_SUBS_EXTRACT
 
 
@@ -718,6 +721,7 @@ set "FL=%FL%fps=%FPS%"
 if not defined SUBS_FILE goto SKIP_SB
 if defined FL set "FL=%FL%,"
 set "FL=%FL%subtitles=%SUBS_FILE%"
+>>"%LOG%" echo([INFO] %DATE% %TIME:~0,8% Для MP4 вшиваем субтитры %SUBS_TYPE% в видеоряд (hardburn).
 :SKIP_SB
 :: Формируем итоговый флаг -vf
 set "VF="
@@ -807,14 +811,18 @@ set "FINAL_KEYS=%FINAL_KEYS% -metadata language=rus"
 :: Добавляем субтитры если есть, устанавливаем их язык в "rus"
 if not defined SUBS_TYPE goto KEYS_SKIP_SB
 :: Если контейнер MP4 - выше уже сделано "вшивание" (hardburn) в ключе VF
-if /i "%OUTPUT_EXT%" == "mp4" goto KEYS_SKIP_SB
+:: Для MP4 заодним добавляем быстрый старт воспроизведения (faststart) и теги стандарта Apple/Google
+if /i "%OUTPUT_EXT%" == "mp4" (
+    set "FINAL_KEYS=%FINAL_KEYS% -movflags +faststart+use_metadata_tags"
+    goto KEYS_SKIP_SB
+)
+:: Если мы здесь, значит MKV и субтитры есть - копируем дорожку
 set "FINAL_KEYS=%FINAL_KEYS% -c:s copy"
 set "FINAL_KEYS=%FINAL_KEYS% -metadata:s:s:0 language=rus"
+>>"%LOG%" echo([INFO] %DATE% %TIME:~0,8% Копируем субтитры %SUBS_TYPE% в MKV отдельной дорожкой.
 :KEYS_SKIP_SB
 :: Копируем глобальные метаданные (Дата съемки, модель камеры, GPS)
 set "FINAL_KEYS=%FINAL_KEYS% -map_metadata 0"
-:: Для MP4 - быстрый старт воспроизведения (faststart) и теги стандарта Apple/Google
-if /i "%OUTPUT_EXT%" == "mp4" set "FINAL_KEYS=%FINAL_KEYS% -movflags +faststart+use_metadata_tags"
 
 :: Удаляем старые видео-теги "битрейт" и "размер потока", если они есть.
 :: FFmpeg копирует их из исходника, но при перекодировании значения неактуальны.
