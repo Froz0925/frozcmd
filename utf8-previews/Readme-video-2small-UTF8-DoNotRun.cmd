@@ -1,10 +1,11 @@
 @echo off
 :: Перекодирование видеофайлов в уменьшенный размер с высоким качеством
 set "DO=Video recode script"
-set "VRS=Froz %DO% v02.04.2026"
+set "VRS=Froz %DO% v04.04.2026"
 
 :: === Блок: ПРОВЕРКИ ===
 title %DO%
+echo(
 echo(%VRS%
 echo(Прервать кодирование - Ctrl-C.
 echo(
@@ -45,7 +46,7 @@ set "INIOEMW=%CMDN%-inioemw-%random%"
 >>"%INIOEMW%" echo(; Уровень качества (меньше = лучше). Пусто - кодек выбирает сам (обычно среднее качество).
 >>"%INIOEMW%" echo(; Примерные значения в зависимости от исходника: nvenc и libx265: 26-33, libx264: 18-28
 >>"%INIOEMW%" echo(; amf/qsv: 1-51 (18-28 дают качество, сравнимое с h264 CRF 23-26)
->>"%INIOEMW%" echo(CRF=32
+>>"%INIOEMW%" echo(CRF=28
 >>"%INIOEMW%" echo(
 >>"%INIOEMW%" echo(; Контейнер: mkv - больше функций. mp4 - совместимее (ограничены ключи и кодеки).
 >>"%INIOEMW%" echo(; Внимание: расширение может быть принудительно изменено на MKV для сохранения 
@@ -53,11 +54,10 @@ set "INIOEMW=%CMDN%-inioemw-%random%"
 >>"%INIOEMW%" echo(OUTPUT_EXT=mkv
 >>"%INIOEMW%" echo(
 >>"%INIOEMW%" echo(; Аудио-ключи: Пусто или ; в начале = копировать исходный звук.
->>"%INIOEMW%" echo(; Рекомендуется OPUS: -c:a libopus -b:a 128k -ac 2
->>"%INIOEMW%" echo(; Формат AAC: -c:a aac -b:a 192k -ac 2
->>"%INIOEMW%" echo(; Для MKV: если в оригинале AAC или OPUS - копируется без перекодирования.
->>"%INIOEMW%" echo(; Для MP4: если в оригинале не AAC или если здесь указан несовместимый кодек 
->>"%INIOEMW%" echo(; скрипт принудительно установит AAC 192k для гарантии воспроизведения.
+>>"%INIOEMW%" echo(; Рекомендуется OPUS стерео: -c:a libopus -b:a 128k -ac 2
+>>"%INIOEMW%" echo(; Формат AAC стерео: -c:a aac -b:a 192k -ac 2
+>>"%INIOEMW%" echo(; Если выбран контейнер MKV: если в исходнике AAC или OPUS - копируется без перекодирования.
+>>"%INIOEMW%" echo(; Если MP4: если в исходнике не AAC или здесь указан не AAC - будет принудительно AAC 192k 2ch.
 >>"%INIOEMW%" echo(AUDIO_ARGS=-c:a libopus -b:a 128k -ac 2
 >>"%INIOEMW%" echo(
 >>"%INIOEMW%" echo(; Принудительный поворот (transpose): -90 = по часовой, 90 = против часовой, 180.
@@ -65,15 +65,15 @@ set "INIOEMW=%CMDN%-inioemw-%random%"
 >>"%INIOEMW%" echo(; Заданный здесь поворот добавляется к тегу из файла. Кодек *qsv не поддерживает ключ transpose.
 >>"%INIOEMW%" echo(ROTATION=
 >>"%INIOEMW%" echo(
->>"%INIOEMW%" echo(; Видеокодек. Аппаратным кодекам выбраны их максимально качественные ключи. libx* - preset slow.
->>"%INIOEMW%" echo(; Примечание: HEVC - меньше размер, выше качество, H.264 - совместимость.
->>"%INIOEMW%" echo(; NVIDIA: hevc_nvenc и h264_nvenc. Быстро, но иногда при том же битрейте качество хуже чем libx.
+>>"%INIOEMW%" echo(; Видеокодек. Максимальное качество дадут медленные CPU-кодеки libx265 и libx264.
+>>"%INIOEMW%" echo(; GPU-кодекам выбраны их максимально качественные ключи. libx* - preset slow.
+>>"%INIOEMW%" echo(; HEVC - меньше размер, выше качество, H.264 - выше совместимость с железом.
+>>"%INIOEMW%" echo(; NVIDIA: hevc_nvenc и h264_nvenc. Быстро, но при том же битрейте качество иногда хуже чем libx.
 >>"%INIOEMW%" echo(;         Требуется GeForce GTX 950+ (Maxwell 2nd Gen GM20x) (2014+) и драйвер Nvidia v.570+.
 >>"%INIOEMW%" echo(; AMD:    hevc_amf и h264_amf - Radeon RX 400 / R9 300 серии и новее (2015+)
 >>"%INIOEMW%" echo(;         Требуется драйвер AMD Adrenalin Edition (не Microsoft)
 >>"%INIOEMW%" echo(; INTEL:  hevc_qsv и h264_qsv - Intel Skylake+ (2015+), драйвер Intel HD + Media Feature Pack
->>"%INIOEMW%" echo(; CPU:    libx265 - очень медленно. libx264 - медленно. Максимальное качество.
->>"%INIOEMW%" echo(CODEC=hevc_nvenc
+>>"%INIOEMW%" echo(CODEC=libx265
 >>"%INIOEMW%" echo(
 >>"%INIOEMW%" echo(; Профиль кодирования для HEVC: main10 (10 bit) и main (8 bit).
 >>"%INIOEMW%" echo(; Для H.264 всегда будет установлен high.
@@ -88,7 +88,7 @@ set "INIOEMW=%CMDN%-inioemw-%random%"
 >>"%INIOEMW%" echo(; Примеры: 24, 25, 30, 50, 60, 24000/1001 (~23.976), 30000/1001 (~29.97)
 >>"%INIOEMW%" echo(FPS=
 >>"%INIOEMW%" echo(
->>"%INIOEMW%" echo(; Суффикс имени файла
+>>"%INIOEMW%" echo(; Суффикс имени готового файла
 >>"%INIOEMW%" echo(NAME_APPEND=_sm
 >>"%INIOEMW%" echo(
 >>"%INIOEMW%" echo(; Калибровка скорости. Нужна для расчета оставшегося времени.
@@ -251,10 +251,9 @@ del "%VT%" & del "%GLOGE%" & del "%GLOGU%"
 :: Все подаваемые на вход файлы всегда лежат в одной папке.
 set "OUTPUT_DIR=%~dp1"
 :: Сохраняем исходные user-значения которые могут быть перезаписаны при работе
-set "USER_ROTATION=%ROTATION%"
-set "USER_OUTPUT_EXT=%OUTPUT_EXT%"
-set "USER_FPS=%FPS%"
-
+set "INI_AUDIO_ARGS=%AUDIO_ARGS%"
+set "INI_FPS=%FPS%"
+set "INI_OUTPUT_EXT=%OUTPUT_EXT%"
 
 
 
@@ -262,10 +261,10 @@ set "USER_FPS=%FPS%"
 
 :: === Блок: СТАРТ ===
 :LOOP
-:: Восстанавливаем user-значения для нового файла
-set "ROTATION=%USER_ROTATION%"
-set "OUTPUT_EXT=%USER_OUTPUT_EXT%"
-set "FPS=%USER_FPS%"
+:: Восстанавливаем ini-значения для нового файла
+set "AUDIO_ARGS=%INI_AUDIO_ARGS%"
+set "FPS=%INI_FPS%"
+set "OUTPUT_EXT=%INI_OUTPUT_EXT%"
 :: Записываем имя файла в переменные чтобы %1 не сломалось в процессе
 set "FNF=%~1"
 set "FNN=%~n1"
@@ -339,6 +338,7 @@ set "A_FPS="
 set "ROTATION_TAG="
 set "TAGBPS="
 set "LENGTH_SECONDS="
+set "AUDIO_CODEC="
 set "FFP_VTMP=%temp%\%CMDN%-ffprobe-video-%random%.txt"
 "%FFP%" -v error ^
     -select_streams v:0 ^
@@ -364,52 +364,45 @@ del "%FFP_VTMP%"
 :: Проверяем, что первый параметр "ширина кадра" извлечен и не равен нулю. Иначе это не видеофайл.
 if not defined SRC_W goto BADFILE
 if %SRC_W% EQU 0 goto BADFILE
-goto GET_AUDIO
-:BADFILE
-echo([ERROR] ffprobe не смог извлечь параметры видео. Файл пропущен.
-echo(
->>"%LOG%" echo([ERROR] %DATE% %TIME:~0,8% ffprobe не смог извлечь параметры видео. Файл пропущен.
-goto NEXT
-:GET_AUDIO
 :: Извлекаем кодек аудиодорожки чтобы решить что с ним делать дальше
-set "AUDIO_CODEC="
 set "FFP_ATMP=%temp%\%CMDN%-ffprobe-audio-%random%.txt"
 :: Ключ :nk=1 отбросит текст "codec_name="
 "%FFP%" -v error -select_streams a:0 -show_entries stream=codec_name -of default=nw=1:nk=1 "%FNF%" >"%FFP_ATMP%"
 set /p "AUDIO_CODEC=" <"%FFP_ATMP%"
 del "%FFP_ATMP%"
-
+goto EXTRACT_DONE
+:BADFILE
+echo([ERROR] Не получилось извлечь параметры видео. Файл пропущен.
+echo(
+>>"%LOG%" echo([ERROR] %DATE% %TIME:~0,8% Не получилось извлечь параметры видео. Файл пропущен.
+goto NEXT
+:EXTRACT_DONE
 
 
 
 
 
 :: === Блок: ЦВЕТ ===
-:: Блок должен быть перед блоком ПОВОРОТ
-:: Определение цветового диапазона (Full Range / Limited Range)
-::   - Если ffprobe извлёк pix_fmt=yuvj420p - считаем, что видео должно отображаться в Full Range,
-::     хотя видео по факту - Limited (16-235). Это стандартное поведение телефонов:
-::     они используют yuvj420p, чтобы плееры "растянули" диапазон и сделали видео ярче.
-::   - Чтобы сохранить этот эффект, устанавливаем colour-range=1 через mkvpropedit в MKV.
-::     ffmpeg не гарантирует запись этого тега, а mkvpropedit не работает с MP4.
-::     Поэтому при yuvj420p расширение меняется на MKV, даже если юзер выбрал MP4.
+:: Блок должен быть перед блоком ПОВОРОТ, так как здесь может измениться контейнер
+:: а в MP4 есть тег Rotation.
+:: При yuvj420p видео по факту - Limited (16-235). Некоторые телефоны используют yuvj420p,
+:: чтобы плееры "растянули" диапазон и сделали видео ярче.
+:: Чтобы сохранить этот эффект, устанавливаем colour-range=1 через mkvpropedit в MKV.
+:: Если тег записывать через ffmpeg, то по факту он не работает, а mkvpropedit не работает с MP4.
+:: Поэтому при yuvj420p расширение принудительно меняем на MKV.
 :: Если очень надо получить MP4 с Full Range, то можно вручную позже (не проверено):
 ::   ffmpeg.exe -i input.mkv -c copy -map 0:v -map 0:a? -map 0:s? -f mp4 -tag:v hvc1 temp.mp4
 ::   MP4Box.exe -add temp.mp4 -new output.mp4 -color=1
-
-:: PIX_FMT извлечён ранее - определяем JPEG FULL RANGE по PIX_FMT
 set "COLOR_RANGE="
 if /i "%PIX_FMT%" == "yuvj420p" set "COLOR_RANGE=1"
+:: Если не Full Range или уже MKV - пропускаем изменения
 if not defined COLOR_RANGE goto COLOR_DONE
-:: Здесь нельзя if (...) так как %OUTPUT_EXT% во второй строке не применит значение из первого set
 if /i "%OUTPUT_EXT%" == "mkv" goto COLOR_DONE
 >>"%LOG%" echo([INFO] %DATE% %TIME:~0,8% Для записи metadata full color с помощью mkvpropedit - меняем расширение на mkv
 :: Меняем расширение на mkv для full-range, пересчитываем OUTPUT
 set "OUTPUT_EXT=mkv"
 set "OUTPUT=%OUTPUT_DIR%%OUTPUT_NAME%.%OUTPUT_EXT%"
 :COLOR_DONE
-
-
 
 
 
@@ -431,28 +424,15 @@ if not defined ROTATION goto ROTATE_DONE
 >>"%LOG%" echo([INFO] %DATE% %TIME:~0,8% Указан дополнительный поворот User-Rotation: %ROTATION%. Добавляем ключ transpose.
 :: Кодеки *qsv не поддерживают фильтр transpose. User-ROTATION будет проигнорирован.
 if /i "%CODEC:~-3%" == "qsv" (
-    >>"%LOG%" echo([WARNING] %DATE% %TIME:~0,8% Кодек %CODEC% не поддерживает ключ transpose.
-    >>"%LOG%" echo([WARNING] %DATE% %TIME:~0,8% Не применяем User-Rotation.
+    >>"%LOG%" echo([WARNING] %DATE% %TIME:~0,8% Кодек %CODEC% не поддерживает ключ transpose. Не применяем User-Rotation.
     >>"%LOG%" echo([WARNING] %DATE% %TIME:~0,8% Поверните видео до кодирования или смените кодек.
     goto ROTATE_DONE
 )
-if "%ROTATION%" == "-90" (
-    set "ROTATION_FILTER=transpose=1"
-    set "SRC_H=%SRC_W%"
-    goto ROTATE_DONE
-)
-if "%ROTATION%" == "90" (
-    set "ROTATION_FILTER=transpose=2"
-    set "SRC_H=%SRC_W%"
-    goto ROTATE_DONE
-)
+if "%ROTATION%" == "-90" set "ROTATION_FILTER=transpose=1" & set "SRC_H=%SRC_W%" & goto ROTATE_DONE
+if "%ROTATION%" == "90" set "ROTATION_FILTER=transpose=2" & set "SRC_H=%SRC_W%" & goto ROTATE_DONE
 :: при 180 - размеры не меняются - SRC_H остаётся как есть
-if "%ROTATION%" == "180" (
-    set "ROTATION_FILTER=transpose=1,transpose=1"
-    goto ROTATE_DONE
-)
+if "%ROTATION%" == "180" set "ROTATION_FILTER=transpose=1,transpose=1"
 :ROTATE_DONE
-
 
 
 
@@ -461,31 +441,21 @@ if "%ROTATION%" == "180" (
 :: === Блок: МАСШТАБ ===
 :: Масштабируем если "SCALE=1": до 720p, если высота > 720. "SCALE=": до 1080p, если есть transpose и высота > 1080
 set "SCALE_EXPR="
-if not defined SCALE goto CHECK_SCALE_EMPTY
-:: SRC_H - физическая высота кадра после всех поворотов (из блока ПОВОРОТ).
-:: Используется для принятия решения о масштабировании.
-:: Режим SCALE=1: уменьшаем до 720, если высота > 720
-if %SRC_H% LEQ 720 (
-    >>"%LOG%" echo([INFO] %DATE% %TIME:~0,8% Задан SCALE=1, высота после поворота ^(если он был^):
-    >>"%LOG%" echo([INFO] %DATE% %TIME:~0,8% %SRC_H% - 720 или менее - не масштабируем.
+:: Устанавливаем значения по умолчанию (для случая, когда SCALE не задан)
+set "SCL_LIMIT=1080"
+set "SCL_PREFIX=SCALE не задан"
+:: Если SCALE определён в ini - переопределяем значения
+if defined SCALE set "SCL_LIMIT=720"
+if defined SCALE set "SCL_PREFIX=Задан SCALE=1"
+:: Единая проверка высоты
+if %SRC_H% LEQ %SCL_LIMIT% (
+    >>"%LOG%" echo([INFO] %DATE% %TIME:~0,8% %SRC_H% - %SCL_LIMIT% или менее - не масштабируем.
     goto SCALE_DONE
 )
->>"%LOG%" echo([INFO] %DATE% %TIME:~0,8% Задан SCALE=1: высота после поворота ^(если он был^):
->>"%LOG%" echo([INFO] %DATE% %TIME:~0,8% %SRC_H% - масштабируем до 720.
-set "SCALE_EXPR=scale=-2:720"
-goto SCALE_DONE
-:: Режим SCALE не задан: уменьшаем до 1080, если высота > 1080
-:CHECK_SCALE_EMPTY
-if %SRC_H% LEQ 1080 (
-    >>"%LOG%" echo([INFO] %DATE% %TIME:~0,8% SCALE не задан, высота после поворота ^(если он был^):
-    >>"%LOG%" echo([INFO] %DATE% %TIME:~0,8% %SRC_H% - 1080 или менее - не масштабируем.
-    goto SCALE_DONE
-)
->>"%LOG%" echo([INFO] %DATE% %TIME:~0,8% SCALE не задан: высота после поворота ^(если он был^):
->>"%LOG%" echo([INFO] %DATE% %TIME:~0,8% %SRC_H% - масштабируем до 1080.
-set "SCALE_EXPR=scale=-2:1080"
+:: Масштабирование требуется
+set "SCALE_EXPR=scale=-2:%SCL_LIMIT%"
+>>"%LOG%" echo([INFO] %DATE% %TIME:~0,8% %SRC_H% - масштабируем до %SCL_LIMIT%.
 :SCALE_DONE
-
 
 
 
@@ -502,13 +472,13 @@ set "SCALE_EXPR=scale=-2:1080"
 :: Для interlaced - всегда устанавливать FPS.
 :: Сброс здесь заранее, т.к. будет if defined в блоке ВРЕМЯ
 set "MAX_FPS="
+set "IS_INTERLACED="
 :: Если FPS задан вручную - выходим сразу
 if defined FPS (
     >>"%LOG%" echo([INFO] %DATE% %TIME:~0,8% FPS задан принудительно: %FPS%.
     goto FPS_DONE
 )
 :: Если видео чересстрочное - ставим FPS по умолчанию и выходим
-set "IS_INTERLACED="
 if /i "%FIELD_ORDER%" == "unknown" (
     >>"%LOG%" echo([INFO] %DATE% %TIME:~0,8% FIELD_ORDER не определён - "unknown". Считаем видео progressive.
     goto HANDLE_PROGRESSIVE
@@ -554,11 +524,15 @@ if %SRC_H% == 480 set "FPS=60"
 
 
 
-
-
 :: === Блок: ВРЕМЯ ===
 :: Блок должен быть после блока ЧАСТОТА
 :: Определяем базовую скорость кодирования (SPEED_CENTI = секунд кодирования на 100 сек видео)
+set "LEN_CALC="
+if "%LENGTH_SECONDS%" == "N/A" (
+    echo(Не получилось извлечь длину видео, расчёт времени кодирования пропущен. Продолжаем кодирование.
+    goto TIME_DONE
+)
+:: Определяем базовую скорость (сек кодирования на 100 сек видео)
 set "SPEED_CENTI="
 if /i "%CODEC%" == "libx264" set "SPEED_CENTI=%SPEED_LIBX264%"
 if /i "%CODEC%" == "libx265" set "SPEED_CENTI=%SPEED_LIBX265%"
@@ -566,27 +540,25 @@ if /i "%CODEC:~-5%" == "nvenc" set "SPEED_CENTI=%SPEED_NVENC%"
 if /i "%CODEC:~-3%" == "amf"   set "SPEED_CENTI=%SPEED_AMF%"
 if /i "%CODEC:~-3%" == "qsv"   set "SPEED_CENTI=%SPEED_QSV%"
 if defined SPEED_CENTI goto TIME_VARS_SET
-:: Fallback SPEED если кодек не в INI
+:: Fallback если кодек не найден в INI
 set "SPEED_CENTI=30"
 if /i "%CODEC:~0,5%" == "libx2" set "SPEED_CENTI=200"
 :TIME_VARS_SET
-:: Используем временную переменную, чтобы не сломать логику фильтрации.
-:: Fallback-FPS = 30
+:: Определяем рабочий FPS для расчёта (приоритет: user > mediainfo > 30)
 set "FPS_FOR_TIME=30"
 if defined MAX_FPS set "FPS_FOR_TIME=%MAX_FPS%"
 if defined FPS set "FPS_FOR_TIME=%FPS%"
-:: 1. Поправка на FPS: Видео 50/60 fps тяжелее, чем 30 fps (x1.8)
+:: Поправка на FPS: Видео 50/60 fps тяжелее, чем 30 fps (x1.8)
 if %FPS_FOR_TIME% GTR 35 set /a "SPEED_CENTI=(SPEED_CENTI*180+50)/100"
-:: 2. Поправка на разрешение: 720p и ниже жмётся в ~2.2 раза быстрее (x0.45)
+:: Поправка на разрешение: 720p и ниже жмётся в ~2.2 раза быстрее (x0.45)
 if %SRC_H% LEQ 720 set /a "SPEED_CENTI=(SPEED_CENTI*45+50)/100"
-:: 3. Коэффициент "Психологического запаса" (x1.3)
-:: Чтобы юзер получил результат "раньше срока"
+:: Психологический запас (x1.3) чтобы юзер получил результат "раньше срока"
 set /a "SPEED_CENTI=(SPEED_CENTI*130+50)/100"
-:: LENGTH_SECONDS извлечён ранее. Округляем длину видео вверх (2.1 -> 3)
+:: Расчёт времени (округляем длину видео вверх, не меняя исходную переменную)
 :: Добавляем точку для защиты от целых чисел без дробной части
-for /f "tokens=1 delims=." %%a in ("%LENGTH_SECONDS%.") do set /a "LENGTH_SECONDS=%%a+1"
+for /f "tokens=1 delims=." %%a in ("%LENGTH_SECONDS%.") do set /a "EST=%%a+1"
 :: Рассчитываем примерное время кодирования в секундах
-set /a "ENCODE_SECONDS=(LENGTH_SECONDS*SPEED_CENTI)/100"
+set /a "ENCODE_SECONDS=(EST*SPEED_CENTI)/100"
 :: Гарантируем минимум 1 секунду
 if %ENCODE_SECONDS% EQU 0 set "ENCODE_SECONDS=1"
 :: Переводим секунды в минуты:секунды
@@ -595,7 +567,7 @@ set /a "SECONDS=ENCODE_SECONDS%%60"
 if %SECONDS% LSS 10 set "SECONDS=0%SECONDS%"
 echo(Примерное время кодирования: %MINUTES% минут %SECONDS% секунд.
 echo(
-
+:TIME_DONE
 
 
 
@@ -614,10 +586,7 @@ set "USE_PROFILE=main10"
 set "PIX_FMT_ARGS=-pix_fmt p010le"
 if /i "%CODEC%" == "libx265" set "PIX_FMT_ARGS=-pix_fmt yuv420p10le"
 :: Если пользователь явно запросил для HEVC профиль main - меняем
-if /i "%PROFILE%" == "main" (
-    set "USE_PROFILE=main"
-    set "PIX_FMT_ARGS=-pix_fmt yuv420p"
-)
+if /i "%PROFILE%" == "main" set "USE_PROFILE=main" & set "PIX_FMT_ARGS=-pix_fmt yuv420p"
 :PROFILE_DONE
 >>"%LOG%" echo([INFO] %DATE% %TIME:~0,8% Установлен профиль кодирования: %USE_PROFILE%
 
@@ -626,24 +595,19 @@ if /i "%PROFILE%" == "main" (
 
 
 :: === Блок: АУДИО ===
-:: Если звука нет - обнуляем юзер-сет и выходим
+:: Если звука нет - обнуляем ключи и сразу на выход
 if not defined AUDIO_CODEC set "AUDIO_ARGS=" & goto AUDIO_DONE
-:: Если в источнике уже AAC - копируем независимо от контейнера, игнорируем юзера
+:: Условия для безусловного КОПИРОВАНИЯ (AAC везде, OPUS в MKV, пусто для MKV)
 if /i "%AUDIO_CODEC%"=="aac" goto AUDIO_COPY
-:: Если MP4 - пропускаем проверку OPUS
-if /i "%OUTPUT_EXT%"=="mp4" goto AUDIO_MP4
-:: Если OPUS и MKV - копируем, игнорируем юзера
-if /i "%AUDIO_CODEC%"=="opus" goto AUDIO_COPY
-:: Если юзер что-то ввел для MKV - оставляем его вариант
-if defined AUDIO_ARGS goto AUDIO_DONE
-:: Если у юзера пусто и MKV - копируем (AC3, DTS и т.д.)
-goto AUDIO_COPY
-:AUDIO_MP4
-:: Если у юзера пусто для MP4 - ставим AAC
+if /i "%AUDIO_CODEC%-%OUTPUT_EXT%"=="opus-mkv" goto AUDIO_COPY
+if /i "%AUDIO_ARGS%-%OUTPUT_EXT%"=="-mkv" goto AUDIO_COPY
+:: Если это MKV и мы здесь - значит у юзера вписан свой кодек. Оставляем и выходим.
+if /i "%OUTPUT_EXT%"=="mkv" goto AUDIO_DONE
+:: MP4: Если у юзера пусто - ставим AAC
 if not defined AUDIO_ARGS goto AAC_SET
 :: Ищем AAC в user-set:
 :: В строке ниже несмотря на "if not" - работает "если в user-set AUDIO_ARGS найден AAC то..."
-:: Но поиск сработает только если set не пустой, поэтому выше была проверка на непустое
+:: Но поиск сработает только если set не пустой, поэтому сперва была проверка на непустое
 if /i not "%AUDIO_ARGS%"=="%AUDIO_ARGS:aac=%" goto AUDIO_DONE
 :AAC_SET
 set "AUDIO_ARGS=-c:a aac -b:a 192k -ac 2"
@@ -651,7 +615,7 @@ set "AUDIO_ARGS=-c:a aac -b:a 192k -ac 2"
 goto AUDIO_DONE
 :AUDIO_COPY
 set "AUDIO_ARGS=-c:a copy"
->>"%LOG%" echo([INFO] %DATE% %TIME:~0,8% Аудио %AUDIO_CODEC% уже в оптимальном формате - копируем поток.
+>>"%LOG%" echo([INFO] %DATE% %TIME:~0,8% Аудио %AUDIO_CODEC% копируется без перекодирования.
 :AUDIO_DONE
 
 
@@ -667,19 +631,19 @@ set "FFP_STMP=%temp%\%CMDN%-ffprobe-subs-%random%.txt"
 "%FFP%" -v error -select_streams s:0 -show_entries stream=codec_name -of default=nw=1:nk=1 "%FNF%" >"%FFP_STMP%"
 set /p "SUBS_TYPE=" <"%FFP_STMP%"
 del "%FFP_STMP%"
-if not defined SUBS_TYPE goto SKIP_SUBS_EXTRACT
+:: Если субтитров нет или вывод в MKV - извлечение не требуется (MKV копирует дорожки напрямую)
+if not defined SUBS_TYPE goto SUBS_DONE
+if /i "%OUTPUT_EXT%"=="mkv" goto SUBS_DONE
 >>"%LOG%" echo([INFO] %DATE% %TIME:~0,8% Найдены субтитры %SUBS_TYPE%. Обрабатывается только первая дорожка.
-if /i "%OUTPUT_EXT%" == "mkv" goto SKIP_SUBS_EXTRACT
+:: Для MP4 поддерживаем вшивание только srt и ass
 if /i "%SUBS_TYPE%"=="srt" set "SUBS_FILE=tempsubs%random%.srt" & goto SUBS_EXTRACT
 if /i "%SUBS_TYPE%"=="ass" set "SUBS_FILE=tempsubs%random%.ass" & goto SUBS_EXTRACT
 >>"%LOG%" echo([WARNING] %DATE% %TIME:~0,8% Тип субтитров %SUBS_TYPE% не поддерживается для вшивания в MP4. Пропускаем.
-goto SKIP_SUBS_EXTRACT
+goto SUBS_DONE
 :SUBS_EXTRACT
 "%FFM%" -hide_banner -v error -i "%FNF%" -c:s copy "%OUTPUT_DIR%%SUBS_FILE%" 2>nul
 >>"%LOG%" echo([INFO] %DATE% %TIME:~0,8% Извлечён временный файл субтитров %SUBS_FILE%.
-:SKIP_SUBS_EXTRACT
-
-
+:SUBS_DONE
 
 
 
@@ -690,42 +654,38 @@ goto SKIP_SUBS_EXTRACT
 :: Порядок фильтров: scale -> transpose -> deinterlace -> fps
 ::   - scale до поворота (размеры), deinterlace после (ориентация), fps в конце (VFR)
 set "FL="
-:: Добавляем scale, если не пропущен и задан
-if defined SCALE_EXPR set "FL=%SCALE_EXPR%"
-:: Добавляем поворот, если задан
-if not defined ROTATION_FILTER goto SKIP_TR
-if defined FL set "FL=%FL%,"
-set "FL=%FL%%ROTATION_FILTER%"
-:SKIP_TR
-:: Добавляем деинтерлейс для interlaced видео
+set "FL_SKIP_FPS="
+set "VF="
+:: Намеренно добавляем запятую перед каждым фильтром, в конце отрезаем первый символ (%FL:~1%)
+:: Scale, если не пропущен и задан
+if defined SCALE_EXPR set "FL=%FL%,%SCALE_EXPR%"
+:: Поворот, если задан
+if defined ROTATION_FILTER set "FL=%FL%,%ROTATION_FILTER%"
+:: Деинтерлейс для interlaced видео
 if not defined IS_INTERLACED goto SKIP_DE
 :: По умолчанию: bwdif=1 - 50i->50p, 60i->60p - сохранит плавность
 set "INTCMD=bwdif=1"
-if not defined FPS goto FL_INT
+if not defined FPS goto SKIP_DE_ADD
 :: При юзер-FPS 25/30 ("кино") -> bwdif=0 + skip FPS, чтобы избежать артефактов
 :: от bwdif=1,fps=25 (50 кадров и отбросить каждый второй)
-set "FL_SKIP_FPS="
 if %FPS% LEQ 30 set "INTCMD=bwdif=0" & set "FL_SKIP_FPS=1"
-:FL_INT
-if defined FL set "FL=%FL%,"
-set "FL=%FL%%INTCMD%"
+:SKIP_DE_ADD
+set "FL=%FL%,%INTCMD%"
 >>"%LOG%" echo([INFO] %DATE% %TIME:~0,8% Применён деинтерлейсинг: %INTCMD%
 :SKIP_DE
-:: Добавляем fps, если задан
+:: Если установлен флаг пропуска (из-за bwdif=0) - не добавляем фильтр fps
 if defined FL_SKIP_FPS goto SKIP_FPS
+:: Если FPS вообще не задан - не добавляем
 if not defined FPS goto SKIP_FPS
-if defined FL set "FL=%FL%,"
-set "FL=%FL%fps=%FPS%"
+set "FL=%FL%,fps=%FPS%"
 :SKIP_FPS
 :: Hardburn субтитров в MP4
-if not defined SUBS_FILE goto SKIP_SB
-if defined FL set "FL=%FL%,"
-set "FL=%FL%subtitles=%SUBS_FILE%"
->>"%LOG%" echo([INFO] %DATE% %TIME:~0,8% Для MP4 вшиваем субтитры %SUBS_TYPE% в видеоряд (hardburn).
-:SKIP_SB
-:: Формируем итоговый флаг -vf
-set "VF="
-if defined FL set "VF=-vf "%FL%""
+if defined SUBS_FILE (
+    set "FL=%FL%,subtitles=%SUBS_FILE%"
+    >>"%LOG%" echo([INFO] %DATE% %TIME:~0,8% Для MP4 вшиваем субтитры %SUBS_TYPE% в видеоряд (hardburn).
+)
+:: Итоговый флаг -vf (~1 отрезает лидирующую запятую)
+if defined FL set "VF=-vf "%FL:~1%""
 
 
 
@@ -735,103 +695,96 @@ if defined FL set "VF=-vf "%FL%""
 :: Порядок ключей ffmpeg КРИТИЧЕН для правильной работы GPU-кодеков. Должно быть так:
 :: -hide_banner -c:v codec [кодек-специфичные init-параметры] -profile:v [-preset]
 :: [-vf] [-pix_fmt] [-crf] [-tune] [-level] -c:a -c:s [-metadata lng]
-set "FINAL_KEYS=-hide_banner -c:v %CODEC%"
+set "FFKEYS=-hide_banner -c:v %CODEC%"
 if /i "%CODEC:~-5%" == "nvenc" goto NV_OPTS
 if /i "%CODEC:~-3%" == "amf" goto AMF_OPTS
 if /i "%CODEC:~-3%" == "qsv" goto QSV_OPTS
 :: Ну и остались libx* : tune film не задаём, т.к. libx265 его не умеет
-set "FINAL_KEYS=%FINAL_KEYS% -preset slow"
-goto KEYS_PROFILE_V
+set "FFKEYS=%FFKEYS% -preset slow"
+goto KEYS_PROFILE
 :NV_OPTS
-if /i "%CODEC:~0,4%" == "hevc" set "FINAL_KEYS=%FINAL_KEYS% -preset p7 -tune uhq"
-if /i "%CODEC:~0,4%" == "h264" set "FINAL_KEYS=%FINAL_KEYS% -preset p7 -tune hq"
+if /i "%CODEC:~0,4%" == "hevc" set "FFKEYS=%FFKEYS% -preset p7 -tune uhq"
+if /i "%CODEC:~0,4%" == "h264" set "FFKEYS=%FFKEYS% -preset p7 -tune hq"
 :: По тестам эти ключи ниже вообще не влияют на результат - 
 :: итоговый файл при любом их сочетании имеет тот же размер до байта. Но пусть будут.
-set "FINAL_KEYS=%FINAL_KEYS% -rc-lookahead 53 -spatial_aq 1"
-set "FINAL_KEYS=%FINAL_KEYS% -b_ref_mode 2"
-goto KEYS_PROFILE_V
+set "FFKEYS=%FFKEYS% -rc-lookahead 53 -spatial_aq 1 -b_ref_mode 2"
+goto KEYS_PROFILE
 :AMF_OPTS
-:: Не протестировано (нет железа) - тут только теория!
-set "FINAL_KEYS=%FINAL_KEYS% -usage high_quality -vbaq 1 -preanalysis 1"
-if /i "%CODEC%" == "h264_amf" set "FINAL_KEYS=%FINAL_KEYS% -coder cabac -bf 2"
-if /i "%CODEC%" == "hevc_amf" goto CHECK_AMF_10BIT
-goto KEYS_PROFILE_V
-:CHECK_AMF_10BIT
-if /i "%USE_PROFILE%" == "main10" set "FINAL_KEYS=%FINAL_KEYS% -bitdepth 10"
-goto KEYS_PROFILE_V
-:QSV_OPTS
-:: Не протестировано (нет железа) - тут только теория!
-set "FINAL_KEYS=%FINAL_KEYS% -scenario archive -async_depth 1"
-set "FINAL_KEYS=%FINAL_KEYS% -extbrc 1 -rdo 1 -adaptive_i 1 -adaptive_b 1"
-if not defined CRF (
-    >>"%LOG%" echo([INFO] %DATE% %TIME:~0,8% QSV: включён look-ahead для VBR
-    set "FINAL_KEYS=%FINAL_KEYS% -look_ahead 1 -look_ahead_depth 60"
+:: GPU AMD: Не протестировано (нет железа) - тут только теория!
+set "FFKEYS=%FFKEYS% -usage high_quality -vbaq 1 -preanalysis 1"
+:: CABAC + 2 B-кадра: улучшают сжатие H.264
+if /i "%CODEC%" == "h264_amf" (
+    set "FFKEYS=%FFKEYS% -coder cabac -bf 2"
+    goto KEYS_PROFILE
 )
-goto KEYS_PROFILE_V
-:KEYS_PROFILE_V
-if /i not "%CODEC:~-5%" == "nvenc" set "FINAL_KEYS=%FINAL_KEYS% -profile:v %USE_PROFILE%"
+:: Для hevc_amf + main10 добавляем 10-bit глубину
+if /i "%USE_PROFILE%" == "main10" set "FFKEYS=%FFKEYS% -bitdepth 10"
+goto KEYS_PROFILE
+:QSV_OPTS
+:: GPU Intel: Не протестировано (нет железа) - тут только теория!
+set "FFKEYS=%FFKEYS% -scenario archive -async_depth 1 -extbrc 1 -rdo 1 -adaptive_i 1 -adaptive_b 1"
+if defined CRF goto KEYS_PROFILE
+:: Если не задан CRF, QSV переключится в VBR - добавляем look-ahead для качества
+set "FFKEYS=%FFKEYS% -look_ahead 1 -look_ahead_depth 60"
+>>"%LOG%" echo([INFO] %DATE% %TIME:~0,8% QSV: включён look-ahead для VBR
+:KEYS_PROFILE
+:: NVENC выбирает профиль по -pix_fmt автоматически. Явное указание отключено.
+:: Для QSV, AMF и CPU (libx264/libx265) -profile:v обязателен (критично для 10-bit HEVC).
+if /i not "%CODEC:~-5%" == "nvenc" set "FFKEYS=%FFKEYS% -profile:v %USE_PROFILE%"
 :: Level для h264_* кодеков (совместимость с проигрывателями)
-if /i "%CODEC:~0,5%" == "h264_" set "FINAL_KEYS=%FINAL_KEYS% -level 4.0"
-if /i "%CODEC%" == "libx264" set "FINAL_KEYS=%FINAL_KEYS% -level 4.0"
+:: Выходное разрешение ограничено блоком МАСШТАБ (высота кадра не более 1080),
+:: поэтому level 4.0 ставим всегда без проверки высоты.
+if /i "%CODEC:~0,5%" == "h264_" set "FFKEYS=%FFKEYS% -level 4.0"
+if /i "%CODEC%" == "libx264" set "FFKEYS=%FFKEYS% -level 4.0"
 :: Видеофильтр -vf
-if defined VF set "FINAL_KEYS=%FINAL_KEYS% %VF%"
+if defined VF set "FFKEYS=%FFKEYS% %VF%"
 :: Формат пикселей (8 bit yuv420p или 10 bit yuv420p10le)
-if defined PIX_FMT_ARGS set "FINAL_KEYS=%FINAL_KEYS% %PIX_FMT_ARGS%"
+if defined PIX_FMT_ARGS set "FFKEYS=%FFKEYS% %PIX_FMT_ARGS%"
 :: Параметры управления качеством (не битрейтом)
-set "FINAL_CRF="
-if not defined CRF goto KEYS_SKIP_CRF
->>"%LOG%" echo([INFO] %DATE% %TIME:~0,8% CRF для %CODEC% установлен: %CRF%
+set "FFCRF="
+if not defined CRF goto KEYS_CRF_DONE
 :: У *NVENC есть ещё -multipass fullres (2pass), он несовместим с CRF-режимом -cq,
 :: и по факту для архивных видео с низким битрейтом почему-то даёт качество хуже чем CRF.
-if /i "%CODEC:~-5%" == "nvenc" set "FINAL_CRF=-cq %CRF%"
-if /i "%CODEC:~-3%" == "amf" set "FINAL_CRF=-rc cqp -qp_i %CRF% -qp_p %CRF%"
-if /i "%CODEC%" == "h264_amf" set "FINAL_CRF=%FINAL_CRF% -qp_b %CRF%"
-if /i "%CODEC:~-3%" == "qsv" set "FINAL_CRF=-global_quality %CRF%"
-if /i "%CODEC:~0,5%" == "libx2" set "FINAL_CRF=-crf %CRF%"
-:KEYS_SKIP_CRF
-if defined FINAL_CRF set "FINAL_KEYS=%FINAL_KEYS% %FINAL_CRF%"
-:: Добавляем аудио если есть
-if not defined AUDIO_ARGS goto KEYS_SKIP_AUD
-set "FINAL_KEYS=%FINAL_KEYS% %AUDIO_ARGS%"
-:: Устанавливаем язык аудио в "rus".
-set "FINAL_KEYS=%FINAL_KEYS% -metadata:s:a:0 language=rus"
-:: Удаляем старые аудио-теги "битрейт" и "размер потока" ТОЛЬКО при перекодировании,
-:: так как при -c:a copy значения остаются корректными.
-if "%AUDIO_ARGS%" == "-c:a copy" goto KEYS_SKIP_AUD
-set "FINAL_KEYS=%FINAL_KEYS% -metadata:s:a BPS="
-set "FINAL_KEYS=%FINAL_KEYS% -metadata:s:a BPS-eng="
-set "FINAL_KEYS=%FINAL_KEYS% -metadata:s:a NUMBER_OF_BYTES="
-set "FINAL_KEYS=%FINAL_KEYS% -metadata:s:a NUMBER_OF_BYTES-eng="
-:KEYS_SKIP_AUD
+if /i "%CODEC:~-5%" == "nvenc" set "FFCRF=-cq %CRF%"
+if /i "%CODEC:~-3%" == "amf" set "FFCRF=-rc cqp -qp_i %CRF% -qp_p %CRF%"
+if /i "%CODEC%" == "h264_amf" set "FFCRF=%FFCRF% -qp_b %CRF%"
+if /i "%CODEC:~-3%" == "qsv" set "FFCRF=-global_quality %CRF%"
+if /i "%CODEC:~0,5%" == "libx2" set "FFCRF=-crf %CRF%"
+>>"%LOG%" echo([INFO] %DATE% %TIME:~0,8% CRF для %CODEC% установлен: %CRF%
+:KEYS_CRF_DONE
+if defined FFCRF set "FFKEYS=%FFKEYS% %FFCRF%"
+:: Добавляем аудио если есть, устанавливаем язык аудио в "rus".
+if not defined AUDIO_ARGS goto KEYS_AUD_DONE
+set "FFKEYS=%FFKEYS% %AUDIO_ARGS% -metadata:s:a:0 language=rus"
+if /i "%AUDIO_ARGS%" == "-c:a copy" goto KEYS_AUD_DONE
+:: Чистим устаревшие аудио-теги только при перекодировании
+set "FFKEYS=%FFKEYS% -metadata:s:a BPS= -metadata:s:a BPS-eng="
+set "FFKEYS=%FFKEYS% -metadata:s:a NUMBER_OF_BYTES= -metadata:s:a NUMBER_OF_BYTES-eng="
+:KEYS_AUD_DONE
 :: Устанавливаем глобальный язык файла. Видеодорожку не трогаем -
 :: ffmpeg делает это криво в MKV, а в MP4 пусть остаётся und/eng.
 :: Язык видеодорожки устанавливается через mkvpropedit
 :: Если включён full-range (COLOR_RANGE=1) - mkvpropedit также добавит цветовые метаданные.
-set "FINAL_KEYS=%FINAL_KEYS% -metadata language=rus"
-:: Добавляем субтитры если есть, устанавливаем их язык в "rus"
-if not defined SUBS_TYPE goto KEYS_SKIP_SB
-:: Если контейнер MP4 - выше уже сделано "вшивание" (hardburn) в ключе VF
-:: Для MP4 заодним добавляем быстрый старт воспроизведения (faststart) и теги стандарта Apple/Google
-if /i "%OUTPUT_EXT%" == "mp4" (
-    set "FINAL_KEYS=%FINAL_KEYS% -movflags +faststart+use_metadata_tags"
-    goto KEYS_SKIP_SB
+:: Также копируем глобальные метаданные (Дата съемки, модель камеры, GPS)
+set "FFKEYS=%FFKEYS% -metadata language=rus -map_metadata 0"
+if not defined SUBS_TYPE goto KEYS_TAGBPS
+if /i "%OUTPUT_EXT%" == "mkv" (
+    set "FFKEYS=%FFKEYS% -c:s copy -metadata:s:s:0 language=rus"
+    >>"%LOG%" echo([INFO] %DATE% %TIME:~0,8% Копируем субтитры %SUBS_TYPE% в MKV отдельной дорожкой.
+    goto KEYS_TAGBPS
 )
-:: Если мы здесь, значит MKV и субтитры есть - копируем дорожку
-set "FINAL_KEYS=%FINAL_KEYS% -c:s copy"
-set "FINAL_KEYS=%FINAL_KEYS% -metadata:s:s:0 language=rus"
->>"%LOG%" echo([INFO] %DATE% %TIME:~0,8% Копируем субтитры %SUBS_TYPE% в MKV отдельной дорожкой.
-:KEYS_SKIP_SB
-:: Копируем глобальные метаданные (Дата съемки, модель камеры, GPS)
-set "FINAL_KEYS=%FINAL_KEYS% -map_metadata 0"
-
+:: Для MP4: добавляем быстрый старт воспроизведения (faststart) и теги стандарта Apple/Google
+:: Если кодек HEVC - добавляем тег hvc1 для совместимости с Apple/Android
+set "FFKEYS=%FFKEYS% -movflags +faststart+use_metadata_tags"
+if /i "%CODEC:~0,4%" == "hevc" set "FFKEYS=%FFKEYS% -tag:v hvc1"
+if /i "%CODEC%" == "libx265" set "FFKEYS=%FFKEYS% -tag:v hvc1"
+:KEYS_TAGBPS
 :: Удаляем старые видео-теги "битрейт" и "размер потока", если они есть.
 :: FFmpeg копирует их из исходника, но при перекодировании значения неактуальны.
 if not defined TAGBPS goto KEYS_DONE
+set "FFKEYS=%FFKEYS% -metadata:s:v BPS= -metadata:s:v BPS-eng="
+set "FFKEYS=%FFKEYS% -metadata:s:v NUMBER_OF_BYTES= -metadata:s:v NUMBER_OF_BYTES-eng="
 >>"%LOG%" echo([CMD] %DATE% %TIME:~0,8% Удаляем "мусорный" metadata-тег BPS %TAGBPS% и сопутствующие ему.
-set "FINAL_KEYS=%FINAL_KEYS% -metadata:s:v BPS="
-set "FINAL_KEYS=%FINAL_KEYS% -metadata:s:v BPS-eng="
-set "FINAL_KEYS=%FINAL_KEYS% -metadata:s:v NUMBER_OF_BYTES="
-set "FINAL_KEYS=%FINAL_KEYS% -metadata:s:v NUMBER_OF_BYTES-eng="
 :KEYS_DONE
 
 
@@ -840,28 +793,28 @@ set "FINAL_KEYS=%FINAL_KEYS% -metadata:s:v NUMBER_OF_BYTES-eng="
 
 :: === Блок: ОБРАБОТКА ===
 :: Пишем CMD_LINE в лог через set, так как есть ключи с кавычками и спецсимволами
-set "CMD_LINE="%FFM%" -i "%FNF%" %FINAL_KEYS% "%OUTPUT%""
+set "CMD_LINE="%FFM%" -i "%FNF%" %FFKEYS% "%OUTPUT%""
 >>"%LOG%" echo([CMD] %DATE% %TIME:~0,8% Строка кодирования: %CMD_LINE%
 :: Запуск кодирования. FFmpeg пишет лог в stderr, а не в stdout - поэтому 2>LOG
 :: Не запускаем через %CMD_LINE%, т.к. могут быть ошибки при спецсимволах.
-"%FFM%" -i "%FNF%" %FINAL_KEYS% "%OUTPUT%" 2>"%FFMPEG_LOG%"
+"%FFM%" -i "%FNF%" %FFKEYS% "%OUTPUT%" 2>"%FFMPEG_LOG%"
 :: Удаляем временный файл субтитров (если был):
-if exist "%OUTPUT_DIR%%SUBS_FILE%" del "%OUTPUT_DIR%%SUBS_FILE%"
+if defined SUBS_FILE del "%OUTPUT_DIR%%SUBS_FILE%"
 :: Проверяем, создан ли выходной видеофайл и ненулевой ли он
 if not exist "%OUTPUT%" goto ENCODE_BAD
 for %%F in ("%OUTPUT%") do set SIZE=%%~zF
 if %SIZE% EQU 0 goto ENCODE_BAD
 :: Если файл - MKV но не full-range - только меняем язык видео на русский
 :: Остальные дорожки (аудио, субтитры) уже получили language=rus через ffmpeg -metadata (см. выше)
-if not "%OUTPUT_EXT%" == "mkv" goto ENCODE_DONE
->>"%LOG%" echo([INFO] %DATE% %TIME:~0,8% В MKV меняем язык видеодорожки на русский
+if /i "%OUTPUT_EXT%" == "mp4" goto ENCODE_DONE
 if not defined COLOR_RANGE goto MKV_LANG_ONLY
 :: Для MKV Full-range добавляем цветовые метаданные + меняем язык на русский
->>"%LOG%" echo([INFO] %DATE% %TIME:~0,8% Full color range: добавляем в MKV теги colour-range
 "%MKVP%" "%OUTPUT%" --edit track:v1 --set "language=rus" --set "colour-range=1" --set "color-matrix-coefficients=1">nul
+>>"%LOG%" echo([INFO] %DATE% %TIME:~0,8% Full color range: добавляем в MKV теги colour-range и меняем язык видеодорожки на русский
 goto ENCODE_DONE
 :MKV_LANG_ONLY
 "%MKVP%" "%OUTPUT%" --edit track:v1 --set "language=rus">nul
+>>"%LOG%" echo([INFO] %DATE% %TIME:~0,8% В MKV меняем язык видеодорожки на русский
 :ENCODE_DONE
 echo(Создан "%OUTPUT_NAME%.%OUTPUT_EXT%".
 >>"%LOG%" echo([INFO] %DATE% %TIME:~0,8% Создан "%OUTPUT_NAME%.%OUTPUT_EXT%"
