@@ -1,259 +1,249 @@
 @echo off
 :: Перекодирование видеофайлов в уменьшенный размер с высоким качеством
 set "DO=Video recode script"
-set "VRS=Froz %DO% v04.04.2026"
+set "VRS=Froz %DO% v03.06.2026"
 
 :: === Блок: ПРОВЕРКИ ===
 title %DO%
-echo(
 echo(%VRS%
 echo(Прервать кодирование - Ctrl-C.
 echo(
 set "CMDN=%~n0"
+:: Инициализация var для if defined в FASTEXIT
+set "CONV="
+set "GLOG="
+set "DTMPV="
 
 :: Проверка наличия утилит
 set "FFM=%~dp0bin\ffmpeg.exe"
 set "FFP=%~dp0bin\ffprobe.exe"
 set "MI=%~dp0bin\mediainfo.exe"
 set "MKVP=%~dp0bin\mkvpropedit.exe"
-if not exist "%FFM%" echo([!] "%FFM%"& goto NOU
-if not exist "%FFP%" echo([!] "%FFP%"& goto NOU
-if not exist "%MI%" echo([!] "%MI%"& goto NOU
-if not exist "%MKVP%" echo([!] "%MKVP%"& goto NOU
+if not exist "%FFM%" echo([!] "%FFM%"& goto NOEXE
+if not exist "%FFP%" echo([!] "%FFP%"& goto NOEXE
+if not exist "%MI%" echo([!] "%MI%"& goto NOEXE
+if not exist "%MKVP%" echo([!] "%MKVP%"& goto NOEXE
 goto CHECK_INI
-:NOU
-echo(не найден, выходим.
-echo(
-pause
-exit /b
+:NOEXE
+echo( не найден, выходим.& echo(
+goto FASTEXIT
 
 :CHECK_INI
-:: Проверка наличия ini-файла
-set "USER_INI=%CMDN%.ini"
-set "USER_INI_FULL=%~dp0%USER_INI%"
-if exist "%USER_INI_FULL%" goto SRC_CHK
+:: Создаём один раз VBS-хелпер конвертации файлов OEM-UTF и UTF-OEM. Нужен pushd.
+:: Пример запуска: cscript //nologo "%CONV%" "%LOGE%" "%LOGU%" "cp866" "UTF-8"
+:: ADODB.Stream принимает пути без внешних кавычек. 
+:: WScript.Arguments(x) очищает кавычки автоматически перед передачей в VBS.
+set "CONV=%temp%\%CMDN%-conv.vbs"
+>"%CONV%"  echo(Set a=WScript.Arguments:With CreateObject("ADODB.Stream")
+>>"%CONV%" echo(.Type=2:.Open:.Charset=a(2):.LoadFromFile a(0):s=.ReadText:.Close
+>>"%CONV%" echo(.Open:.Charset=a(3):.WriteText s:.SaveToFile a(1),2:End With
 
-:: Если ini нет - создаём шаблон. Нельзя полный путь в VBS, поэтому pushd
+set "INI_NAME=%CMDN%.ini"
+set "INI_FPATH=%~dp0%INI_NAME%"
+if exist "%INI_FPATH%" goto SRC_CHK
+:: Если ini нет - создаём шаблон. В VBS нельзя полный путь, поэтому меняем папку
 pushd "%~dp0"
-set "INIOEMW=%CMDN%-inioemw-%random%"
->"%INIOEMW%"  echo(Настройки Froz Video recode script (%CMDN%)
->>"%INIOEMW%" echo(------------------------------------------------------------
->>"%INIOEMW%" echo(
->>"%INIOEMW%" echo(; Размер картинки: 1 = уменьшить до 720p. Пусто = ограничить 1080p.
->>"%INIOEMW%" echo(; Если исходник меньше 720, он не будет увеличен.
->>"%INIOEMW%" echo(SCALE=1
->>"%INIOEMW%" echo(
->>"%INIOEMW%" echo(; Уровень качества (меньше = лучше). Пусто - кодек выбирает сам (обычно среднее качество).
->>"%INIOEMW%" echo(; Примерные значения в зависимости от исходника: nvenc и libx265: 26-33, libx264: 18-28
->>"%INIOEMW%" echo(; amf/qsv: 1-51 (18-28 дают качество, сравнимое с h264 CRF 23-26)
->>"%INIOEMW%" echo(CRF=28
->>"%INIOEMW%" echo(
->>"%INIOEMW%" echo(; Контейнер: mkv - больше функций. mp4 - совместимее (ограничены ключи и кодеки).
->>"%INIOEMW%" echo(; Внимание: расширение может быть принудительно изменено на MKV для сохранения 
->>"%INIOEMW%" echo(; цветового диапазона (Full Range), так как MP4 не поддерживает эти метаданные.
->>"%INIOEMW%" echo(OUTPUT_EXT=mkv
->>"%INIOEMW%" echo(
->>"%INIOEMW%" echo(; Аудио-ключи: Пусто или ; в начале = копировать исходный звук.
->>"%INIOEMW%" echo(; Рекомендуется OPUS стерео: -c:a libopus -b:a 128k -ac 2
->>"%INIOEMW%" echo(; Формат AAC стерео: -c:a aac -b:a 192k -ac 2
->>"%INIOEMW%" echo(; Если выбран контейнер MKV: если в исходнике AAC или OPUS - копируется без перекодирования.
->>"%INIOEMW%" echo(; Если MP4: если в исходнике не AAC или здесь указан не AAC - будет принудительно AAC 192k 2ch.
->>"%INIOEMW%" echo(AUDIO_ARGS=-c:a libopus -b:a 128k -ac 2
->>"%INIOEMW%" echo(
->>"%INIOEMW%" echo(; Принудительный поворот (transpose): -90 = по часовой, 90 = против часовой, 180.
->>"%INIOEMW%" echo(; Пусто = берется из тега поворота контейнеров MP4/MOV, если есть.
->>"%INIOEMW%" echo(; Заданный здесь поворот добавляется к тегу из файла. Кодек *qsv не поддерживает ключ transpose.
->>"%INIOEMW%" echo(ROTATION=
->>"%INIOEMW%" echo(
->>"%INIOEMW%" echo(; Видеокодек. Максимальное качество дадут медленные CPU-кодеки libx265 и libx264.
->>"%INIOEMW%" echo(; GPU-кодекам выбраны их максимально качественные ключи. libx* - preset slow.
->>"%INIOEMW%" echo(; HEVC - меньше размер, выше качество, H.264 - выше совместимость с железом.
->>"%INIOEMW%" echo(; NVIDIA: hevc_nvenc и h264_nvenc. Быстро, но при том же битрейте качество иногда хуже чем libx.
->>"%INIOEMW%" echo(;         Требуется GeForce GTX 950+ (Maxwell 2nd Gen GM20x) (2014+) и драйвер Nvidia v.570+.
->>"%INIOEMW%" echo(; AMD:    hevc_amf и h264_amf - Radeon RX 400 / R9 300 серии и новее (2015+)
->>"%INIOEMW%" echo(;         Требуется драйвер AMD Adrenalin Edition (не Microsoft)
->>"%INIOEMW%" echo(; INTEL:  hevc_qsv и h264_qsv - Intel Skylake+ (2015+), драйвер Intel HD + Media Feature Pack
->>"%INIOEMW%" echo(CODEC=libx265
->>"%INIOEMW%" echo(
->>"%INIOEMW%" echo(; Профиль кодирования для HEVC: main10 (10 bit) и main (8 bit).
->>"%INIOEMW%" echo(; Для H.264 всегда будет установлен high.
->>"%INIOEMW%" echo(; Если не задано - устанавливается main10, если поддерживается кодеком.
->>"%INIOEMW%" echo(PROFILE=
->>"%INIOEMW%" echo(
->>"%INIOEMW%" echo(; Частота кадров. Если не задано - обрабатывается автоматически:
->>"%INIOEMW%" echo(; - обычное видео остается как есть (CFR);
->>"%INIOEMW%" echo(; - плавающий FPS (VFR) приводится к ближайшему CFR: 25, 30, 50 или 60;
->>"%INIOEMW%" echo(; - чересстрочное (50i/60i) преобразуется в плавное 50p/60p (60p для 480i).
->>"%INIOEMW%" echo(; Если плавность 50p/60p не нужна (нужен эффект "кино") - установить 25 или 30.
->>"%INIOEMW%" echo(; Примеры: 24, 25, 30, 50, 60, 24000/1001 (~23.976), 30000/1001 (~29.97)
->>"%INIOEMW%" echo(FPS=
->>"%INIOEMW%" echo(
->>"%INIOEMW%" echo(; Суффикс имени готового файла
->>"%INIOEMW%" echo(NAME_APPEND=_sm
->>"%INIOEMW%" echo(
->>"%INIOEMW%" echo(; Калибровка скорости. Нужна для расчета оставшегося времени.
->>"%INIOEMW%" echo(; Расчет опытным путем: (секунд кодирования / секунд видео) x 100. Пример: 0.3 -^> ставим 30.
->>"%INIOEMW%" echo(; Лучше измерять на видео 1080/30, скрипт учтёт ускорение для 720p и замедление для 50/60 fps.
->>"%INIOEMW%" echo(SPEED_NVENC=8
->>"%INIOEMW%" echo(SPEED_AMF=50
->>"%INIOEMW%" echo(SPEED_QSV=50
->>"%INIOEMW%" echo(SPEED_LIBX265=150
->>"%INIOEMW%" echo(SPEED_LIBX264=120
-:: Конвертация OEM в UTF-8
-set "VTO=%temp%\%CMDN%-oem2utf-%random%.vbs"
->"%VTO%"  echo(With CreateObject("ADODB.Stream")
->>"%VTO%" echo(.Type=2:.Charset="cp866":.Open:.LoadFromFile "%INIOEMW%":s=.ReadText:.Close
->>"%VTO%" echo(.Type=2:.Charset="UTF-8":.Open:.WriteText s:.SaveToFile "%USER_INI%",2:.Close:End With
-cscript //nologo "%VTO%"
-:: Удаление временных файлов и возврат в исходную папку
-del "%INIOEMW%" & del "%VTO%"
+set "IOEMW=%CMDN%-inioemw%random%"
+>"%IOEMW%" echo(; Настройки Froz Video recode script (%CMDN%). Подробнее см. в %CMDN%.txt
+>>"%IOEMW%" echo(-------------------------------------------------------------------------
+>>"%IOEMW%" echo(
+>>"%IOEMW%" echo(; РАЗМЕР: 1 = уменьшить до 720p. Пусто = до 1080p. Меньшие видео не увеличиваются.
+>>"%IOEMW%" echo(SCALE=
+>>"%IOEMW%" echo(
+>>"%IOEMW%" echo(; КАЧЕСТВО (меньше = лучше): nvenc/libx265: 26-33, libx264: 18-28. 
+>>"%IOEMW%" echo(; AV1 (все энкодеры): 28-35. amf/qsv: 20-30. Пусто = авто-качество (обычно невысокое).
+>>"%IOEMW%" echo(CRF=32
+>>"%IOEMW%" echo(
+>>"%IOEMW%" echo(; КОНТЕЙНЕР: mkv (рекомендуется) или mp4. При Full-Range цвете будет принудительно MKV.
+>>"%IOEMW%" echo(OUTPUT_EXT=mkv
+>>"%IOEMW%" echo(
+>>"%IOEMW%" echo(; АУДИО: Пусто = копировать аудиодорожку без перекодирования.
+>>"%IOEMW%" echo(; OPUS (для MKV): -c:a libopus -b:a 128k -ac 2
+>>"%IOEMW%" echo(; AAC (для MP4): -c:a aac -b:a 192k -ac 2.  См. правила копирования в %CMDN%.txt.
+>>"%IOEMW%" echo(AUDIO_ARGS=-c:a libopus -b:a 128k -ac 2
+>>"%IOEMW%" echo(
+>>"%IOEMW%" echo(; ПОВОРОТ: -90 (по час.), 90 (против), 180. Пусто = авто из тега файла (если есть).
+>>"%IOEMW%" echo(ROTATION=
+>>"%IOEMW%" echo(
+>>"%IOEMW%" echo(; КОДЕК: CPU - медленно, макс. кач-во. По убыванию эффективности - меньший размер
+>>"%IOEMW%" echo(; при том же качестве: libsvtav1, libx265, libx264. 
+>>"%IOEMW%" echo(; GPU (nvenc-Nvidia, amf-AMD, qsv-Intel): av1_nvenc, av1_amf, av1_qsv
+>>"%IOEMW%" echo(; hevc_nvenc, hevc_amf, hevc_qsv. Требования к железу - см. %CMDN%.txt.
+>>"%IOEMW%" echo(CODEC=libsvtav1
+>>"%IOEMW%" echo(
+>>"%IOEMW%" echo(; FPS: 24, 25, 30, 50, 60, 24000/1001 (~23.976), 30000/1001 (~29.97). Пусто = авто.
+>>"%IOEMW%" echo(FPS=
+>>"%IOEMW%" echo(
+>>"%IOEMW%" echo(; СУФФИКС готового файла (добавляется к имени исходника).
+>>"%IOEMW%" echo(NAME_APPEND=_sm
+>>"%IOEMW%" echo(
+>>"%IOEMW%" echo(; КАЛИБРОВКА СКОРОСТИ: Нужна для расчета времени (сек. кодирования / сек. видео) x 100.
+>>"%IOEMW%" echo(SPEED_LIBSVTAV1=130
+>>"%IOEMW%" echo(SPEED_LIBX265=150
+>>"%IOEMW%" echo(SPEED_LIBX264=120
+>>"%IOEMW%" echo(SPEED_NVENC=8
+>>"%IOEMW%" echo(SPEED_AMF=50
+>>"%IOEMW%" echo(SPEED_QSV=50
+:: Конвертируем ini в UTF-8 и удаляем временный файл
+cscript //nologo "%CONV%" "%IOEMW%" "%INI_NAME%" "cp866" "UTF-8"
+del "%IOEMW%"
 popd
 echo([!] Файл настроек не найден - создан новый шаблон.
 echo(
 goto HELP
 
-:: Проверка наличия входных файлов
 :SRC_CHK
+:: Проверка наличия входных файлов
 if "%~1" == "" goto HELP
-goto FLD_CHK
-
+set "ATTR=%~a1"
+if /i "%ATTR:~0,1%"=="d" (
+    echo([ERROR] Папки не обрабатываются, выходим.
+    echo(
+    pause
+    goto FASTEXIT
+)
+goto READ_INI
 :HELP
+echo([!] Не заданы входные файлы.
+echo(
 echo(Использование: При необходимости измените настройки в файле
-echo(%USER_INI_FULL%
+echo(%INI_FPATH%
 echo(редактором для Unicode TXT-файлов, например Блокнотом.
 echo(
 echo(Затем перетяните или вставьте видеофайлы на этот файл.
 echo(
-pause
-exit /b
+goto FASTEXIT
 
-:FLD_CHK
-set "ATTR=%~a1"
-if /i "%ATTR:~0,1%"=="d" echo(Папки не обрабатываются, выходим.& echo(& pause & exit /b
-
-:: Проверка длины аргументов CMD через VBS
-:: так как в CMD нет безопасного способа парсить строку с &)(
-set "CTV=%temp%\%CMDN%-len-%random%.vbs"
-set "CTO=%temp%\%CMDN%-out-%random%.txt"
-:: Подсчёт длины всех аргументов с пробелами - для проверки лимита CMD (8191)
-:: Массив + Join, т.к. WScript.Arguments не совместим с Join напрямую
-:: Проверка на "%~1"=="" выше гарантирует a.Count >= 1 , значит ReDim безопасен
->"%CTV%" echo(Set a=WScript.Arguments.Unnamed:ReDim b(a.Count-1)
->>"%CTV%" echo(For i=0To a.Count-1:b(i)=a(i):Next:WScript.Echo Len(Join(b," "))
-cscript //nologo "%CTV%" %* >"%CTO%"
-set "ALEN=0"
-set /p "ALEN=" <"%CTO%"
-del "%CTV%" & del "%CTO%"
-if %ALEN% GTR 7500 (
-    echo(ВНИМАНИЕ: слишком длинная команда.
-    echo(Общая длина путей к файлам больше 7500 символов - возможна потеря данных.
-    echo(Ограничение Windows - 8191 символ, остальное будет обрезано. Выходим.
-    echo(
-    pause
-    exit /b
-)
-
+:READ_INI
 :: Читаем ini-файл в переменные.
 :: Сброс переменных
 set "SCALE="
 set "CRF="
+set "OUTPUT_EXT="
 set "AUDIO_ARGS="
 set "ROTATION="
 set "CODEC="
-set "PROFILE="
 set "FPS="
-set "OUTPUT_EXT="
 set "NAME_APPEND="
+set "SPEED_LIBSVTAV1="
+set "SPEED_LIBX265="
+set "SPEED_LIBX264="
 set "SPEED_NVENC="
 set "SPEED_AMF="
 set "SPEED_QSV="
-set "SPEED_LIBX265="
-set "SPEED_LIBX264="
 :: Конвертация UTF-8 в OEM - нельзя полный путь в VBS, поэтому pushd
 pushd "%~dp0"
-set "INIOEMR=%CMDN%-inioemr-%random%"
-set "VTU=%temp%\%CMDN%-utf2oem-%random%.vbs"
->"%VTU%"  echo(With CreateObject("ADODB.Stream")
->>"%VTU%" echo(.Type=2:.Charset="UTF-8":.Open:.LoadFromFile "%USER_INI%":s=.ReadText:.Close
->>"%VTU%" echo(.Type=2:.Charset="cp866":.Open:.WriteText s:.SaveToFile "%INIOEMR%",2:.Close:End With
-cscript //nologo "%VTU%"
-del "%VTU%"
+set "IOEMR=%CMDN%-inioemr%random%"
+cscript //nologo "%CONV%" "%INI_NAME%" "%IOEMR%" "UTF-8" "cp866"
 :: Чтение ini-файла
-for /f "usebackq tokens=1* delims==" %%a in ("%INIOEMR%") do (
+for /f "usebackq tokens=1* delims==" %%a in ("%IOEMR%") do (
     if "%%a"=="SCALE"               set "SCALE=%%b"
     if "%%a"=="CRF"                 set "CRF=%%b"
+    if "%%a"=="OUTPUT_EXT"          set "OUTPUT_EXT=%%b"
     if "%%a"=="AUDIO_ARGS"          set "AUDIO_ARGS=%%b"
     if "%%a"=="ROTATION"            set "ROTATION=%%b"
     if "%%a"=="CODEC"               set "CODEC=%%b"
-    if "%%a"=="PROFILE"             set "PROFILE=%%b"
     if "%%a"=="FPS"                 set "FPS=%%b"
-    if "%%a"=="OUTPUT_EXT"          set "OUTPUT_EXT=%%b"
     if "%%a"=="NAME_APPEND"         set "NAME_APPEND=%%b"
+    if "%%a"=="SPEED_LIBSVTAV1"     set "SPEED_LIBSVTAV1=%%b"
+    if "%%a"=="SPEED_LIBX265"       set "SPEED_LIBX265=%%b"
+    if "%%a"=="SPEED_LIBX264"       set "SPEED_LIBX264=%%b"
     if "%%a"=="SPEED_NVENC"         set "SPEED_NVENC=%%b"
     if "%%a"=="SPEED_AMF"           set "SPEED_AMF=%%b"
     if "%%a"=="SPEED_QSV"           set "SPEED_QSV=%%b"
-    if "%%a"=="SPEED_LIBX265"       set "SPEED_LIBX265=%%b"
-    if "%%a"=="SPEED_LIBX264"       set "SPEED_LIBX264=%%b"
 )
 :: Удаление OEM-ini и возврат в исходную папку
-del "%INIOEMR%"
+del "%IOEMR%"
 popd
 
 :: Проверка ключевых user sets:
 if not defined CODEC (
-    echo([!] В %USER_INI_FULL%
+    echo([!] В %INI_FPATH%
     echo(не задан параметр CODEC - задайте. Выходим.
     echo(
     pause
-    exit /b
+    goto FASTEXIT
 )
 if not defined OUTPUT_EXT (
     set "OUTPUT_EXT=mkv"
-    echo([!] В %USER_INI_FULL%
+    echo([!] В %INI_FPATH%
     echo(не задано расширение выходных файлов - принимаем: %OUTPUT_EXT%
     echo(
 )
 if not defined NAME_APPEND (
     set "NAME_APPEND=_sm"
-    echo([!] В %USER_INI_FULL%
+    echo([!] В %INI_FPATH%
     echo(не задан суффикс выходных файлов - принимаем: %NAME_APPEND%
     echo(
 )
 
 :: Проверка: поддерживает ли GPU выбранный GPU-кодек
-if /i "%CODEC:~0,5%" == "libx2" goto SKIP_GCHK
+:: Для CPU проверка корректности имени кодека в INI не делается - надеемся на пряморукость юзера
+::if /i "%CODEC:~0,3%" == "lib" goto SKIP_GCHK
+:: По умолчанию целимся в 10-bit (p010le) для HEVC и AV1
+set "FF_PIXFMT=-pix_fmt p010le"
+:: Если выбран кодек семейства h264 - для него стартуем сразу с 8-bit (пустой фильтр)
+if /i "%CODEC:~0,4%" == "h264" set "FF_PIXFMT="
 :: Базовое имя для временных файлов (логи и скрипт перекодировки)
-set "GLOG=%temp%\%CMDN%-gpuchk-%random%"
-:: ffmpeg пишет stderr в UTF-8 -> сохраняем как UTF-8-лог
-set "GLOGU=%GLOG%-utf8"
+set "GLOG=%temp%\%CMDN%-gpuchk.log"
+:: Сбрасываем флаг возможной второй попытки перед входом в TRY_GPU
+set "GPU_RETRY="
+:TRY_GPU
 :: Создаём виртуальный пустой видеофайл длиной в 1 секунду и пытаемся сжать кодеком
-"%FFM%" -hide_banner -v error -f lavfi -i nullsrc -c:v %CODEC% -t 1 -f null - 2>"%GLOGU%"
-:: findstr в CMD работает только с OEM (cp866) - конвертируем лог из UTF-8 в OEM
-set "GLOGE=%GLOG%-oem"
-set "VT=%GLOG%.vbs"
->"%VT%"  echo(With CreateObject("ADODB.Stream")
->>"%VT%" echo(.Type=2:.Charset="UTF-8":.Open:.LoadFromFile "%GLOGU%":s=.ReadText:.Close
->>"%VT%" echo(.Type=2:.Charset="cp866":.Open:.WriteText s:.SaveToFile "%GLOGE%",2:.Close:End With
-cscript //nologo "%VT%"
-:: Не отрывать строку findstr от if errorlevel
-findstr /i "Error while opening encoder" "%GLOGE%" >nul
+"%FFM%" -hide_banner -v error -f lavfi -i nullsrc -c:v %CODEC% %FF_PIXFMT% -t 1 -f null - 2>"%GLOG%"
+:: ffmpeg пишет stderr в UTF-8, но мы ищем латиницу, поэтому можно не конвертировать лог в OEM для findstr
+:: Проверка на кривое имя GPU-энкодера в INI-файле
+:: Если ошибка есть (строка найдена - findstr вернул 0) - проверка не пройдена
+:: Не отрывать строку findstr от строки errorlevel !
+findstr /i /c:"Unknown encoder" "%GLOG%" >nul
 if %ERRORLEVEL% EQU 0 (
-    echo([!] Видеокарта или её драйвер не поддерживает выбранный GPU-кодек.
-    echo(Обновите видеокарту и/или драйвер, или смените кодек в настройках скрипта. Выходим.
+    echo([ERROR] Имя кодека некорректно - проверьте INI-файл. Выходим.
     echo(
     pause
-    exit /b
+    goto FASTEXIT
 )
-del "%VT%" & del "%GLOGE%" & del "%GLOGU%"
+:: Не отрывать строку findstr от строки errorlevel !
+findstr /i /c:"Error while opening encoder" "%GLOG%" >nul
+set "GPU_ERR=%ERRORLEVEL%"
+:: Если ошибки нет (строка Error НЕ найдена - findstr вернул 1) - проверка пройдена
+if %GPU_ERR% EQU 1 goto SKIP_GCHK
+if defined GPU_RETRY goto GPU_NOT_SUPPORTED
+if /i not "%CODEC:~0,4%" == "hevc" goto GPU_NOT_SUPPORTED
+:: Если мы тут, значит упал HEVC 10-битный режим. Пробуем 8 бит
+set "GPU_RETRY=1"
+set "FF_PIXFMT="
+echo([INFO] GPU не поддерживает 10-bit. Пробуем 8-bit...
+goto TRY_GPU
+:GPU_NOT_SUPPORTED
+:: Если мы здесь - это окончательный сбой (упал H.264, AV1, 8-битный HEVC)
+echo([ERROR] Видеокарта или её драйвер не поддерживает выбранный GPU-кодек.
+echo(Обновите видеокарту/драйвер или смените кодек в настройках. Выходим.
+echo(
+goto FASTEXIT
 :SKIP_GCHK
+
+
+
+
 
 :: Глобальные set перед LOOP
 :: Все подаваемые на вход файлы всегда лежат в одной папке.
 set "OUTPUT_DIR=%~dp1"
 :: Сохраняем исходные user-значения которые могут быть перезаписаны при работе
+set "INI_OUTPUT_EXT=%OUTPUT_EXT%"
 set "INI_AUDIO_ARGS=%AUDIO_ARGS%"
 set "INI_FPS=%FPS%"
-set "INI_OUTPUT_EXT=%OUTPUT_EXT%"
+set "AUDIO_DEFAULT=-c:a copy"
+
+:: Создаём один раз VBS-хелпер штампа времени для temp-файлов
+:: Временное имя OEM-лога для текущего видеофайла - используем дату, а не %random%.
+:: Чтобы не зависеть от локали Windows берём текущую дату-время через VBS, 
+:: а не через %date% %time%. Формат: ГГГГ-ММ-ДД_ЧЧММСС
+set "DTMPV=%temp%\%CMDN%-dtmpv.vbs"
+>"%DTMPV%"  echo(s=Year(Now)^&"-"^&Right("0"^&Month(Now),2)^&"-"
+>>"%DTMPV%" echo(s=s^&Right("0"^&Day(Now),2)
+>>"%DTMPV%" echo(s=s^&"_"^&Right("0"^&Hour(Now),2)^&Right("0"^&Minute(Now),2)
+>>"%DTMPV%" echo(s=s^&Right("0"^&Second(Now),2):WScript.Echo s
 
 
 
@@ -262,9 +252,9 @@ set "INI_OUTPUT_EXT=%OUTPUT_EXT%"
 :: === Блок: СТАРТ ===
 :LOOP
 :: Восстанавливаем ini-значения для нового файла
+set "OUTPUT_EXT=%INI_OUTPUT_EXT%"
 set "AUDIO_ARGS=%INI_AUDIO_ARGS%"
 set "FPS=%INI_FPS%"
-set "OUTPUT_EXT=%INI_OUTPUT_EXT%"
 :: Записываем имя файла в переменные чтобы %1 не сломалось в процессе
 set "FNF=%~1"
 set "FNN=%~n1"
@@ -277,21 +267,14 @@ set "OUTPUT=%OUTPUT_DIR%%OUTPUT_NAME%.%OUTPUT_EXT%"
 if not defined FNF goto END
 
 set "ATTR=%~a1"
-if /i not "%ATTR:~0,1%"=="d" goto FILEOK
+if /i not "%ATTR:~0,1%"=="d" goto START
 echo(%FNN% - папка, пропускаем.
 goto NEXT
-:FILEOK
-:: Временное имя OEM-лога для текущего видеофайла - используем дату, а не %random%.
-:: Чтобы не зависеть от локали Windows берём текущую дату-время через VBS, 
-:: а не через %date% %time%. Формат: ГГГГ-ММ-ДД_ЧЧММСС
-set "TV=%temp%\%CMDN%-dtmp-%random%.vbs"
->"%TV%"  echo(s=Year(Now)^&"-"^&Right("0"^&Month(Now),2)^&"-"
->>"%TV%" echo(s=s^&Right("0"^&Day(Now),2)
->>"%TV%" echo(s=s^&"_"^&Right("0"^&Hour(Now),2)^&Right("0"^&Minute(Now),2)
->>"%TV%" echo(s=s^&Right("0"^&Second(Now),2):WScript.Echo s
-for /f %%t in ('cscript //nologo "%TV%"') do set "DTMP=%%t"
-del "%TV%"
-
+:START
+:: Для надёжности переходим в папку с файлом чтобы ffmpeg всегда нашёл внешние субтитры если они будут
+pushd "%OUTPUT_DIR%"
+:: Запрашиваем текущий штамп времени из VBS-хелпера TV
+for /f %%t in ('cscript //nologo "%DTMPV%"') do set "DTMP=%%t"
 :: Имена и папка логов
 set "LOGE=%DTMP%oem"
 set "LOG=%OUTPUT_DIR%logs\%LOGE%"
@@ -318,7 +301,6 @@ goto NEXT
 
 title Обработка %FNWE%...
 echo(%DATE% %TIME:~0,8% Начата обработка "%FNWE%"...
-echo(
 >"%LOG%" echo([INFO] %DATE% %TIME:~0,8% Начата обработка "%FNWE%"...
 
 
@@ -331,7 +313,7 @@ echo(
 :: "мусорные" видеотеги для их удаления позже.
 set "SRC_W="
 set "SRC_H="
-set "PIX_FMT="
+set "SRC_PIXFMT="
 set "FIELD_ORDER="
 set "R_FPS="
 set "A_FPS="
@@ -352,7 +334,7 @@ set "FFP_VTMP=%temp%\%CMDN%-ffprobe-video-%random%.txt"
 for /f "tokens=1* delims==" %%a in ('type "%FFP_VTMP%"') do (
     if "%%a"=="width"          set "SRC_W=%%b"
     if "%%a"=="height"         set "SRC_H=%%b"
-    if "%%a"=="pix_fmt"        set "PIX_FMT=%%b"
+    if "%%a"=="pix_fmt"        set "SRC_PIXFMT=%%b"
     if "%%a"=="field_order"    set "FIELD_ORDER=%%b"
     if "%%a"=="r_frame_rate"   set "R_FPS=%%b"
     if "%%a"=="avg_frame_rate" set "A_FPS=%%b"
@@ -394,7 +376,7 @@ goto NEXT
 ::   ffmpeg.exe -i input.mkv -c copy -map 0:v -map 0:a? -map 0:s? -f mp4 -tag:v hvc1 temp.mp4
 ::   MP4Box.exe -add temp.mp4 -new output.mp4 -color=1
 set "COLOR_RANGE="
-if /i "%PIX_FMT%" == "yuvj420p" set "COLOR_RANGE=1"
+if /i "%SRC_PIXFMT%" == "yuvj420p" set "COLOR_RANGE=1"
 :: Если не Full Range или уже MKV - пропускаем изменения
 if not defined COLOR_RANGE goto COLOR_DONE
 if /i "%OUTPUT_EXT%" == "mkv" goto COLOR_DONE
@@ -422,12 +404,6 @@ if defined ROTATION_TAG (
 :: Обрабатываем User-ROTATION
 if not defined ROTATION goto ROTATE_DONE
 >>"%LOG%" echo([INFO] %DATE% %TIME:~0,8% Указан дополнительный поворот User-Rotation: %ROTATION%. Добавляем ключ transpose.
-:: Кодеки *qsv не поддерживают фильтр transpose. User-ROTATION будет проигнорирован.
-if /i "%CODEC:~-3%" == "qsv" (
-    >>"%LOG%" echo([WARNING] %DATE% %TIME:~0,8% Кодек %CODEC% не поддерживает ключ transpose. Не применяем User-Rotation.
-    >>"%LOG%" echo([WARNING] %DATE% %TIME:~0,8% Поверните видео до кодирования или смените кодек.
-    goto ROTATE_DONE
-)
 if "%ROTATION%" == "-90" set "ROTATION_FILTER=transpose=1" & set "SRC_H=%SRC_W%" & goto ROTATE_DONE
 if "%ROTATION%" == "90" set "ROTATION_FILTER=transpose=2" & set "SRC_H=%SRC_W%" & goto ROTATE_DONE
 :: при 180 - размеры не меняются - SRC_H остаётся как есть
@@ -486,10 +462,10 @@ if /i "%FIELD_ORDER%" == "unknown" (
 if /i not "%FIELD_ORDER%" == "progressive" goto HANDLE_INTERLACED
 :HANDLE_PROGRESSIVE
 :: Дальше может быть только progressive видео. Всегда извлекаем MAX_FPS в т.ч. для блока ВРЕМЯ
-set "TMPMI=%temp%\%CMDN%-mi-fps-%random%.txt"
-"%MI%" --Inform=Video;%%FrameRate%% "%FNF%" >"%TMPMI%"
-set /p MAX_FPS= <"%TMPMI%"
-del "%TMPMI%"
+set "MI_TMP=%temp%\%CMDN%-mi-fps-%random%.txt"
+"%MI%" --Inform=Video;%%FrameRate%% "%FNF%" >"%MI_TMP%"
+set /p MAX_FPS= <"%MI_TMP%"
+del "%MI_TMP%"
 if not defined MAX_FPS (
     >>"%LOG%" echo([WARNING] %DATE% %TIME:~0,8% Не удалось извлечь max frame rate из mediainfo
     goto FPS_DONE
@@ -534,8 +510,9 @@ if "%LENGTH_SECONDS%" == "N/A" (
 )
 :: Определяем базовую скорость (сек кодирования на 100 сек видео)
 set "SPEED_CENTI="
-if /i "%CODEC%" == "libx264" set "SPEED_CENTI=%SPEED_LIBX264%"
+if /i "%CODEC%" == "libsvtav1" set "SPEED_CENTI=%SPEED_LIBSVTAV1%"
 if /i "%CODEC%" == "libx265" set "SPEED_CENTI=%SPEED_LIBX265%"
+if /i "%CODEC%" == "libx264" set "SPEED_CENTI=%SPEED_LIBX264%"
 if /i "%CODEC:~-5%" == "nvenc" set "SPEED_CENTI=%SPEED_NVENC%"
 if /i "%CODEC:~-3%" == "amf"   set "SPEED_CENTI=%SPEED_AMF%"
 if /i "%CODEC:~-3%" == "qsv"   set "SPEED_CENTI=%SPEED_QSV%"
@@ -566,57 +543,67 @@ set /a "MINUTES=ENCODE_SECONDS/60"
 set /a "SECONDS=ENCODE_SECONDS%%60"
 if %SECONDS% LSS 10 set "SECONDS=0%SECONDS%"
 echo(Примерное время кодирования: %MINUTES% минут %SECONDS% секунд.
-echo(
 :TIME_DONE
 
 
 
 
 
+
 :: === Блок: ПРОФИЛЬ ===
-:: Профиль кодирования profile: main/high - 8 bit, main10 - 10 bit. Для всех H.264 - только high.
-:: Формат пикселей pix_fmt: в зависимости от профиля и поддержки кодеком
-set "USE_PROFILE=high"
-set "PIX_FMT_ARGS=-pix_fmt yuv420p"
-:: H.264 использует профиль high по умолчанию
-if /i "%CODEC:~0,5%" == "h264_" goto PROFILE_DONE
-if /i "%CODEC%" == "libx264" goto PROFILE_DONE
-:: Для HEVC используем main10, libx265 требует yuv420p10le
-set "USE_PROFILE=main10"
-set "PIX_FMT_ARGS=-pix_fmt p010le"
-if /i "%CODEC%" == "libx265" set "PIX_FMT_ARGS=-pix_fmt yuv420p10le"
-:: Если пользователь явно запросил для HEVC профиль main - меняем
-if /i "%PROFILE%" == "main" set "USE_PROFILE=main" & set "PIX_FMT_ARGS=-pix_fmt yuv420p"
+:: 1. Базовый дефолт для 8-bit (Упавший HEVC автоматом получает main и yuv420p)
+set "PROFILE=main"
+set "FF_PIXFMT=-pix_fmt yuv420p"
+:: 2. Если тест GPU зафиксировал откат HEVC в 8-бит - база уже настроена идеально, уходим
+if defined GPU_RETRY goto PROFILE_DONE
+:: 3. Если это H.264 (GPU или CPU) - меняем профиль на high (формат yuv420p уже стоит) и уходим
+if /i "%CODEC:~0,4%" == "h264" set "PROFILE=high" & goto PROFILE_DONE
+if /i "%CODEC%" == "libx264" set "PROFILE=high" & goto PROFILE_DONE
+:: 4. Для всех остальных (современных 10-битных) кодеков включаем апгрейд на main10 и p010le
+set "PROFILE=main10"
+set "FF_PIXFMT=-pix_fmt p010le"
+:: 5. Корректировка формата пикселей для CPU-версий (они используют yuv420p10le вместо p010le)
+if /i "%CODEC:~0,3%" == "lib" set "FF_PIXFMT=-pix_fmt yuv420p10le"
+:: 6. Сброс профиля для AV1 (CPU и GPU - драйвер выставит сам, уходим)
+if /i "%CODEC:~0,3%" == "av1" set "PROFILE=" & goto PROFILE_DONE
+if /i "%CODEC%" == "libsvtav1" set "PROFILE="
 :PROFILE_DONE
->>"%LOG%" echo([INFO] %DATE% %TIME:~0,8% Установлен профиль кодирования: %USE_PROFILE%
+>>"%LOG%" echo([INFO] %DATE% %TIME:~0,8% Для %CODEC% установлен формат пикселей: %FF_PIXFMT%
+
 
 
 
 
 
 :: === Блок: АУДИО ===
-:: Если звука нет - обнуляем ключи и сразу на выход
+:: Базовый дефолт (закрывает сценарии копирования для MP4 и MKV, а также пустой ini)
+set "AUDIO_ARGS=%AUDIO_DEFAULT%"
+:: Если звука в оригинале нет - обнуляем и уходим
 if not defined AUDIO_CODEC set "AUDIO_ARGS=" & goto AUDIO_DONE
-:: Условия для безусловного КОПИРОВАНИЯ (AAC везде, OPUS в MKV, пусто для MKV)
-if /i "%AUDIO_CODEC%"=="aac" goto AUDIO_COPY
-if /i "%AUDIO_CODEC%-%OUTPUT_EXT%"=="opus-mkv" goto AUDIO_COPY
-if /i "%AUDIO_ARGS%-%OUTPUT_EXT%"=="-mkv" goto AUDIO_COPY
-:: Если это MKV и мы здесь - значит у юзера вписан свой кодек. Оставляем и выходим.
-if /i "%OUTPUT_EXT%"=="mkv" goto AUDIO_DONE
-:: MP4: Если у юзера пусто - ставим AAC
-if not defined AUDIO_ARGS goto AAC_SET
-:: Ищем AAC в user-set:
-:: В строке ниже несмотря на "if not" - работает "если в user-set AUDIO_ARGS найден AAC то..."
-:: Но поиск сработает только если set не пустой, поэтому сперва была проверка на непустое
-if /i not "%AUDIO_ARGS%"=="%AUDIO_ARGS:aac=%" goto AUDIO_DONE
-:AAC_SET
+:: Если юзер удалил кодек в ini - copy уже задан - уходим
+if not defined INI_AUDIO_ARGS goto AUDIO_DONE
+:: --- СЦЕНАРИЙ: КОНТЕЙНЕР MP4 ---
+if /i "%OUTPUT_EXT%" == "mkv" goto AUDIO_MKV
+:: Если родной звук уже AAC - копируется, уходим
+if /i "%AUDIO_CODEC%" == "aac" goto AUDIO_DONE
+:: Если юзер сам вручную вписал ключевое слово "aac" в ini - отдаем его кастомные ключи и уходим
+:: В строке ниже несмотря на "if not" - работает "если в INI_AUDIO_ARGS найден AAC то..."
+:: Но поиск сработает только если set не пустой, поэтому раньше была нужна проверка на непустое
+if not "%INI_AUDIO_ARGS%" == "%INI_AUDIO_ARGS:aac=%" set "AUDIO_ARGS=%INI_AUDIO_ARGS%" & goto AUDIO_DONE
+:: Во всех остальных случаях для MP4 (например в ini дефолтный Opus) - принудительно ставим AAC 192k
 set "AUDIO_ARGS=-c:a aac -b:a 192k -ac 2"
->>"%LOG%" echo([WARNING] %DATE% %TIME:~0,8% В ini аудиокодек указан не AAC. Для MP4 принудительно меняем на AAC-192k.
+>>"%LOG%" echo([WARNING] %DATE% %TIME:~0,8% В ini указан не AAC. Для MP4 принудительно применен AAC-192k.
 goto AUDIO_DONE
-:AUDIO_COPY
-set "AUDIO_ARGS=-c:a copy"
->>"%LOG%" echo([INFO] %DATE% %TIME:~0,8% Аудио %AUDIO_CODEC% копируется без перекодирования.
+:AUDIO_MKV
+:: --- СЦЕНАРИЙ: КОНТЕЙНЕР MKV ---
+:: В MKV если родной звук Opus - копия уже стоит, уходим
+if /i "%AUDIO_CODEC%" == "opus" goto AUDIO_DONE
+:: В остальных случаях для MKV (например, исходник MP3) - берём из ini
+set "AUDIO_ARGS=%INI_AUDIO_ARGS%"
 :AUDIO_DONE
+if /i "%AUDIO_ARGS%" == "%AUDIO_DEFAULT%" (
+    >>"%LOG%" echo([INFO] %DATE% %TIME:~0,8% Аудиодорожка: %AUDIO_CODEC%, контейнер: %OUTPUT_EXT%. Копируем без перекодирования.
+)
 
 
 
@@ -649,110 +636,119 @@ goto SUBS_DONE
 
 
 
+
 :: === Блок: ВИДЕОФИЛЬТР ===
 :: Этот блок должен быть после блоков МАСШТАБ, ПОВОРОТ, ЧАСТОТА
 :: Порядок фильтров: scale -> transpose -> deinterlace -> fps
 ::   - scale до поворота (размеры), deinterlace после (ориентация), fps в конце (VFR)
-set "FL="
-set "FL_SKIP_FPS="
+set "FILTER_LIST="
+set "SKIP_FPS_FILTER="
 set "VF="
-:: Намеренно добавляем запятую перед каждым фильтром, в конце отрезаем первый символ (%FL:~1%)
-:: Scale, если не пропущен и задан
-if defined SCALE_EXPR set "FL=%FL%,%SCALE_EXPR%"
+:: Собираем базовые фильтры геометрии
+:: Намеренно добавляем запятую перед каждым фильтром - в конце отрежем первый символ (%FL:~1%)
+:: Масштабирование, если не пропущен и задан
+if defined SCALE_EXPR set "FILTER_LIST=%FILTER_LIST%,%SCALE_EXPR%"
 :: Поворот, если задан
-if defined ROTATION_FILTER set "FL=%FL%,%ROTATION_FILTER%"
-:: Деинтерлейс для interlaced видео
-if not defined IS_INTERLACED goto SKIP_DE
+if defined ROTATION_FILTER set "FILTER_LIST=%FILTER_LIST%,%ROTATION_FILTER%"
+:: Обработка деинтерлейса (только для интерлейсного видео)
+if not defined IS_INTERLACED goto PROCESS_FPS
 :: По умолчанию: bwdif=1 - 50i->50p, 60i->60p - сохранит плавность
 set "INTCMD=bwdif=1"
-if not defined FPS goto SKIP_DE_ADD
+if not defined FPS goto ADD_DEINTERLACE
 :: При юзер-FPS 25/30 ("кино") -> bwdif=0 + skip FPS, чтобы избежать артефактов
 :: от bwdif=1,fps=25 (50 кадров и отбросить каждый второй)
-if %FPS% LEQ 30 set "INTCMD=bwdif=0" & set "FL_SKIP_FPS=1"
-:SKIP_DE_ADD
-set "FL=%FL%,%INTCMD%"
+if %FPS% LEQ 30 set "INTCMD=bwdif=0" & set "SKIP_FPS_FILTER=1"
+:ADD_DEINTERLACE
+set "FILTER_LIST=%FILTER_LIST%,%INTCMD%"
 >>"%LOG%" echo([INFO] %DATE% %TIME:~0,8% Применён деинтерлейсинг: %INTCMD%
-:SKIP_DE
+:PROCESS_FPS
 :: Если установлен флаг пропуска (из-за bwdif=0) - не добавляем фильтр fps
-if defined FL_SKIP_FPS goto SKIP_FPS
+if defined SKIP_FPS_FILTER goto PROCESS_SUBS
 :: Если FPS вообще не задан - не добавляем
-if not defined FPS goto SKIP_FPS
-set "FL=%FL%,fps=%FPS%"
-:SKIP_FPS
+if not defined FPS goto PROCESS_SUBS
+set "FILTER_LIST=%FILTER_LIST%,fps=%FPS%"
+:PROCESS_SUBS
 :: Hardburn субтитров в MP4
-if defined SUBS_FILE (
-    set "FL=%FL%,subtitles=%SUBS_FILE%"
-    >>"%LOG%" echo([INFO] %DATE% %TIME:~0,8% Для MP4 вшиваем субтитры %SUBS_TYPE% в видеоряд (hardburn).
-)
-:: Итоговый флаг -vf (~1 отрезает лидирующую запятую)
-if defined FL set "VF=-vf "%FL:~1%""
+if not defined SUBS_FILE goto VF_COMPILE
+set "FILTER_LIST=%FILTER_LIST%,subtitles=%SUBS_FILE%"
+>>"%LOG%" echo([INFO] %DATE% %TIME:~0,8% Для MP4 вшиваем субтитры %SUBS_TYPE% в видеоряд (hardburn).
+:VF_COMPILE
+:: Финальная сборка ключа -vf
+:: Отрезание первого символа (:~1%) убирает лидирующую запятую, 
+:: которая неизбежно образуется при динамической склейке фильтров ,scale,fps
+if defined FILTER_LIST set "VF=-vf "%FILTER_LIST:~1%""
 
 
 
 
 
-:: === Блок: КЛЮЧИ ===
+
+:: === Блок: ВИДЕОКЛЮЧИ ===
 :: Порядок ключей ffmpeg КРИТИЧЕН для правильной работы GPU-кодеков. Должно быть так:
-:: -hide_banner -c:v codec [кодек-специфичные init-параметры] -profile:v [-preset]
+:: -hide_banner -c:v codec [-preset] [кодек-специфичные init-параметры] [-profile:v]
 :: [-vf] [-pix_fmt] [-crf] [-tune] [-level] -c:a -c:s [-metadata lng]
 set "FFKEYS=-hide_banner -c:v %CODEC%"
 if /i "%CODEC:~-5%" == "nvenc" goto NV_OPTS
 if /i "%CODEC:~-3%" == "amf" goto AMF_OPTS
 if /i "%CODEC:~-3%" == "qsv" goto QSV_OPTS
-:: Ну и остались libx* : tune film не задаём, т.к. libx265 его не умеет
+:: Мы в CPU libx-кодеках
 set "FFKEYS=%FFKEYS% -preset slow"
+if /i "%CODEC:~-3%" == "av1" set "FFKEYS=%FFKEYS% -preset 4 -svtav1-params tune=0"
 goto KEYS_PROFILE
 :NV_OPTS
-if /i "%CODEC:~0,4%" == "hevc" set "FFKEYS=%FFKEYS% -preset p7 -tune uhq"
-if /i "%CODEC:~0,4%" == "h264" set "FFKEYS=%FFKEYS% -preset p7 -tune hq"
-:: По тестам эти ключи ниже вообще не влияют на результат - 
-:: итоговый файл при любом их сочетании имеет тот же размер до байта. Но пусть будут.
-set "FFKEYS=%FFKEYS% -rc-lookahead 53 -spatial_aq 1 -b_ref_mode 2"
+set "FFKEYS=%FFKEYS% -preset p7 -rc vbr -rc-lookahead 32 -spatial-aq 1 -temporal-aq 1 -b_ref_mode 1"
+if /i "%CODEC:~0,4%" == "h264" set "FFKEYS=%FFKEYS% -tune hq" & goto KEYS_PROFILE
+set "FFKEYS=%FFKEYS% -tune uhq"
 goto KEYS_PROFILE
 :AMF_OPTS
 :: GPU AMD: Не протестировано (нет железа) - тут только теория!
-set "FFKEYS=%FFKEYS% -usage high_quality -vbaq 1 -preanalysis 1"
-:: CABAC + 2 B-кадра: улучшают сжатие H.264
-if /i "%CODEC%" == "h264_amf" (
-    set "FFKEYS=%FFKEYS% -coder cabac -bf 2"
-    goto KEYS_PROFILE
-)
-:: Для hevc_amf + main10 добавляем 10-bit глубину
-if /i "%USE_PROFILE%" == "main10" set "FFKEYS=%FFKEYS% -bitdepth 10"
+:: Переносим -preset в начало, чтобы он не затирал тонкие init-параметры
+if /i "%CODEC:~0,4%" == "h264" set "FFKEYS=%FFKEYS% -preset 2" & goto AMF_INIT
+set "FFKEYS=%FFKEYS% -preset 0"
+:AMF_INIT
+set "FFKEYS=%FFKEYS% -usage transcode -rc qvbr -preanalysis 1"
+:: VBAQ есть только в H.264/HEVC. В AV1 его нет, там используется -aq_mode.
+if /i not "%CODEC:~0,3%" == "av1" set "FFKEYS=%FFKEYS% -vbaq 1"
+:: AV1: PROFILE был сброшен ранее, включаем режим адаптивного квантования
+if /i "%CODEC:~0,3%" == "av1" set "FFKEYS=%FFKEYS% -aq_mode 1" & goto KEYS_PROFILE
+:: 10-bit для HEVC включаем только при PROFILE=main10 (автомат теста GPU)
+if /i "%PROFILE%" == "main10" set "FFKEYS=%FFKEYS% -bitdepth 10"
 goto KEYS_PROFILE
 :QSV_OPTS
 :: GPU Intel: Не протестировано (нет железа) - тут только теория!
-set "FFKEYS=%FFKEYS% -scenario archive -async_depth 1 -extbrc 1 -rdo 1 -adaptive_i 1 -adaptive_b 1"
-if defined CRF goto KEYS_PROFILE
-:: Если не задан CRF, QSV переключится в VBR - добавляем look-ahead для качества
-set "FFKEYS=%FFKEYS% -look_ahead 1 -look_ahead_depth 60"
->>"%LOG%" echo([INFO] %DATE% %TIME:~0,8% QSV: включён look-ahead для VBR
+set "FFKEYS=%FFKEYS% -preset veryslow -low_power 0 -extbrc 1"
+:: В av1_qsv нет rdo отсутствует , поэтому добавляем только для h264/hevc
+if /i not "%CODEC:~0,3%" == "av1" set "FFKEYS=%FFKEYS% -rdo 1"
+set "FFKEYS=%FFKEYS% -adaptive_i 1 -adaptive_b 1 -look_ahead_depth 100"
+goto KEYS_PROFILE
 :KEYS_PROFILE
-:: NVENC выбирает профиль по -pix_fmt автоматически. Явное указание отключено.
-:: Для QSV, AMF и CPU (libx264/libx265) -profile:v обязателен (критично для 10-bit HEVC).
-if /i not "%CODEC:~-5%" == "nvenc" set "FFKEYS=%FFKEYS% -profile:v %USE_PROFILE%"
-:: Level для h264_* кодеков (совместимость с проигрывателями)
-:: Выходное разрешение ограничено блоком МАСШТАБ (высота кадра не более 1080),
-:: поэтому level 4.0 ставим всегда без проверки высоты.
-if /i "%CODEC:~0,5%" == "h264_" set "FFKEYS=%FFKEYS% -level 4.0"
-if /i "%CODEC%" == "libx264" set "FFKEYS=%FFKEYS% -level 4.0"
+:: Если профиль определён (h264/hevc) - добавляем. Для av1_ и libsvtav1 переменная пуста - ключ пропускается.
+if defined PROFILE set "FFKEYS=%FFKEYS% -profile:v %PROFILE%"
+:: H.264 для совместимости с плеерами ставим level не выше 4.1 (включает 1080@60)
+if /i "%PROFILE%" == "high" set "FFKEYS=%FFKEYS% -level 4.1"
 :: Видеофильтр -vf
 if defined VF set "FFKEYS=%FFKEYS% %VF%"
 :: Формат пикселей (8 bit yuv420p или 10 bit yuv420p10le)
-if defined PIX_FMT_ARGS set "FFKEYS=%FFKEYS% %PIX_FMT_ARGS%"
-:: Параметры управления качеством (не битрейтом)
+if defined FF_PIXFMT set "FFKEYS=%FFKEYS% %FF_PIXFMT%"
+:: Управление качеством CRF
 set "FFCRF="
 if not defined CRF goto KEYS_CRF_DONE
-:: У *NVENC есть ещё -multipass fullres (2pass), он несовместим с CRF-режимом -cq,
-:: и по факту для архивных видео с низким битрейтом почему-то даёт качество хуже чем CRF.
 if /i "%CODEC:~-5%" == "nvenc" set "FFCRF=-cq %CRF%"
-if /i "%CODEC:~-3%" == "amf" set "FFCRF=-rc cqp -qp_i %CRF% -qp_p %CRF%"
-if /i "%CODEC%" == "h264_amf" set "FFCRF=%FFCRF% -qp_b %CRF%"
+if /i "%CODEC:~-3%" == "amf" set "FFCRF=-qvbr_quality_level %CRF%"
 if /i "%CODEC:~-3%" == "qsv" set "FFCRF=-global_quality %CRF%"
-if /i "%CODEC:~0,5%" == "libx2" set "FFCRF=-crf %CRF%"
+if /i "%CODEC:~0,3%" == "lib" set "FFCRF=-crf %CRF%"
 >>"%LOG%" echo([INFO] %DATE% %TIME:~0,8% CRF для %CODEC% установлен: %CRF%
 :KEYS_CRF_DONE
 if defined FFCRF set "FFKEYS=%FFKEYS% %FFCRF%"
+
+
+
+
+
+:: === Блок: ПРОЧИЕ КЛЮЧИ ===
+:: Порядок ключей ffmpeg КРИТИЧЕН для правильной работы GPU-кодеков. Должно быть так:
+:: -hide_banner -c:v codec [кодек-специфичные init-параметры] [-profile:v] [-preset]
+:: [-vf] [-pix_fmt] [-crf] [-tune] [-level] -c:a -c:s [-metadata lng]
 :: Добавляем аудио если есть, устанавливаем язык аудио в "rus".
 if not defined AUDIO_ARGS goto KEYS_AUD_DONE
 set "FFKEYS=%FFKEYS% %AUDIO_ARGS% -metadata:s:a:0 language=rus"
@@ -767,18 +763,18 @@ set "FFKEYS=%FFKEYS% -metadata:s:a NUMBER_OF_BYTES= -metadata:s:a NUMBER_OF_BYTE
 :: Если включён full-range (COLOR_RANGE=1) - mkvpropedit также добавит цветовые метаданные.
 :: Также копируем глобальные метаданные (Дата съемки, модель камеры, GPS)
 set "FFKEYS=%FFKEYS% -metadata language=rus -map_metadata 0"
-if not defined SUBS_TYPE goto KEYS_TAGBPS
+if not defined SUBS_TYPE goto KEYS_METADATA
 if /i "%OUTPUT_EXT%" == "mkv" (
     set "FFKEYS=%FFKEYS% -c:s copy -metadata:s:s:0 language=rus"
     >>"%LOG%" echo([INFO] %DATE% %TIME:~0,8% Копируем субтитры %SUBS_TYPE% в MKV отдельной дорожкой.
-    goto KEYS_TAGBPS
+    goto KEYS_METADATA
 )
 :: Для MP4: добавляем быстрый старт воспроизведения (faststart) и теги стандарта Apple/Google
 :: Если кодек HEVC - добавляем тег hvc1 для совместимости с Apple/Android
 set "FFKEYS=%FFKEYS% -movflags +faststart+use_metadata_tags"
 if /i "%CODEC:~0,4%" == "hevc" set "FFKEYS=%FFKEYS% -tag:v hvc1"
 if /i "%CODEC%" == "libx265" set "FFKEYS=%FFKEYS% -tag:v hvc1"
-:KEYS_TAGBPS
+:KEYS_METADATA
 :: Удаляем старые видео-теги "битрейт" и "размер потока", если они есть.
 :: FFmpeg копирует их из исходника, но при перекодировании значения неактуальны.
 if not defined TAGBPS goto KEYS_DONE
@@ -792,11 +788,12 @@ set "FFKEYS=%FFKEYS% -metadata:s:v NUMBER_OF_BYTES= -metadata:s:v NUMBER_OF_BYTE
 
 
 :: === Блок: ОБРАБОТКА ===
-:: Пишем CMD_LINE в лог через set, так как есть ключи с кавычками и спецсимволами
+:: CMD_LINE пишется в лог чисто для истории. 
+:: Сам запуск идет через прямые переменные, иначе CMD ломает кавычки ключей.
 set "CMD_LINE="%FFM%" -i "%FNF%" %FFKEYS% "%OUTPUT%""
 >>"%LOG%" echo([CMD] %DATE% %TIME:~0,8% Строка кодирования: %CMD_LINE%
 :: Запуск кодирования. FFmpeg пишет лог в stderr, а не в stdout - поэтому 2>LOG
-:: Не запускаем через %CMD_LINE%, т.к. могут быть ошибки при спецсимволах.
+:: Не запускаем через CMD_LINE, т.к. могут быть ошибки при спецсимволах.
 "%FFM%" -i "%FNF%" %FFKEYS% "%OUTPUT%" 2>"%FFMPEG_LOG%"
 :: Удаляем временный файл субтитров (если был):
 if defined SUBS_FILE del "%OUTPUT_DIR%%SUBS_FILE%"
@@ -829,20 +826,17 @@ echo(
 echo(%DATE% %TIME:~0,8% Обработка "%FNWE%" завершена.
 echo(Cм. логи в папке "%OUTPUT_DIR%logs".
 echo(---
+:: Выход из папки файла (вход был в начале метки START)
+popd
 :: Конвертируем OEM-лог в UTF-8:
 :: %LOGE% - входной OEM-лог, %LOGU% - выходной UTF-8-лог.
 :: Пути должны быть без кириллицы из-за разных кодировок CMD и VBS
 :: Переходим в папку Logs
 pushd "%OUTPUT_DIR%logs"
-set "VT=%temp%\%CMDN%-oem2utf-%random%.vbs"
->"%VT%"  echo(With CreateObject("ADODB.Stream")
->>"%VT%" echo(.Type=2:.Charset="cp866":.Open:.LoadFromFile "%LOGE%":s=.ReadText:.Close
->>"%VT%" echo(.Type=2:.Charset="UTF-8":.Open:.WriteText s:.SaveToFile "%LOGU%",2:.Close:End With
-cscript //nologo "%VT%"
+cscript //nologo "%CONV%" "%LOGE%" "%LOGU%" "cp866" "UTF-8"
 del "%LOGE%"
 if exist "%LOGN%" del "%LOGN%"
 ren "%LOGU%" "%LOGN%"
-del "%VT%"
 popd
 :: Переход к следующему файлу
 :NEXT
@@ -852,12 +846,16 @@ goto LOOP
 :END
 echo(Все файлы обработаны.
 echo(
-set "EV=%temp%\%CMDN%-end-%random%.vbs"
+set "EV=%temp%\%CMDN%-end%random%.vbs"
 set "EMSG=Пакетный файл %CMDN% закончил работу."
 chcp 1251 >nul
 >"%EV%" echo(MsgBox "%EMSG%",,"%CMDN%"
 chcp 866 >nul
 cscript //nologo "%EV%"
 del "%EV%"
+:FASTEXIT
+:: Удаляем VBS-хелперы и временные файлы
+if defined CONV del "%CONV%"
+if defined GLOG del "%GLOG%"
+if defined DTMPV del "%DTMPV%"
 pause
-exit
