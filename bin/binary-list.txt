@@ -2,7 +2,7 @@
 aapt2_64.exe из Android Asset Packaging Tool (apktool)
 exiv2.dll
 exiv2.exe
-ffmpeg.exe
+ffmpeg.exe ("full" - для libsvtav1)
 ffprobe.exe
 lame.exe
 MediaInfo.exe
