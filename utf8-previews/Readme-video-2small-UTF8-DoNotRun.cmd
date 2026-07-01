@@ -1,7 +1,7 @@
 @echo off
 :: Перекодирование видеофайлов в уменьшенный размер с высоким качеством
 set "DO=Video recode script"
-set "VRS=Froz %DO% v03.06.2026"
+set "VRS=Froz %DO% v30.06.2026"
 
 :: === Блок: ПРОВЕРКИ ===
 title %DO%
@@ -12,7 +12,7 @@ set "CMDN=%~n0"
 :: Инициализация var для if defined в FASTEXIT
 set "CONV="
 set "GLOG="
-set "DTMPV="
+set "STAMP="
 
 :: Проверка наличия утилит
 set "FFM=%~dp0bin\ffmpeg.exe"
@@ -29,21 +29,18 @@ echo( не найден, выходим.& echo(
 goto FASTEXIT
 
 :CHECK_INI
-:: Создаём один раз VBS-хелпер конвертации файлов OEM-UTF и UTF-OEM. Нужен pushd.
-:: Пример запуска: cscript //nologo "%CONV%" "%LOGE%" "%LOGU%" "cp866" "UTF-8"
-:: ADODB.Stream принимает пути без внешних кавычек. 
-:: WScript.Arguments(x) очищает кавычки автоматически перед передачей в VBS.
+:: Создаем конвертер OEM в UTF-8 и наоборот (поменять местами ключи cp/utf)
+:: Пример: cscript //nologo "%CONV%" "ВходнойФайл" "ВыходнойФайл" "cp866" "UTF-8"
 set "CONV=%temp%\%CMDN%-conv.vbs"
 >"%CONV%"  echo(Set a=WScript.Arguments:With CreateObject("ADODB.Stream")
 >>"%CONV%" echo(.Type=2:.Open:.Charset=a(2):.LoadFromFile a(0):s=.ReadText:.Close
 >>"%CONV%" echo(.Open:.Charset=a(3):.WriteText s:.SaveToFile a(1),2:End With
 
-set "INI_NAME=%CMDN%.ini"
-set "INI_FPATH=%~dp0%INI_NAME%"
-if exist "%INI_FPATH%" goto SRC_CHK
-:: Если ini нет - создаём шаблон. В VBS нельзя полный путь, поэтому меняем папку
-pushd "%~dp0"
-set "IOEMW=%CMDN%-inioemw%random%"
+set "ININAME=%CMDN%.ini"
+set "INIFULL=%~dp0%ININAME%"
+if exist "%INIFULL%" goto SRC_CHK
+:: Если ini нет - создаём OEM-шаблон во временной папке Windows.
+set "IOEMW=%temp%\%CMDN%-inioemw.txt"
 >"%IOEMW%" echo(; Настройки Froz Video recode script (%CMDN%). Подробнее см. в %CMDN%.txt
 >>"%IOEMW%" echo(-------------------------------------------------------------------------
 >>"%IOEMW%" echo(
@@ -84,10 +81,9 @@ set "IOEMW=%CMDN%-inioemw%random%"
 >>"%IOEMW%" echo(SPEED_NVENC=8
 >>"%IOEMW%" echo(SPEED_AMF=50
 >>"%IOEMW%" echo(SPEED_QSV=50
-:: Конвертируем ini в UTF-8 и удаляем временный файл
-cscript //nologo "%CONV%" "%IOEMW%" "%INI_NAME%" "cp866" "UTF-8"
+:: Конвертируем из temp в папку скрипта и удаляем временный файл
+cscript //nologo "%CONV%" "%IOEMW%" "%INIFULL%" "cp866" "UTF-8"
 del "%IOEMW%"
-popd
 echo([!] Файл настроек не найден - создан новый шаблон.
 echo(
 goto HELP
@@ -95,6 +91,7 @@ goto HELP
 :SRC_CHK
 :: Проверка наличия входных файлов
 if "%~1" == "" goto HELP
+:: Проверяем первый аргумент на "папка", если да - выходим из ВСЕГО скрипта.
 set "ATTR=%~a1"
 if /i "%ATTR:~0,1%"=="d" (
     echo([ERROR] Папки не обрабатываются, выходим.
@@ -107,7 +104,7 @@ goto READ_INI
 echo([!] Не заданы входные файлы.
 echo(
 echo(Использование: При необходимости измените настройки в файле
-echo(%INI_FPATH%
+echo(%INIFULL%
 echo(редактором для Unicode TXT-файлов, например Блокнотом.
 echo(
 echo(Затем перетяните или вставьте видеофайлы на этот файл.
@@ -115,8 +112,7 @@ echo(
 goto FASTEXIT
 
 :READ_INI
-:: Читаем ini-файл в переменные.
-:: Сброс переменных
+:: Делаем сброс переменных для будущих if defined и читаем переменные из ini
 set "SCALE="
 set "CRF="
 set "OUTPUT_EXT="
@@ -131,11 +127,10 @@ set "SPEED_LIBX264="
 set "SPEED_NVENC="
 set "SPEED_AMF="
 set "SPEED_QSV="
-:: Конвертация UTF-8 в OEM - нельзя полный путь в VBS, поэтому pushd
-pushd "%~dp0"
-set "IOEMR=%CMDN%-inioemr%random%"
-cscript //nologo "%CONV%" "%INI_NAME%" "%IOEMR%" "UTF-8" "cp866"
-:: Чтение ini-файла
+:: Конвертация UTF-8 в OEM во временную папку
+set "IOEMR=%temp%\%CMDN%-inioemr.txt"
+cscript //nologo "%CONV%" "%INIFULL%" "%IOEMR%" "UTF-8" "cp866"
+:: Чтение ini-файла и удаление временного OEM
 for /f "usebackq tokens=1* delims==" %%a in ("%IOEMR%") do (
     if "%%a"=="SCALE"               set "SCALE=%%b"
     if "%%a"=="CRF"                 set "CRF=%%b"
@@ -152,13 +147,11 @@ for /f "usebackq tokens=1* delims==" %%a in ("%IOEMR%") do (
     if "%%a"=="SPEED_AMF"           set "SPEED_AMF=%%b"
     if "%%a"=="SPEED_QSV"           set "SPEED_QSV=%%b"
 )
-:: Удаление OEM-ini и возврат в исходную папку
 del "%IOEMR%"
-popd
 
 :: Проверка ключевых user sets:
 if not defined CODEC (
-    echo([!] В %INI_FPATH%
+    echo([!] В %INIFULL%
     echo(не задан параметр CODEC - задайте. Выходим.
     echo(
     pause
@@ -166,20 +159,19 @@ if not defined CODEC (
 )
 if not defined OUTPUT_EXT (
     set "OUTPUT_EXT=mkv"
-    echo([!] В %INI_FPATH%
+    echo([!] В %INIFULL%
     echo(не задано расширение выходных файлов - принимаем: %OUTPUT_EXT%
     echo(
 )
 if not defined NAME_APPEND (
     set "NAME_APPEND=_sm"
-    echo([!] В %INI_FPATH%
+    echo([!] В %INIFULL%
     echo(не задан суффикс выходных файлов - принимаем: %NAME_APPEND%
     echo(
 )
 
-:: Проверка: поддерживает ли GPU выбранный GPU-кодек
-:: Для CPU проверка корректности имени кодека в INI не делается - надеемся на пряморукость юзера
-::if /i "%CODEC:~0,3%" == "lib" goto SKIP_GCHK
+:: Проверка: поддерживает ли GPU выбранный GPU-кодек. CPU - пропускаем
+if /i "%CODEC:~0,3%" == "lib" goto SKIP_GCHK
 :: По умолчанию целимся в 10-bit (p010le) для HEVC и AV1
 set "FF_PIXFMT=-pix_fmt p010le"
 :: Если выбран кодек семейства h264 - для него стартуем сразу с 8-bit (пустой фильтр)
@@ -191,10 +183,10 @@ set "GPU_RETRY="
 :TRY_GPU
 :: Создаём виртуальный пустой видеофайл длиной в 1 секунду и пытаемся сжать кодеком
 "%FFM%" -hide_banner -v error -f lavfi -i nullsrc -c:v %CODEC% %FF_PIXFMT% -t 1 -f null - 2>"%GLOG%"
-:: ffmpeg пишет stderr в UTF-8, но мы ищем латиницу, поэтому можно не конвертировать лог в OEM для findstr
-:: Проверка на кривое имя GPU-энкодера в INI-файле
-:: Если ошибка есть (строка найдена - findstr вернул 0) - проверка не пройдена
-:: Не отрывать строку findstr от строки errorlevel !
+:: ffmpeg пишет лог в UTF-8, ошибки на латинице можно искать без конвертации в OEM. 
+:: Если ошибка есть (строка найдена - findstr вернул 0) - проверка не пройдена.
+:: Не отрывать строки findstr от строк errorlevel !
+:: Проверка кривого имени кодека:
 findstr /i /c:"Unknown encoder" "%GLOG%" >nul
 if %ERRORLEVEL% EQU 0 (
     echo([ERROR] Имя кодека некорректно - проверьте INI-файл. Выходим.
@@ -202,12 +194,13 @@ if %ERRORLEVEL% EQU 0 (
     pause
     goto FASTEXIT
 )
-:: Не отрывать строку findstr от строки errorlevel !
+:: Проверка на отсутствие аппаратной поддержки GPU:
 findstr /i /c:"Error while opening encoder" "%GLOG%" >nul
 set "GPU_ERR=%ERRORLEVEL%"
 :: Если ошибки нет (строка Error НЕ найдена - findstr вернул 1) - проверка пройдена
 if %GPU_ERR% EQU 1 goto SKIP_GCHK
 if defined GPU_RETRY goto GPU_NOT_SUPPORTED
+:: 8 бит для AV1 не проверяем - нет GPU которые умеют AV1-8 но не умеют AV1-10
 if /i not "%CODEC:~0,4%" == "hevc" goto GPU_NOT_SUPPORTED
 :: Если мы тут, значит упал HEVC 10-битный режим. Пробуем 8 бит
 set "GPU_RETRY=1"
@@ -227,7 +220,7 @@ goto FASTEXIT
 
 
 :: Глобальные set перед LOOP
-:: Все подаваемые на вход файлы всегда лежат в одной папке.
+:: Все подаваемые на вход файлы всегда лежат в одной папке. ВАЖНО: В конце dp1 есть слэш
 set "OUTPUT_DIR=%~dp1"
 :: Сохраняем исходные user-значения которые могут быть перезаписаны при работе
 set "INI_OUTPUT_EXT=%OUTPUT_EXT%"
@@ -235,15 +228,12 @@ set "INI_AUDIO_ARGS=%AUDIO_ARGS%"
 set "INI_FPS=%FPS%"
 set "AUDIO_DEFAULT=-c:a copy"
 
-:: Создаём один раз VBS-хелпер штампа времени для temp-файлов
-:: Временное имя OEM-лога для текущего видеофайла - используем дату, а не %random%.
-:: Чтобы не зависеть от локали Windows берём текущую дату-время через VBS, 
-:: а не через %date% %time%. Формат: ГГГГ-ММ-ДД_ЧЧММСС
-set "DTMPV=%temp%\%CMDN%-dtmpv.vbs"
->"%DTMPV%"  echo(s=Year(Now)^&"-"^&Right("0"^&Month(Now),2)^&"-"
->>"%DTMPV%" echo(s=s^&Right("0"^&Day(Now),2)
->>"%DTMPV%" echo(s=s^&"_"^&Right("0"^&Hour(Now),2)^&Right("0"^&Minute(Now),2)
->>"%DTMPV%" echo(s=s^&Right("0"^&Second(Now),2):WScript.Echo s
+:: Создаем VBS-хелпер штампа времени, не зависящий от локали - формат ГГГГ-ММ-ДД_ЧЧММСС
+set "STAMP=%temp%\%CMDN%-STAMP.vbs"
+>"%STAMP%"  echo(s=Year(Now)^&"-"^&Right("0"^&Month(Now),2)^&"-"
+>>"%STAMP%" echo(s=s^&Right("0"^&Day(Now),2)
+>>"%STAMP%" echo(s=s^&"_"^&Right("0"^&Hour(Now),2)^&Right("0"^&Minute(Now),2)
+>>"%STAMP%" echo(s=s^&Right("0"^&Second(Now),2):WScript.Echo s
 
 
 
@@ -262,43 +252,35 @@ set "FNWE=%~nx1"
 set "EXT=%~x1"
 set "OUTPUT_NAME=%FNN%%NAME_APPEND%"
 set "OUTPUT=%OUTPUT_DIR%%OUTPUT_NAME%.%OUTPUT_EXT%"
-
 :: Если больше нет файлов - выходим
 if not defined FNF goto END
-
 set "ATTR=%~a1"
 if /i not "%ATTR:~0,1%"=="d" goto START
 echo(%FNN% - папка, пропускаем.
 goto NEXT
 :START
-:: Для надёжности переходим в папку с файлом чтобы ffmpeg всегда нашёл внешние субтитры если они будут
-pushd "%OUTPUT_DIR%"
 :: Запрашиваем текущий штамп времени из VBS-хелпера TV
-for /f %%t in ('cscript //nologo "%DTMPV%"') do set "DTMP=%%t"
-:: Имена и папка логов
-set "LOGE=%DTMP%oem"
-set "LOG=%OUTPUT_DIR%logs\%LOGE%"
-set "LOGU=%DTMP%utf"
-set "LOGN=%FNN%%NAME_APPEND%-log.txt"
+for /f %%t in ('cscript //nologo "%STAMP%"') do set "DTMP=%%t"
+:: Имена и папка логов (используем только полные пути)
+set "LOG=%OUTPUT_DIR%logs\%DTMP%-oem.txt"
+set "LOGFINAL=%OUTPUT_DIR%logs\%FNN%%NAME_APPEND%-log.txt"
 :: Совместить логи CMD+FFMpeg в один не получится, так как ffmpeg выводит в UTF8, а CMD - в OEM
 set "FFMPEG_LOG_NAME=%OUTPUT_NAME%-log_ffmpeg.txt"
 set "FFMPEG_LOG=%OUTPUT_DIR%logs\%FFMPEG_LOG_NAME%"
-
 :: Создаём папку для логов
 if not exist "%OUTPUT_DIR%logs" md "%OUTPUT_DIR%logs"
-
 :: Проверяем что конечный файл уже существует и ненулевого размера
 if not exist "%OUTPUT%" goto DONE_SIZE_CHK
 for %%F in ("%OUTPUT%") do set SIZE=%%~zF
-if %SIZE% GTR 0 goto EXIST
+if %SIZE% GTR 0 goto FEXIST
 del "%OUTPUT%"
 goto DONE_SIZE_CHK
-:EXIST
+:FEXIST
 echo("%OUTPUT_NAME%" уже существует, пропускаем.
 echo(
+if exist "%LOG%" del "%LOG%"
 goto NEXT
 :DONE_SIZE_CHK
-
 title Обработка %FNWE%...
 echo(%DATE% %TIME:~0,8% Начата обработка "%FNWE%"...
 >"%LOG%" echo([INFO] %DATE% %TIME:~0,8% Начата обработка "%FNWE%"...
@@ -308,9 +290,8 @@ echo(%DATE% %TIME:~0,8% Начата обработка "%FNWE%"...
 
 
 :: === Блок: ИЗВЛЕЧЕНИЕ ===
-:: ffprobe извлекает: размеры кадра, формат пикселей, чересстрочность,
-:: частоту кадров (базовая и средняя), поворот, длительность,
-:: "мусорные" видеотеги для их удаления позже.
+:: ffprobe извлекает: размеры, pix_fmt, чересстрочность, FPS (база/среднее),
+:: поворот, длительность, "мусорные" видеотеги (для удаления позже).
 set "SRC_W="
 set "SRC_H="
 set "SRC_PIXFMT="
@@ -357,7 +338,7 @@ goto EXTRACT_DONE
 echo([ERROR] Не получилось извлечь параметры видео. Файл пропущен.
 echo(
 >>"%LOG%" echo([ERROR] %DATE% %TIME:~0,8% Не получилось извлечь параметры видео. Файл пропущен.
-goto NEXT
+goto FILE_DONE
 :EXTRACT_DONE
 
 
@@ -397,6 +378,7 @@ set "OUTPUT=%OUTPUT_DIR%%OUTPUT_NAME%.%OUTPUT_EXT%"
 :: 2. Если ROTATION задан юзером - добавляем transpose. Для кодека *qsv - пишем варнинг и игнорируем.
 :: SRC_H, SRC_W и ROTATION_TAG извлечены ранее
 set "ROTATION_FILTER="
+:: Ожидаем только теги кратные 90: 90, 270 и -90. Никогда не встречал видео с тегом 180.
 if defined ROTATION_TAG (
     >>"%LOG%" echo([INFO] %DATE% %TIME:~0,8% Применён тег Rotate из файла: %ROTATION_TAG%
     set "SRC_H=%SRC_W%"
@@ -438,18 +420,14 @@ set "SCALE_EXPR=scale=-2:%SCL_LIMIT%"
 
 
 :: === Блок: ЧАСТОТА ===
-:: Цель: привести VFR (variable frame rate) к CFR (constant), чтобы:
-:: - избежать проблем с аппаратными кодеками (некоторые их не любят),
-:: - улучшить совместимость с проигрывателями и ТВ.
-:: r_frame_rate = базовая частота (например, 30000/1001)
-:: avg_frame_rate = средняя за видео
-:: Их несовпадение означает VFR FPS.
-:: FIELD_ORDER, R_FPS и A_FPS извлечены ранее
-:: Для interlaced - всегда устанавливать FPS.
-:: Сброс здесь заранее, т.к. будет if defined в блоке ВРЕМЯ
+:: Цель: привести VFR к CFR - для совместимости с HW-кодеками и плеерами/ТВ.
+:: VFR определяем по несовпадению r_frame_rate (база) и avg_frame_rate (среднее).
+:: FIELD_ORDER, R_FPS, A_FPS извлечены ранее. Для interlaced FPS ставим всегда.
+:: Сброс MAX_FPS/IS_INTERLACED здесь заранее - нужны для if defined в блоке ВРЕМЯ.
 set "MAX_FPS="
 set "IS_INTERLACED="
-:: Если FPS задан вручную - выходим сразу
+:: Если FPS задан вручную - выходим сразу. Это отключает деинтерлейсинг bwdif 50p/60p
+:: Если юзер вручную ставит FPS=25/30 - получит 25p/30p без bwdif.
 if defined FPS (
     >>"%LOG%" echo([INFO] %DATE% %TIME:~0,8% FPS задан принудительно: %FPS%.
     goto FPS_DONE
@@ -474,8 +452,7 @@ if not defined MAX_FPS (
 for /f "tokens=1 delims=." %%m in ("%MAX_FPS%") do set "MAX_FPS=%%m"
 :: Если r_frame_rate == avg_frame_rate - это CFR, ничего не делаем
 if "%R_FPS%" == "%A_FPS%" goto FPS_DONE
-:: Progressive + VFR - определяем MAX_FPS и ставим стандартный CFR
-:: Определяем целевой FPS
+:: Progressive + VFR - определяем MAX_FPS и ставим стандартные CFR
 if %MAX_FPS% GTR 50 set "FPS=60" & goto REPORT_FPS
 :: Если VFR-видео содержит фрагменты с высоким FPS (например, slow-mo >35 к/с),
 :: выбираем 50 fps вместо 30, чтобы сохранить плавность.
@@ -489,7 +466,7 @@ set "FPS=24"
 goto FPS_DONE
 :HANDLE_INTERLACED
 :: Чересстрочное видео - по умолчанию 50p (PAL) или 60p (NTSC 480i)
-:: FPS здесь нужен для расчёта времени и выбора режима деинтерлейса (bwdif=0/1)
+:: FPS здесь нужен для расчёта времени и выбора режима деинтерлейса
 set "IS_INTERLACED=1"
 set "FPS=50"
 if %SRC_H% == 480 set "FPS=60"
@@ -654,11 +631,11 @@ if defined ROTATION_FILTER set "FILTER_LIST=%FILTER_LIST%,%ROTATION_FILTER%"
 if not defined IS_INTERLACED goto PROCESS_FPS
 :: По умолчанию: bwdif=1 - 50i->50p, 60i->60p - сохранит плавность
 set "INTCMD=bwdif=1"
-if not defined FPS goto ADD_DEINTERLACE
-:: При юзер-FPS 25/30 ("кино") -> bwdif=0 + skip FPS, чтобы избежать артефактов
+:: FPS тут всегда определён. Для interlaced либо авто 50/60,
+:: либо явно задан юзером - доп. проверка на defined FPS не нужна.
+:: При юзер-FPS 25/30 - bwdif=0 и skip FPS, чтобы избежать артефактов
 :: от bwdif=1,fps=25 (50 кадров и отбросить каждый второй)
 if %FPS% LEQ 30 set "INTCMD=bwdif=0" & set "SKIP_FPS_FILTER=1"
-:ADD_DEINTERLACE
 set "FILTER_LIST=%FILTER_LIST%,%INTCMD%"
 >>"%LOG%" echo([INFO] %DATE% %TIME:~0,8% Применён деинтерлейсинг: %INTCMD%
 :PROCESS_FPS
@@ -673,9 +650,7 @@ if not defined SUBS_FILE goto VF_COMPILE
 set "FILTER_LIST=%FILTER_LIST%,subtitles=%SUBS_FILE%"
 >>"%LOG%" echo([INFO] %DATE% %TIME:~0,8% Для MP4 вшиваем субтитры %SUBS_TYPE% в видеоряд (hardburn).
 :VF_COMPILE
-:: Финальная сборка ключа -vf
-:: Отрезание первого символа (:~1%) убирает лидирующую запятую, 
-:: которая неизбежно образуется при динамической склейке фильтров ,scale,fps
+:: Финальная сборка -vf: (:~1%) отрезает лидирующую запятую от склейки ,scale,fps
 if defined FILTER_LIST set "VF=-vf "%FILTER_LIST:~1%""
 
 
@@ -717,7 +692,7 @@ goto KEYS_PROFILE
 :QSV_OPTS
 :: GPU Intel: Не протестировано (нет железа) - тут только теория!
 set "FFKEYS=%FFKEYS% -preset veryslow -low_power 0 -extbrc 1"
-:: В av1_qsv нет rdo отсутствует , поэтому добавляем только для h264/hevc
+:: В av1_qsv параметр rdo отсутствует , поэтому добавляем только для h264/hevc
 if /i not "%CODEC:~0,3%" == "av1" set "FFKEYS=%FFKEYS% -rdo 1"
 set "FFKEYS=%FFKEYS% -adaptive_i 1 -adaptive_b 1 -look_ahead_depth 100"
 goto KEYS_PROFILE
@@ -794,7 +769,10 @@ set "CMD_LINE="%FFM%" -i "%FNF%" %FFKEYS% "%OUTPUT%""
 >>"%LOG%" echo([CMD] %DATE% %TIME:~0,8% Строка кодирования: %CMD_LINE%
 :: Запуск кодирования. FFmpeg пишет лог в stderr, а не в stdout - поэтому 2>LOG
 :: Не запускаем через CMD_LINE, т.к. могут быть ошибки при спецсимволах.
+:: Переходим в папку вывода перед самым запуском для корректной работы фильтра субтитров
+pushd "%OUTPUT_DIR%"
 "%FFM%" -i "%FNF%" %FFKEYS% "%OUTPUT%" 2>"%FFMPEG_LOG%"
+popd
 :: Удаляем временный файл субтитров (если был):
 if defined SUBS_FILE del "%OUTPUT_DIR%%SUBS_FILE%"
 :: Проверяем, создан ли выходной видеофайл и ненулевой ли он
@@ -826,18 +804,10 @@ echo(
 echo(%DATE% %TIME:~0,8% Обработка "%FNWE%" завершена.
 echo(Cм. логи в папке "%OUTPUT_DIR%logs".
 echo(---
-:: Выход из папки файла (вход был в начале метки START)
-popd
-:: Конвертируем OEM-лог в UTF-8:
-:: %LOGE% - входной OEM-лог, %LOGU% - выходной UTF-8-лог.
-:: Пути должны быть без кириллицы из-за разных кодировок CMD и VBS
-:: Переходим в папку Logs
-pushd "%OUTPUT_DIR%logs"
-cscript //nologo "%CONV%" "%LOGE%" "%LOGU%" "cp866" "UTF-8"
-del "%LOGE%"
-if exist "%LOGN%" del "%LOGN%"
-ren "%LOGU%" "%LOGN%"
-popd
+:: Конвертируем OEM-лог в итоговый UTF-8 лог
+cscript //nologo "%CONV%" "%LOG%" "%LOGFINAL%" "cp866" "UTF-8"
+:: Удаляем промежуточный OEM-лог
+del "%LOG%"
 :: Переход к следующему файлу
 :NEXT
 shift
@@ -848,6 +818,7 @@ echo(Все файлы обработаны.
 echo(
 set "EV=%temp%\%CMDN%-end%random%.vbs"
 set "EMSG=Пакетный файл %CMDN% закончил работу."
+:: Для VBS MsgBox текст нужен в ANSI, поэтому 1251, потом возвращаем 866
 chcp 1251 >nul
 >"%EV%" echo(MsgBox "%EMSG%",,"%CMDN%"
 chcp 866 >nul
@@ -857,5 +828,5 @@ del "%EV%"
 :: Удаляем VBS-хелперы и временные файлы
 if defined CONV del "%CONV%"
 if defined GLOG del "%GLOG%"
-if defined DTMPV del "%DTMPV%"
+if defined STAMP del "%STAMP%"
 pause
