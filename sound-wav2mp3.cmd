@@ -20,30 +20,8 @@ if "%~1"=="" (
     pause
     exit /b
 )
-:: Проверка длины аргументов: лимит Windows 8191 символ - путь может быть обрезан, а остальные утеряны
-:: CMD ломается при передаче &)( в %* - используем VBS
-:: Нельзя удалять проверку "%~1"=="" - VBS не сможет посчитать длину
-set "TV=%temp%\%CMDN%_len_%random%%random%.vbs"
-set "TO=%temp%\%CMDN%_out_%random%%random%.txt"
->"%TV%" echo(Set a=WScript.Arguments.Unnamed:ReDim b(a.Count-1)
->>"%TV%" echo(For i=0To a.Count-1:b(i)=a(i):Next
->>"%TV%" echo(WScript.Echo Len(Join(b," "))
-cscript //nologo "%TV%" %* >"%TO%"
-set "ALEN=0"
-set /p "ALEN=" <"%TO%"
-del "%TV%" & del "%TO%"
-if %ALEN% gtr 7500 (
-    echo(ВНИМАНИЕ: слишком длинная команда.
-    echo(Общая длина путей к файлам больше 7500 символов - возможна потеря данных.
-    echo(Ограничение Windows - 8191 символ, остальное будет обрезано.
-    echo(
-    echo(Перетащите папку вместо отдельных файлов, или подавайте частями. Выходим.
-    echo(
-    pause
-    exit /b
-)
 :: Флаг: был ли обработан хотя бы один файл - для сообщения о пустом результате.
-set FOUND=
+set "FOUND="
 :: Проверяем первый аргумент - папка или файл
 set "ATR=%~a1"
 if /I "%ATR:~0,1%"=="d" goto folder

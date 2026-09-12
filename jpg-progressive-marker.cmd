@@ -1,10 +1,40 @@
 @echo off
 set "DO=JPG-Progressive marker"
 title Froz %DO%
-set "VRS=Froz %DO% v29.09.2025"
+set "VRS=Froz %DO% v01.08.2026"
 echo(%VRS%
 echo(
-if not "%~1"=="" goto exchk
+set "VCR=%~dp0bin\VC_redist.x64.exe"
+if exist "%SystemRoot%\System32\vcruntime140_1.dll" goto vcok
+if not exist "%VCR%" (
+    echo("%VCR%" не найден, выходим.
+    echo(Ссылка для скачивания - в readme.txt.
+    echo(& pause & exit /b
+)
+echo(Компоненты Visual C++ не найдены.
+echo(Начата установка "%VCR%"...
+echo(Потребуется подтверждение администратором в окне повышения прав!
+echo(
+rem Запуск установки в тихом режиме с ожиданием завершения
+start /wait "" "%VCR%" /q /norestart
+rem Повторная проверка после установки
+if not exist "%SystemRoot%\System32\vcruntime140_1.dll" (
+    echo(Установка "%VCR%" завершилась с ошибкой или требует перезагрузки, выходим.
+    echo(& pause & exit /b
+)
+echo(Компоненты Visual C++ успешно установлены.
+echo(
+:vcok
+set "EX=%~dp0bin\exiv2.exe"
+if exist "%EX%" goto exok
+echo(
+echo(Ошибка: Не найден "%EX%".
+echo(Положите exiv2.exe и exiv2.dll в папку bin рядом с cmd-файлом
+echo(
+pause
+exit /b
+:exok
+if not "%~1"=="" goto work
 echo(Проверка JPG на режим Progressive (SOF2 в заголовке)
 echo(и добавление к имени таких файлов суффикса _PROGR.
 echo(
@@ -18,39 +48,12 @@ echo(
 pause
 exit /b
 
-:exchk
+:work
 set "CMDN=%~n0"
-set "EX=%~dp0bin\exiv2.exe"
-if exist "%EX%" goto exok
-echo(
-echo(Ошибка: Не найден "%EX%".
-echo(Положите exiv2.exe и exiv2.dll в папку bin рядом с cmd-файлом
-echo(
-pause
-exit /b
-:exok
-
 set "CNTALL=0"
 set "CNTP=0"
 set "ATTR=%~a1"
 if /i "%ATTR:~0,1%"=="d" goto mode_folder
-
-set "CTV=%temp%\%CMDN%-len-%random%%random%.vbs"
-set "CTO=%temp%\%CMDN%-out-%random%%random%.txt"
->"%CTV%" echo(Set a=WScript.Arguments.Unnamed:ReDim b(a.Count-1)
->>"%CTV%" echo(For i=0To a.Count-1:b(i)=a(i):Next:WScript.Echo Len(Join(b," "))
-cscript //nologo "%CTV%" %* >"%CTO%"
-set "ALEN=0"
-set /p "ALEN=" <"%CTO%"
-del "%CTV%" & del "%CTO%"
-if %ALEN% GTR 7500 (
-    echo(ВНИМАНИЕ: слишком длинная команда.
-    echo(Общая длина путей к файлам больше 7500 символов.
-    echo(Перетащите папку или подавайте частями. Выходим.
-    echo(
-    pause
-    exit /b
-)
 
 set "FLD=%~dp1"
 pushd "%FLD%"
@@ -71,7 +74,7 @@ goto loop
 pushd "%~f1"
 echo(Обработка папки "%~f1"...
 echo(
-:: Обработка файлов в папке (папок среди них быть уже не может - это фильтрует dir /a-d)
+rem Обработка файлов в папке (папок среди них быть уже не может - это фильтрует dir /a-d)
 for /f "delims=" %%i in ('dir /b /a-d') do (
     set "FN=%%i"
     call :go
@@ -90,22 +93,22 @@ exit /b
 
 :jpg_ok
 set /a CNTALL+=1
-:: Не обрабатываем, если уже есть _PROGR
+rem Не обрабатываем, если уже есть _PROGR
 if /i not "%BASE:~-6%"=="_PROGR" goto no_progr
 echo(%FN% - пропущен - _PROGR уже есть
 echo(
 exit /b
 :no_progr
 
-:: Проверяем SOF2 через exiv2
+rem Проверяем SOF2 через exiv2
 "%EX%" -pS "%FN%" | find "SOF2" >nul
 if %ERRORLEVEL% NEQ 0 exit /b
 
-:: Пробуем базовое имя + _PROGR
+rem Пробуем базовое имя + _PROGR
 set "NEWNAME=%BASE%_PROGR%EXT%"
 if not exist "%NEWNAME%" goto do_rename
 
-:: Проверка конфликта имён
+rem Проверка конфликта имён
 set "I=1"
 :conflict_loop
 set "NEWNAME=%BASE%_%I%_PROGR%EXT%"
@@ -143,4 +146,3 @@ set "VB=%temp%\%CMDN%-hlp-%random%%random%.vbs"
 cscript //nologo "%VB%"
 del "%VB%" & del "%HF%"
 pause
-exit /b

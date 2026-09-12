@@ -1,0 +1,36 @@
+﻿video-mkv-mov-2mp4_remux.cmd
+Ремуксит видеофайлы в MP4 с помощью ffmpeg.
+
+
+Не проверено:
+
+Вариант 1:
+Если видео в MP4 было записано с поворотом телефона физически, то тег Rotation скорее всего записался неверно.
+Чтобы удалить тег Rotation:
+
+ffmpeg -i input.mp4 -c copy -metadata:s:v:0 rotate="" output.mp4
+
+или установить нужный Rotation (не проверял).
+
+
+Полностью удалить теги:
+ffmpeg -i input.mp4 -c copy -map_metadata -1 output.mp4
+
+
+
+Вариант 2:
+Как добавить тег Rotate в MP4:
+
+ffmpeg -hide_banner -display_rotation 90 -i %1 -c copy "%~n1_rotated.mp4"
+При этом в MP4 запишется тег метадата Rotation 270.
+
+Если -display_rotation не сработает, то через mkvtoolnix + ffmpeg:
+Если видео MP4 повёрнуто вправо:
+1. mkvtoolnix - выбрать видеодорожку - раздел Video Projection information - в поле Roll Rotation вставить 90 - Конвертировать в MKV.
+При этом при проигрывании такого MKV будет неверный поворот. Так и нужно, так как в MKV и в MP4 разные значения тегов поворота.
+2. Конвертируем обратно в MP4 без перекодирования.
+Сразу вписать тег с помощью ffmpeg не получится - флаг "-metadata:s:v:0 rotate=90" по факту не работает.
+Команда:
+ffmpeg -hide_banner -i input.mkv -c copy output.mp4
+При этом в MP4 запишется тег метадата Rotation 270.
+Но mkvtoolnix не всегда корректно вписывает этот флаг, возможно надо его сперва принудительно удалить через mkvpropedit.
