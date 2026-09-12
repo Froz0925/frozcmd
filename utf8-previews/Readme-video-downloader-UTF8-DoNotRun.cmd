@@ -1,9 +1,9 @@
 @echo off
 set "CMDN=%~n0"
-:: ----------------------------------------------------
-:: Папка для скачивания:
+rem ----------------------------------------------------
+rem Папка для скачивания:
 set "OUTD=%USERPROFILE%\Downloads\Froz-%CMDN%"
-:: ----------------------------------------------------
+rem ----------------------------------------------------
 
 set "DO=Video Downloader"
 set "VRS=Froz %DO% v03.09.2025"
@@ -29,24 +29,24 @@ echo(
 set "LNKF="
 set /p "LNKF=Вставьте https-ссылку, Enter - выход: "
 if "%LNKF%"=="" echo(Выходим.& exit /b
-:: Обрезаем по &
+rem Обрезаем по &
 for /f "delims=&" %%n in ("%LNKF%") do set "LNK=%%n"
-:: Начинается ли с https://
+rem Начинается ли с https://
 set "LNKC=%LNK:~0,8%"
 if /i not "%LNKC%"=="https://" echo(%ERRL%& goto inp
 
 :get
-:: Проверяем обновления
+rem Проверяем обновления
 "%VDL%" -U
 :waitloop
 set "VDLN=%~dp0bin\yt-dlp.exe.new"
-:: Ждём исчезновения файла .new - это сигнал, что yt-dlp обновился
+rem Ждём исчезновения файла .new - это сигнал, что yt-dlp обновился
 if exist "%VDLN%" (
   ping 127.0.0.1 -n 1>nul
   goto waitloop
 )
 "%VDL%" -F "%LNK%"|more
-:: Видеохостинг: если удаление подстроки вроде "youtu" меняет ссылку, значит она там была - переходим в нужный блок
+rem Видеохостинг: если удаление подстроки вроде "youtu" меняет ссылку, значит она там была - переходим в нужный блок
 if not "%LNK%"=="%LNK:youtu=%" goto yu-in
 if not "%LNK%"=="%LNK:rutu=%" goto ru-in
 if not "%LNK%"=="%LNK:vkvideo=%" goto vk-in
@@ -62,7 +62,7 @@ set "VID="
 set /p "VID=YouTube: введите номер видео, r - повтор списка, Enter - выход: "
 if "%VID%"=="" echo(Выходим.& exit /b
 if "%VID%"=="r" "%VDL%" -F "%LNK%"|more
-:: Проверка что введены только цифры
+rem Проверка что введены только цифры
 echo(%VID%|findstr "^[0-9]*$" >nul
 if errorlevel 1 echo(%ERRC%& goto yu-in
 if /i %VID% LSS 100 set "FMT=%VID%" & goto dl
@@ -85,7 +85,7 @@ echo(RuTube: введите номер видео XXX из default-XXX-0, r - п
 set /p "VID=Ввод: "
 if "%VID%"=="" echo(Выходим.& exit /b
 if "%VID%"=="r" "%VDL%" -F "%LNK%"|more
-:: Проверка что введены только цифры
+rem Проверка что введены только цифры
 echo(%VID%|findstr "^[0-9]*$" >nul
 if errorlevel 1 echo(%ERRC%& echo(& goto ru-in
 if /i %VID% GEQ 100 set "FMT=default-%VID%-0" & goto dl
@@ -107,9 +107,9 @@ if /i %VID% GEQ 100 set "FMT=url%VID%" & goto dl
 set "AUD="
 set /p "AUD=Введите номер аудиодорожки X из dash_sep-X audio only, q - выход: "
 if "%AUD%"=="" echo(Выходим.& exit /b
-echo(%VID%|findstr "^[0-9]*$" >nul
+echo(%AUD%|findstr "^[0-9]*$" >nul
 if errorlevel 1 echo(%ERRC%& goto vk-aud
-if /i %VID% LSS 10 set "FMT=dash_sep-%VID%+dash_sep-%AUD%" & goto dl
+if /i %AUD% LSS 10 set "FMT=dash_sep-%VID%+dash_sep-%AUD%" & goto dl
 
 
 :dz-in
@@ -145,13 +145,14 @@ set "FMT=%VID%" & goto dl
 :dl
 echo(Скачиваем...
 if not exist "%OUTD%" md "%OUTD%">nul
-:: Ключ -k убирать нельзя, так как при раздельном указании видео и аудиодорожек yt-dlp через ключ -x извлекает аудиодорожку в отдельный файл,
-:: и кроме временных DASH-файлов он удаляет и сам видеофайл считая его тоже временным
+rem Ключ -k убирать нельзя, так как при раздельном указании видео и аудиодорожек
+rem yt-dlp через ключ -x извлекает аудиодорожку в отдельный файл,
+rem и кроме временных DASH-файлов он удаляет и сам видеофайл считая его тоже временным
 "%VDL%" ^
     -f %FMT% --console-title -w -x -k --write-subs --sub-langs ru --convert-subtitles srt ^
     --windows-filenames -o "%OUTD%\%%(upload_date>%%Y-%%m-%%d)s_%%(title)s_%%(id)s.%%(ext)s" ^
     "%LNK%"
-:: Удаляем DASH-фрагменты вручную: yt-dlp при -x удаляет и видео, поэтому используем -k и чистим сами
+rem Удаляем DASH-фрагменты вручную: yt-dlp при -x удаляет и видео, поэтому используем -k и чистим сами
 set "VATMP=%OUTD%\*.f*.*"
 if exist "%VATMP%" del "%VATMP%"
 start "" "%OUTD%"

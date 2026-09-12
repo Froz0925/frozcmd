@@ -2,11 +2,11 @@
 set "IN=.apk"
 set "DO=APK min version extract"
 title %DO%
-set "VRS=Froz %DO% v10.09.2025"
+set "VRS=Froz %DO% v08.07.2026"
 echo(%VRS%
 echo(
 set "CMDN=%~n0"
-set "EX=%~dp0bin\aapt2_64.exe"
+set "EX=%~dp0bin\aapt2.exe"
 if not exist "%EX%" echo("%EX%" не найден, выходим.& echo(& pause & exit /b
 if "%~1"=="" (
     echo(Из указанных %IN% извлекается минимальная версия Android.
@@ -114,7 +114,7 @@ if not defined HAS_DST (
     pause
     exit /b
 )
-set "EV=%temp%\%CMDN%_%random%%random%.vbs"
+set "EV=%temp%\%CMDN%_%random%.vbs"
 set "EMSG=Создан файл %DST%"
 chcp 1251 >nul
 >"%EV%" echo(MsgBox "%EMSG%",,"%CMDN%"

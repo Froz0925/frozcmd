@@ -2,36 +2,40 @@
 set "DSTFLD=D:\Фотки\!разбирать\Видео"
 
 set "DO=Import .MTS to .MKV"
-title %DO%
-set "VRS=Froz %DO% v21.08.2025"
+title Froz %DO%
+set "VRS=Froz %DO% v20.07.2026"
 echo(%VRS%
 echo(
 set "IN=.mts"
 set "OUT=.mkv"
 set "FLD=PRIVATE\AVCHD\BDMV\STREAM"
 set "FLD2DEL=PRIVATE"
-set "CMDN=%~n0"
 set "EX=%~dp0bin\ffmpeg.exe"
-if not exist "%EX%" (
-    echo(%EX% не найден, выходим.
-    echo(
-    pause
-    exit /b
-)
+if not exist "%EX%" echo(%EX% не найден, выходим.& echo(& pause & exit /b
+set "CMDN=%~n0"
 
-:: Автоопределение съёмного носителя (DriveType=1 + Ready=True)
+rem Поиск съёмного носителя (DriveType=1 + IsReady). Выводит подходящие буквы дисков по одной на строку.
+set "DLV=%temp%\%CMDN%-USBDIR.vbs"
+>"%DLV%"  echo(With CreateObject("Scripting.FileSystemObject"):For Each D In .Drives
+>>"%DLV%" echo(If D.DriveType=1 And D.IsReady Then Wscript.Echo D.DriveLetter
+>>"%DLV%" echo(Next:End With
+
+rem Ищем первый диск с папкой %FLD%. Чтобы не делать ещё один if внутри if - используем call.
+rem В cmd нельзя выйти из for (...) досрочно - goto запрещён, 
+rem поэтому используем if not defined - обработается первое найденное совпадение.
+rem а затем for "вхолостую докрутит" все оставшиеся буквы дисков без вызова call.
+rem Двойная вложенность тут неизбежна: это минимально возможная структура.
+rem Обнуляем на всякий случай UD2DEL чтобы в случае ошибки в rd не попало неверное значение
+set "UD2DEL="
 set "USBDIR="
-set "TV=%temp%\%CMDN%_d_%random%%random%.vbs"
->"%TV%" echo(With CreateObject("Scripting.FileSystemObject"):For Each D In .Drives
->>"%TV%" echo(If D.DriveType=1 And D.IsReady Then Wscript.Echo D.DriveLetter
->>"%TV%" echo(Next:End With
-for /f "delims=" %%D in ('cscript //nologo "%TV%"') do (
+for /f "delims=" %%D in ('cscript //nologo "%DLV%"') do (
     if not defined USBDIR (
         set "DL=%%D:"
         call :chkusb
     )
 )
-del "%TV%"
+del "%DLV%"
+
 if not defined USBDIR (
     echo(Не найден съёмный носитель с папкой %FLD%
     echo(
@@ -44,14 +48,32 @@ if not exist "%USBDIR%\*%IN%" (
     pause
     goto help
 )
+
+rem Создаём один раз VBS-код для запроса DLM в отдельные переменные, способом не зависящим от локали
+rem Формат выдачи VBS - ГГГГ-ММ-ДД_ЧЧММСС
+set "DLMV=%temp%\%CMDN%-DLM.vbs"
+>"%DLMV%"  echo(With CreateObject("Scripting.FileSystemObject")
+>>"%DLMV%" echo(Set f=.GetFile(WScript.Arguments.Item(0)):dt=f.DateLastModified
+>>"%DLMV%" echo(Y=Year(dt):M=Right("0"^&Month(dt),2):D=Right("0"^&Day(dt),2)
+>>"%DLMV%" echo(H=Right("0"^&Hour(dt),2):N=Right("0"^&Minute(dt),2):S=Right("0"^&Second(dt),2)
+>>"%DLMV%" echo(WScript.Echo Y^&"-"^&M^&"-"^&D^&"_"^&H^&""^&N^&""^&S:End With
+
 for %%F in ("%USBDIR%\*%IN%") do (
     set "FN=%%~nF"
     set "FNX=%%~nxF"
     set "FNF=%%~fF"
     call :go
 )
+
+rem Удаляем VBS DLM
+del "%DLMV%"
+
+rem Удаляем папку PRIVATE с носителя, чтобы затем на фотокамере не было ошибок типа "файл поврежден"
+rem из-за отсутствующих видеофайлов MTS. В стандарте BDMV индексные файлы: *.bdmv, *.clpi, *.cpi.
 rd /s /q "%UD2DEL%"
-set "EV=%temp%\%CMDN%-end-%random%%random%.vbs"
+
+rem Выводим сообщение
+set "EV=%temp%\%CMDN%-MSG.vbs"
 set "EMSG=Все файлы обработаны. Проверьте корректность конвертации и удалите файлы %IN%."
 chcp 1251 >nul
 >"%EV%" echo(MsgBox "%EMSG%",,"%CMDN%"
@@ -64,32 +86,38 @@ exit /b
 :help
 set "HF=%temp%\%CMDN%-hlp-%random%%random%.txt"
 set "VB=%temp%\%CMDN%-hlp-%random%%random%.vbs"
->"%HF%" echo %VRS%
+>"%HF%"  echo(%VRS%
 >>"%HF%" echo(
->>"%HF%" echo Перенос .mts с фотоаппарата и ремукс в .mkv.
+>>"%HF%" echo(Перенос видеофайлов .mts с фотокамер
+>>"%HF%" echo(с файловой структурой стандарта BDMV-AVCHD,
+>>"%HF%" echo(например Panasonic, Sony.
+>>"%HF%" echo(Подготовка:
+>>"%HF%" echo(1. Открыть скрипт в редакторе с поддержкой OEM866,
+>>"%HF%" echo(   например Блокнот со шрифтом Terminal, Far Manager
+>>"%HF%" echo(   Total Commander, Notepad++.
+>>"%HF%" echo(2. Уточнить путь извлечения видеофайлов:
+>>"%HF%" echo(   %DSTFLD%
 >>"%HF%" echo(
->>"%HF%" echo Подготовка:
->>"%HF%" echo 1. Открыть скрипт текстовым редактором с поддержкой кодовой страницы
->>"%HF%" echo    OEM866, например Far Manager, Total Commander, Notepad++
->>"%HF%" echo 2. Уточнить путь назначения DSTFLD: %DSTFLD%
->>"%HF%" echo(
->>"%HF%" echo Что делает:
->>"%HF%" echo 1. Ищет съёмный носитель с папкой %FLD%
->>"%HF%" echo 2. Переносит .mts в
->>"%HF%" echo    %DSTFLD%
->>"%HF%" echo 3. Переименовывает по маске ГГГГ-ММ-ДД_ЧЧММСС_имя.
->>"%HF%" echo 4. Удаляет папку %FLD2DEL% с носителя,
->>"%HF%" echo    чтобы на фотоаппарате не было ошибок просмотра "файл не найден".
->>"%HF%" echo 5. Ремуксит .mts в .mkv.
+>>"%HF%" echo(Что делает скрипт:
+>>"%HF%" echo(1. Ищет съёмный носитель с папкой
+>>"%HF%" echo(   %FLD%
+>>"%HF%" echo(2. Переносит .mts в
+>>"%HF%" echo(   %DSTFLD%
+>>"%HF%" echo(3. Переименовывает файлы по маске ГГГГ-ММ-ДД_ЧЧММСС_имя.
+>>"%HF%" echo(4. Ремуксит .mts в .mkv ^(без перекодировки^)
+>>"%HF%" echo(   для совместимости с проигрывателями.
+>>"%HF%" echo(5. Удаляет папку %FLD2DEL% с носителя,
+>>"%HF%" echo(   чтобы на фотокамере при просмотре не было ошибок
+>>"%HF%" echo(   "файл не найден" или "файл поврежден".
 >"%VB%" echo(With CreateObject("ADODB.Stream"):.Type=2:.Charset="cp866"
 >>"%VB%" echo(.Open:.LoadFromFile"%HF%":MsgBox .ReadText,,"%CMDN%":.Close:End With
 cscript //nologo "%VB%"
 del "%VB%" & del "%HF%"
 exit /b
-:: === Окончание основного кода ===
+rem === Окончание основного кода ===
 
 
-:: === Подпрограммы ===
+rem === Подпрограммы ===
 :chkusb
 if exist "%DL%\%FLD%" (
     set "USBDIR=%DL%\%FLD%"
@@ -98,28 +126,11 @@ if exist "%DL%\%FLD%" (
 exit /b
 
 :go
-:: Извлекаем DateLastModified
-set "TV=%temp%\dlm-%random%%random%.vbs"
->"%TV%" echo(Wscript.Echo CreateObject("Scripting.FileSystemObject").GetFile(WScript.Arguments.Item(0)).DateLastModified
-for /f "delims=" %%t in ('cscript //nologo "%TV%" "%FNF%"') do set "DT=%%t"
-del "%TV%"
-set "D=%DT:~0,2%"
-set "M=%DT:~3,2%"
-set "Y=%DT:~6,4%"
-set "HH=%DT:~11,2%"
-set "MM=%DT:~14,2%"
-set "SS=%DT:~17,2%"
-:: Коррекция однозначного часа (например, "8:08:08")
-if not "%HH%"=="%HH::=%" (
-    set "HH=0%HH:~0,1%"
-    set "MM=%DT:~13,2%"
-    set "SS=%DT:~16,2%"
-)
-set "DSTNAMEIN=%Y%-%M%-%D%_%HH%%MM%%SS%_%FNX%"
-set "DSTNAME=%Y%-%M%-%D%_%HH%%MM%%SS%_%FN%%OUT%"
-echo(Конвертация: "%FNX%" -^> "%DSTNAME%"...
+rem Извлекаем дату последнего изменения файла (DateLastModified) способом не зависящим от локали ОС:
+for /f "delims=" %%a in ('cscript //nologo "%DLMV%" "%FNF%"') do set "DLM=%%a"
+echo(Конвертация: "%FNX%" -^> "%DLM%_%FN%%OUT%"...
 if not exist "%DSTFLD%" md "%DSTFLD%"
-move "%FNF%" "%DSTFLD%\%DSTNAMEIN%" >nul
-"%EX%" -hide_banner -i "%DSTFLD%\%DSTNAMEIN%" -c copy "%DSTFLD%\%DSTNAME%"
+move "%FNF%" "%DSTFLD%\%DLM%_%FNX%" >nul
+"%EX%" -hide_banner -i "%DSTFLD%\%DLM%_%FNX%" -map 0 -c copy -metadata:s:s:0 language=rus "%DSTFLD%\%DLM%_%FN%%OUT%"
 echo(
 exit /b
