@@ -1,2 +1,3 @@
 utf8-previews/ export-ignore
 .gitattributes export-ignore
+*.cmd encoding=cp866
