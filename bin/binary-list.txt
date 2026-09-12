@@ -9,5 +9,5 @@ lame.exe
 MediaInfo.exe
 mkvpropedit.exe
 opusenc.exe
-VC_redist.x64.exe
+VC_redist.x64.exe (Microsoft Visual C++ Redistributable https://aka.ms/vc14/vc_redist.x64.exe)
 yt-dlp.exe
