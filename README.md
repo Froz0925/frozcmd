@@ -43,7 +43,7 @@ CMD-скрипты для автоматизации некоторых зада
 Извлекает минимальную версию Android из указанных `.apk`-файлов и записывает результат в `txt`-файл.
 
 **Требуется**:  
-- `aapt2_64.exe` — из Android Asset Packaging Tool (apktool)
+- `aapt2.exe` — из Android Asset Packaging Tool (apktool)
 
 ---
 
@@ -78,7 +78,7 @@ CMD-скрипты для автоматизации некоторых зада
 
 **Требуется**:  
 - `exiv2.exe` и `exiv2.dll`
-
+- `VC_redist.x64.exe` (https://aka.ms/vc14/vc_redist.x64.exe)
 ---
 
 ### 🔊 `sound-all2wav.cmd`
