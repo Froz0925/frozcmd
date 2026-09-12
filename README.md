@@ -52,7 +52,7 @@ CMD-скрипты для автоматизации некоторых зада
 
 **Требуется**:  
 - `exiv2.exe` и `exiv2.dll`
-- `VC_redist.x64.exe` (Microsoft Visual C++ Redistributable https://aka.ms/vc14/vc_redist.x64.exe)
+- `VC_redist.x64.exe`
 
 ---
 
@@ -65,7 +65,7 @@ CMD-скрипты для автоматизации некоторых зада
 
 **Требуется**:  
 - `exiv2.exe` и `exiv2.dll`
-- `VC_redist.x64.exe` (Microsoft Visual C++ Redistributable https://aka.ms/vc14/vc_redist.x64.exe)
+- `VC_redist.x64.exe`
 
 ---
 
@@ -80,7 +80,7 @@ CMD-скрипты для автоматизации некоторых зада
 
 **Требуется**:  
 - `exiv2.exe` и `exiv2.dll`
-- `VC_redist.x64.exe` (Microsoft Visual C++ Redistributable https://aka.ms/vc14/vc_redist.x64.exe)
+- `VC_redist.x64.exe`
 
 ---
 
